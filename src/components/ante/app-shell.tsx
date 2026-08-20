@@ -4,6 +4,7 @@ import { Activity, LogOut, ShieldCheck, Stethoscope, User } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useRoles, type AnteRole } from "@/hooks/use-session";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
