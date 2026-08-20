@@ -9,6 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getMySettings, updateMySettings } from "@/lib/ante.functions";
+import {
+  PRACTITIONER_ROLES,
+  SPECIALIZATIONS,
+  type PractitionerRoleValue,
+} from "@/lib/practitioner-options";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const settingsQuery = queryOptions({
   queryKey: ["my-settings"],
@@ -54,11 +66,29 @@ function SettingsPage() {
   const [gender, setGender] = useState(data.patient?.gender ?? "");
   const [postalCode, setPostalCode] = useState(data.patient?.postal_code ?? "");
   const [primaryLanguage, setPrimaryLanguage] = useState(data.patient?.primary_language ?? "da");
+  const [firstName, setFirstName] = useState(data.practitioner?.first_name ?? "");
+  const [lastName, setLastName] = useState(data.practitioner?.last_name ?? "");
+  const [practitionerRole, setPractitionerRole] = useState<PractitionerRoleValue>(
+    (data.practitioner?.role as PractitionerRoleValue) ?? "DOCTOR",
+  );
+  const [specialization, setSpecialization] = useState(data.practitioner?.specialization ?? "");
+  const [licenseNumber, setLicenseNumber] = useState(data.practitioner?.license_number ?? "");
 
   const save = useMutation({
     mutationFn: () =>
       updateMySettings({
-        data: { fullName, dateOfBirth, gender, postalCode, primaryLanguage },
+        data: {
+          fullName: data.practitioner ? `${firstName} ${lastName}`.trim() || fullName : fullName,
+          dateOfBirth,
+          gender,
+          postalCode,
+          primaryLanguage,
+          firstName,
+          lastName,
+          practitionerRole,
+          specialization,
+          licenseNumber,
+        },
       }),
     onSuccess: async () => {
       toast.success("Profile updated");
@@ -75,14 +105,80 @@ function SettingsPage() {
             <CardTitle className="text-base">Profile</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="fullName">Full name</Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
-              />
-            </div>
+            {data.practitioner ? (
+              <>
+                <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="firstName">First name</Label>
+                    <Input
+                      id="firstName"
+                      value={firstName}
+                      onChange={(event) => setFirstName(event.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="lastName">Last name</Label>
+                    <Input
+                      id="lastName"
+                      value={lastName}
+                      onChange={(event) => setLastName(event.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="practRole">Title</Label>
+                    <Select
+                      value={practitionerRole}
+                      onValueChange={(v) => setPractitionerRole(v as PractitionerRoleValue)}
+                    >
+                      <SelectTrigger id="practRole">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PRACTITIONER_ROLES.map((r) => (
+                          <SelectItem key={r.value} value={r.value}>
+                            {r.label} ({r.title})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="spec">Specialisation</Label>
+                    <Select value={specialization} onValueChange={setSpecialization}>
+                      <SelectTrigger id="spec">
+                        <SelectValue placeholder="Select a specialisation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SPECIALIZATIONS.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="license">Licence number (AutorisationsID)</Label>
+                  <Input
+                    id="license"
+                    value={licenseNumber}
+                    onChange={(event) => setLicenseNumber(event.target.value)}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="grid gap-2">
+                <Label htmlFor="fullName">Full name</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                />
+              </div>
+            )}
 
             {data.patient ? (
               <>
@@ -127,7 +223,15 @@ function SettingsPage() {
             ) : null}
 
             <div>
-              <Button onClick={() => save.mutate()} disabled={save.isPending || !fullName.trim()}>
+              <Button
+                onClick={() => save.mutate()}
+                disabled={
+                  save.isPending ||
+                  (data.practitioner
+                    ? !firstName.trim() || !lastName.trim()
+                    : !fullName.trim())
+                }
+              >
                 {save.isPending ? "Saving…" : "Save changes"}
               </Button>
             </div>
@@ -149,7 +253,11 @@ function SettingsPage() {
               <p>
                 Practice:{" "}
                 <span className="text-foreground">
-                  {data.practitioner.organization?.name ?? "—"} · {data.practitioner.role}
+                  {data.practitioner.organization?.name ?? "—"} ·{" "}
+                  {data.practitioner.title ?? data.practitioner.role}
+                  {data.practitioner.specialization
+                    ? ` · ${data.practitioner.specialization}`
+                    : ""}
                 </span>
               </p>
             ) : null}
