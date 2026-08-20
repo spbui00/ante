@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { finaliseVisit, getVisitDetail } from "@/lib/ante.functions";
+import { getVisitClinicalItems } from "@/lib/visit-clinical.functions";
+
 import { ENCOUNTER_TYPE_LABEL, formatDateTime } from "@/lib/clinical-utils";
 
 export const Route = createFileRoute("/_authenticated/consultation/$visitId")({
