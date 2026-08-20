@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { finaliseVisit, getVisitDetail } from "@/lib/ante.functions";
+import { getVisitClinicalItems } from "@/lib/visit-clinical.functions";
+
 import { ENCOUNTER_TYPE_LABEL, formatDateTime } from "@/lib/clinical-utils";
 
 export const Route = createFileRoute("/_authenticated/consultation/$visitId")({
@@ -62,6 +64,12 @@ function ConsultationPage() {
     queryKey: ["visit-detail", visitId],
     queryFn: () => getVisitDetail({ data: { visitId } }),
   });
+
+  const { data: clinicalItems } = useQuery({
+    queryKey: ["visit-clinical-items", visitId],
+    queryFn: () => getVisitClinicalItems({ data: { visitId } }),
+  });
+
 
   const visit = data?.visit as
     | ({
@@ -112,8 +120,20 @@ function ConsultationPage() {
       void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
       void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
     },
-    onError: () => toast.error("Could not save the consultation"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : "Could not save the consultation",
+      ),
   });
+
+  const recordCount = clinicalItems?.records?.length ?? 0;
+  const missing: string[] = [];
+  if (!conclusion.trim()) missing.push("a conclusion");
+  if (!recommendation.trim()) missing.push("a recommendation");
+  if (recordCount === 0) missing.push("at least one clinical record");
+
 
   const patientName = visit?.patient?.full_name ?? "Patient";
 
@@ -225,9 +245,19 @@ function ConsultationPage() {
                   </div>
                 </div>
 
-                <Button onClick={() => signOff.mutate()} disabled={signOff.isPending}>
+                {missing.length ? (
+                  <p className="text-xs text-muted-foreground">
+                    Before signing off, add {missing.join(", ")}.
+                  </p>
+                ) : null}
+
+                <Button
+                  onClick={() => signOff.mutate()}
+                  disabled={signOff.isPending || missing.length > 0}
+                >
                   {signOff.isPending ? "Signing off…" : "Sign off consultation"}
                 </Button>
+
               </CardContent>
             </Card>
 

@@ -141,8 +141,9 @@ export const signOffConsultation = createServerFn({ method: "POST" })
       .object({
         visitId: z.string().uuid(),
         transcript: z.string().max(40000).default(""),
-        conclusion: z.string().max(6000),
-        recommendation: z.string().max(6000),
+        conclusion: z.string().trim().min(1, "Conclusion is required").max(6000),
+        recommendation: z.string().trim().min(1, "Recommendation is required").max(6000),
+
         urgencyLevel: z.enum(["LOW", "MEDIUM", "HIGH_RED_FLAG"]),
         disposition: z.enum(["HOME_CARE", "PRESCRIPTION", "ER_REFERRAL"]),
         diagnoses: z
@@ -196,6 +197,19 @@ export const signOffConsultation = createServerFn({ method: "POST" })
     if (!profile?.practitioner_id || visit.practitioner_id !== profile.practitioner_id) {
       throw new Error("Only the clinician running this visit can sign it off");
     }
+
+    // Require at least one clinical record: either new diagnoses or already documented.
+    if (!data.diagnoses.length) {
+      const { count, error: recordError } = await supabase
+        .from("clinical_record")
+        .select("id", { count: "exact", head: true })
+        .eq("visit_id", data.visitId);
+      if (recordError) throw new Error(recordError.message);
+      if (!count) {
+        throw new Error("Add at least one clinical record before signing off this consultation");
+      }
+    }
+
 
     const transcript = data.transcript
       ? [visit.intake_transcript, `--- Consultation ---\n${data.transcript}`]

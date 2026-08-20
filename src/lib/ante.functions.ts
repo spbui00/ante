@@ -182,14 +182,24 @@ export const finaliseVisit = createServerFn({ method: "POST" })
     z
       .object({
         visitId: z.string().uuid(),
-        conclusion: z.string().max(4000),
-        recommendation: z.string().max(4000),
+        conclusion: z.string().trim().min(1, "Conclusion is required").max(4000),
+        recommendation: z.string().trim().min(1, "Recommendation is required").max(4000),
         disposition: z.enum(["HOME_CARE", "PRESCRIPTION", "ER_REFERRAL"]),
         urgencyLevel: z.enum(["LOW", "MEDIUM", "HIGH_RED_FLAG"]),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // A signed-off consultation must carry a documented clinical record.
+    const { count, error: recordError } = await context.supabase
+      .from("clinical_record")
+      .select("id", { count: "exact", head: true })
+      .eq("visit_id", data.visitId);
+    if (recordError) throw new Error(recordError.message);
+    if (!count) {
+      throw new Error("Add at least one clinical record before signing off this consultation");
+    }
+
     const { error } = await context.supabase
       .from("visit")
       .update({
@@ -203,6 +213,7 @@ export const finaliseVisit = createServerFn({ method: "POST" })
       .eq("id", data.visitId);
 
     if (error) throw new Error(error.message);
+
     return { ok: true };
   });
 
