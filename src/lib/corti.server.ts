@@ -17,6 +17,13 @@ const TENANT = "base";
 export const CORTI_ENVIRONMENT = ENVIRONMENT;
 export const CORTI_TENANT = TENANT;
 
+/**
+ * Coding system used for ICD-10 predictions. The Danish SKS modification
+ * (icd10dk-*) is alpha-only and rejected by the API on this tenant, so we use
+ * the outpatient ICD-10-CM system, which is enabled and returns codes.
+ */
+export const CORTI_CODING_SYSTEM = "icd10cm-outpatient";
+
 const API_BASE = `https://api.${ENVIRONMENT}.corti.app/v2`;
 const AUTH_URL = `https://auth.${ENVIRONMENT}.corti.app/realms/${TENANT}/protocol/openid-connect/token`;
 const MODELS_URL = `https://ai.${ENVIRONMENT}.corti.app/v1/chat/completions`;
@@ -229,7 +236,7 @@ export type CortiCode = { code: string; display: string; system: string };
 
 export async function predictCodes(
   text: string,
-  systems: string[] = ["icd-10-dk"],
+  systems: string[] = [CORTI_CODING_SYSTEM],
 ): Promise<CortiCode[]> {
   const data = await cortiFetch<{
     codes?: { code: string; display?: string; system?: string }[];
