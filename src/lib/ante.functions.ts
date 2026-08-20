@@ -585,17 +585,53 @@ export const respondToConsent = createServerFn({ method: "POST" })
     z.object({ consentId: z.string().uuid(), accept: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { supabase } = context;
+
+    const { data: updated, error } = await supabase
       .from("consent_grant")
       .update(
         data.accept
           ? { status: "ACTIVE" as const, granted_at: new Date().toISOString() }
           : { status: "REVOKED" as const },
       )
-      .eq("id", data.consentId);
+      .eq("id", data.consentId)
+      .select("patient_id, practitioner_id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
+
+    // Granting access also adds the practitioner to the patient's care team.
+    if (data.accept && updated) {
+      const { data: existing } = await supabase
+        .from("patient_care_team")
+        .select("id")
+        .eq("patient_id", updated.patient_id)
+        .eq("practitioner_id", updated.practitioner_id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from("patient_care_team")
+          .update({ status: "ACTIVE" as const, ended_at: null })
+          .eq("id", existing.id);
+      } else {
+        const { data: prac } = await supabase
+          .from("practitioner")
+          .select("specialization, role")
+          .eq("id", updated.practitioner_id)
+          .maybeSingle();
+
+        await supabase.from("patient_care_team").insert({
+          patient_id: updated.patient_id,
+          practitioner_id: updated.practitioner_id,
+          specialization: prac?.specialization || "General practice",
+          is_primary: false,
+        });
+      }
+    }
+
     return { ok: true };
   });
+
 
 /** Patient registry: everyone who has granted the signed-in practitioner access. */
 export const getMyPatients = createServerFn({ method: "GET" })
