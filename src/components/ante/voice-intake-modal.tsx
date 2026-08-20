@@ -522,11 +522,10 @@ export function VoiceIntakeModal({
                   <span className="font-medium text-foreground">Symptom summary</span>
                   <UrgencyBadge level={result.urgencyLevel} />
                 </div>
-                <p className="text-muted-foreground">{result.summary}</p>
                 {result.symptomDetail ? (
-                  <p className="mt-3 text-foreground">{result.symptomDetail}</p>
+                  <p className="text-foreground">{result.symptomDetail}</p>
                 ) : result.symptoms.length ? (
-                  <p className="mt-3 text-foreground">{result.symptoms.join(", ")}</p>
+                  <p className="text-foreground">{result.symptoms.join(", ")}</p>
                 ) : null}
                 {result.pertinentNegatives?.length ? (
                   <p className="mt-2 text-muted-foreground">
