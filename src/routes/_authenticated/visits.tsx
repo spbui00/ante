@@ -30,16 +30,6 @@ import {
 import { RichText } from "@/components/ante/rich-text";
 import { VisitCard } from "@/components/ante/visit-card";
 import { VoiceIntakeModal } from "@/components/ante/voice-intake-modal";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { getMyVisitHistory } from "@/lib/ante.functions";
 import { deleteScheduledVisit } from "@/lib/intake.functions";
@@ -445,29 +435,28 @@ function VisitsPage() {
         />
       ) : null}
 
-      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this scheduled visit?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your pre-intake answers for {pendingDelete ? formatDate(pendingDelete.visit_date) : ""}{" "}
-              will be permanently removed. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Keep it</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={deleting}
-              onClick={(e) => {
-                e.preventDefault();
-                void confirmDelete();
-              }}
-            >
-              {deleting ? "Deleting…" : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Drawer open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <DrawerContent>
+          <div className="mx-auto w-full max-w-md">
+            <DrawerHeader>
+              <DrawerTitle>Delete this scheduled visit?</DrawerTitle>
+              <DrawerDescription>
+                Your pre-intake answers for{" "}
+                {pendingDelete ? formatDate(pendingDelete.visit_date) : ""} will be permanently
+                removed. This cannot be undone.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="flex-row justify-end gap-2">
+              <Button variant="outline" disabled={deleting} onClick={() => setPendingDelete(null)}>
+                Keep it
+              </Button>
+              <Button variant="destructive" disabled={deleting} onClick={() => void confirmDelete()}>
+                {deleting ? "Deleting…" : "Delete"}
+              </Button>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </AppShell>
   );
 }
