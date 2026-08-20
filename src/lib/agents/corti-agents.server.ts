@@ -103,7 +103,7 @@ type A2AResponse = {
     id?: string;
     contextId?: string;
     history?: A2AMessage[];
-    status?: { state?: string };
+    status?: { state?: string; message?: A2AMessage };
     artifacts?: { parts?: A2APart[] }[];
   };
 };
@@ -149,9 +149,14 @@ export async function sendAgentMessage(opts: {
     .find((m) => m.role === "ROLE_AGENT");
 
   const text =
+    partsToText(task?.status?.message?.parts) ||
     partsToText(lastAgentMessage?.parts) ||
     partsToText(task?.artifacts?.[0]?.parts) ||
     "";
 
-  return { text, contextId: task?.contextId ?? null, taskId: task?.id ?? null };
+  return {
+    text,
+    contextId: task?.contextId ?? task?.status?.message?.contextId ?? null,
+    taskId: task?.id ?? null,
+  };
 }

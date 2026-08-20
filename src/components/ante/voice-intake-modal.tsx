@@ -291,15 +291,12 @@ export function VoiceIntakeModal({
               <PromptInputTools>
                 <button
                   type="button"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                    void dictation.start();
+                  onClick={() => {
+                    if (recording) dictation.stop();
+                    else if (!connecting) void dictation.start();
                   }}
-                  onPointerUp={() => dictation.stop()}
-                  onPointerCancel={() => dictation.stop()}
-                  onContextMenu={(e) => e.preventDefault()}
-                  aria-label="Hold to talk"
+                  aria-pressed={recording}
+                  aria-label={recording ? "Stop recording" : "Start recording"}
                   className={`grid size-9 touch-none select-none place-items-center rounded-full text-primary-foreground transition-transform active:scale-95 ${
                     recording ? "bg-destructive scale-105" : "bg-primary"
                   }`}
