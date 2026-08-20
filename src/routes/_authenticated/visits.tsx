@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { CalendarDays, Filter, Pencil, Search, X } from "lucide-react";
+import { CalendarDays, Filter, Pencil, Search, Trash2, X } from "lucide-react";
 
 import { AppShell } from "@/components/ante/app-shell";
 import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
@@ -30,7 +30,19 @@ import {
 import { RichText } from "@/components/ante/rich-text";
 import { VisitCard } from "@/components/ante/visit-card";
 import { VoiceIntakeModal } from "@/components/ante/voice-intake-modal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import { getMyVisitHistory } from "@/lib/ante.functions";
+import { deleteScheduledVisit } from "@/lib/intake.functions";
 import { DISPOSITION_LABEL, ENCOUNTER_TYPE_LABEL, URGENCY_LABEL, formatDate } from "@/lib/clinical-utils";
 
 const visitsQuery = queryOptions({
@@ -109,7 +121,26 @@ function VisitsPage() {
   const [selectedVisit, setSelectedVisit] = useState<VisitItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<VisitItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await deleteScheduledVisit({ data: { visitId: pendingDelete.id } });
+      toast.success("Scheduled visit deleted");
+      setPendingDelete(null);
+      setDetailOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ["my-visit-history"] });
+      void queryClient.invalidateQueries({ queryKey: ["passport"] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete this visit");
+    } finally {
+      setDeleting(false);
+    }
+  }
   const canEdit = selectedVisit?.status === "SCHEDULED";
 
   const doctors = useMemo(() => {
@@ -319,6 +350,7 @@ function VisitsPage() {
                     setSelectedVisit(v as VisitItem);
                     setEditOpen(true);
                   },
+                  onDelete: () => setPendingDelete(v as VisitItem),
                 }
               : {})}
           />
@@ -371,6 +403,16 @@ function VisitsPage() {
             )}
 
             <DrawerFooter className="flex-row justify-end">
+              {canEdit && selectedVisit ? (
+                <Button
+                  variant="ghost"
+                  className="mr-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setPendingDelete(selectedVisit)}
+                >
+                  <Trash2 className="size-4" />
+                  Delete
+                </Button>
+              ) : null}
               {canEdit ? (
                 <Button
                   onClick={() => {
@@ -402,6 +444,30 @@ function VisitsPage() {
           }}
         />
       ) : null}
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this scheduled visit?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your pre-intake answers for {pendingDelete ? formatDate(pendingDelete.visit_date) : ""}{" "}
+              will be permanently removed. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmDelete();
+              }}
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }

@@ -1,4 +1,4 @@
-import { CalendarDays, Pencil } from "lucide-react";
+import { CalendarDays, Pencil, Trash2 } from "lucide-react";
 
 import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
 import { RichTextInline } from "@/components/ante/rich-text";
@@ -34,12 +34,15 @@ export function VisitCard({
   visit,
   onClick,
   onEdit,
+  onDelete,
   className,
 }: {
   visit: VisitCardData;
   onClick?: () => void;
   /** Shown as an "Edit intake" action (used for SCHEDULED drafts). */
   onEdit?: () => void;
+  /** Shown as a "Delete" action (used for SCHEDULED drafts). */
+  onDelete?: () => void;
   className?: string;
 }) {
   const practitioner = visit.practitioner;
@@ -81,18 +84,36 @@ export function VisitCard({
           className="line-clamp-2 text-sm text-muted-foreground"
           text={visit.conclusion || visit.symptoms || "No conclusion recorded."}
         />
-        {onEdit ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-          >
-            <Pencil className="size-4" />
-            Edit intake
-          </Button>
+        {onEdit || onDelete ? (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {onEdit ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                <Pencil className="size-4" />
+                Edit intake
+              </Button>
+            ) : null}
+            {onDelete ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            ) : null}
+          </div>
         ) : null}
       </CardContent>
     </Card>
