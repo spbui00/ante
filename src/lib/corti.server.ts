@@ -79,7 +79,7 @@ async function cortiFetch<T>(
   const res = await fetch(`${API_BASE}${path}`, {
     method: init.method ?? "GET",
     headers,
-    body: init.body,
+    body: init.body ?? null,
   });
 
   if (!res.ok) {
@@ -144,7 +144,7 @@ export async function transcribeAudio(
 ): Promise<{ transcript: string; interactionId: string }> {
   const interactionId = await createInteraction({
     identifier: opts.identifier,
-    patientIdentifier: opts.patientIdentifier,
+    ...(opts.patientIdentifier ? { patientIdentifier: opts.patientIdentifier } : {}),
   });
   const recordingId = await uploadRecording(interactionId, audio);
 
