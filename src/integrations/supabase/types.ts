@@ -712,6 +712,51 @@ export type Database = {
           },
         ]
       }
+      queue_priority: {
+        Row: {
+          id: string
+          pinned: boolean
+          position: number
+          practitioner_id: string
+          rationale: string | null
+          updated_at: string
+          visit_id: string
+        }
+        Insert: {
+          id?: string
+          pinned?: boolean
+          position?: number
+          practitioner_id: string
+          rationale?: string | null
+          updated_at?: string
+          visit_id: string
+        }
+        Update: {
+          id?: string
+          pinned?: boolean
+          position?: number
+          practitioner_id?: string
+          rationale?: string | null
+          updated_at?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_priority_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_priority_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visit"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -732,6 +777,8 @@ export type Database = {
       }
       visit: {
         Row: {
+          arrived_at: string | null
+          completed_at: string | null
           conclusion: string | null
           created_at: string
           disposition: Database["public"]["Enums"]["disposition_enum"] | null
@@ -747,11 +794,14 @@ export type Database = {
           symptom_duration_days: number | null
           symptom_icd_codes: Json
           symptoms: string | null
+          taken_in_at: string | null
           travel_history: Json
           urgency_level: Database["public"]["Enums"]["urgency_enum"]
           visit_date: string
         }
         Insert: {
+          arrived_at?: string | null
+          completed_at?: string | null
           conclusion?: string | null
           created_at?: string
           disposition?: Database["public"]["Enums"]["disposition_enum"] | null
@@ -767,11 +817,14 @@ export type Database = {
           symptom_duration_days?: number | null
           symptom_icd_codes?: Json
           symptoms?: string | null
+          taken_in_at?: string | null
           travel_history?: Json
           urgency_level?: Database["public"]["Enums"]["urgency_enum"]
           visit_date?: string
         }
         Update: {
+          arrived_at?: string | null
+          completed_at?: string | null
           conclusion?: string | null
           created_at?: string
           disposition?: Database["public"]["Enums"]["disposition_enum"] | null
@@ -787,6 +840,7 @@ export type Database = {
           symptom_duration_days?: number | null
           symptom_icd_codes?: Json
           symptoms?: string | null
+          taken_in_at?: string | null
           travel_history?: Json
           urgency_level?: Database["public"]["Enums"]["urgency_enum"]
           visit_date?: string
