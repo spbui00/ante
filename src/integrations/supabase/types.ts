@@ -156,6 +156,7 @@ export type Database = {
           id: string
           patient_id: string
           status: Database["public"]["Enums"]["record_status_enum"]
+          visit_id: string | null
         }
         Insert: {
           category: Database["public"]["Enums"]["record_category_enum"]
@@ -166,6 +167,7 @@ export type Database = {
           id?: string
           patient_id: string
           status?: Database["public"]["Enums"]["record_status_enum"]
+          visit_id?: string | null
         }
         Update: {
           category?: Database["public"]["Enums"]["record_category_enum"]
@@ -176,6 +178,7 @@ export type Database = {
           id?: string
           patient_id?: string
           status?: Database["public"]["Enums"]["record_status_enum"]
+          visit_id?: string | null
         }
         Relationships: [
           {
@@ -183,6 +186,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patient"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_record_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visit"
             referencedColumns: ["id"]
           },
         ]
@@ -888,6 +898,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      owns_visit: { Args: { _visit_id: string }; Returns: boolean }
       request_consent_by_cpr: {
         Args: { _cpr: string; _duration: string }
         Returns: Json

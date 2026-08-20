@@ -2,6 +2,8 @@ import { Pencil, Trash2 } from "lucide-react";
 
 import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
 import { RichText } from "@/components/ante/rich-text";
+import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,15 +57,15 @@ export function VisitDetailDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh]">
-        <div className="mx-auto w-full max-w-2xl">
-          <DrawerHeader>
+      <DrawerContent className="flex max-h-[90vh] flex-col">
+        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col">
+          <DrawerHeader className="shrink-0">
             <DrawerTitle>Visit details</DrawerTitle>
             <DrawerDescription>{visit ? formatDate(visit.visit_date) : "—"}</DrawerDescription>
           </DrawerHeader>
 
           {visit ? (
-            <div className="space-y-6 overflow-y-auto px-4 pb-6">
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 pb-6">
               <div className="flex flex-wrap items-center gap-2">
                 {visit.encounter_type ? (
                   <Badge variant="outline">
@@ -99,12 +101,17 @@ export function VisitDetailDrawer({
                 label="Recommendation"
                 value={visit.recommendation ?? "No recommendation recorded."}
               />
+
+              <div className="border-t border-border pt-4">
+                <VisitClinicalItems visitId={visit.id} />
+              </div>
             </div>
           ) : (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
               Select a visit to view details.
             </div>
           )}
+
 
           <DrawerFooter className="flex-row justify-end">
             {canEdit && onDelete ? (
