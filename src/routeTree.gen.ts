@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedClinicalRouteImport } from './routes/_authenticated/clinical'
 import { Route as AuthenticatedPassportRouteImport } from './routes/_authenticated/passport'
+import { Route as AuthenticatedSurveillanceRouteImport } from './routes/_authenticated/surveillance'
 import { Route as ApiIntakeRouteImport } from './routes/api/intake'
 import { Route as ApiProcessVisitRouteImport } from './routes/api/process-visit'
 
@@ -41,6 +42,12 @@ const AuthenticatedPassportRoute = AuthenticatedPassportRouteImport.update({
   path: '/passport',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSurveillanceRoute =
+  AuthenticatedSurveillanceRouteImport.update({
+    id: '/surveillance',
+    path: '/surveillance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiIntakeRoute = ApiIntakeRouteImport.update({
   id: '/api/intake',
   path: '/api/intake',
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/clinical': typeof AuthenticatedClinicalRoute
   '/passport': typeof AuthenticatedPassportRoute
+  '/surveillance': typeof AuthenticatedSurveillanceRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
 }
@@ -65,6 +73,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/clinical': typeof AuthenticatedClinicalRoute
   '/passport': typeof AuthenticatedPassportRoute
+  '/surveillance': typeof AuthenticatedSurveillanceRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
 }
@@ -75,6 +84,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/clinical': typeof AuthenticatedClinicalRoute
   '/_authenticated/passport': typeof AuthenticatedPassportRoute
+  '/_authenticated/surveillance': typeof AuthenticatedSurveillanceRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
 }
@@ -85,6 +95,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/clinical'
     | '/passport'
+    | '/surveillance'
     | '/api/intake'
     | '/api/process-visit'
   fileRoutesByTo: FileRoutesByTo
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/clinical'
     | '/passport'
+    | '/surveillance'
     | '/api/intake'
     | '/api/process-visit'
   id:
@@ -102,6 +114,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/clinical'
     | '/_authenticated/passport'
+    | '/_authenticated/surveillance'
     | '/api/intake'
     | '/api/process-visit'
   fileRoutesById: FileRoutesById
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPassportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/surveillance': {
+      id: '/_authenticated/surveillance'
+      path: '/surveillance'
+      fullPath: '/surveillance'
+      preLoaderRoute: typeof AuthenticatedSurveillanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/intake': {
       id: '/api/intake'
       path: '/api/intake'
@@ -171,11 +191,13 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedClinicalRoute: typeof AuthenticatedClinicalRoute
   AuthenticatedPassportRoute: typeof AuthenticatedPassportRoute
+  AuthenticatedSurveillanceRoute: typeof AuthenticatedSurveillanceRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClinicalRoute: AuthenticatedClinicalRoute,
   AuthenticatedPassportRoute: AuthenticatedPassportRoute,
+  AuthenticatedSurveillanceRoute: AuthenticatedSurveillanceRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
