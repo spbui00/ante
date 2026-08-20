@@ -526,3 +526,147 @@ export const getMyVisitHistory = createServerFn({ method: "GET" })
 
     return { visits: data ?? [] };
   });
+
+const DURATIONS = {
+  "1 hour": "1 hour",
+  "1 day": "1 day",
+  "1 week": "7 days",
+  "1 month": "1 month",
+  "1 year": "1 year",
+  "3 years": "3 years",
+} as const;
+
+/** Practitioner requests record access for a patient identified by CPR. */
+export const requestPatientConsent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        cpr: z.string().trim().min(6).max(15),
+        duration: z.enum(["1 hour", "1 day", "1 week", "1 month", "1 year", "3 years"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("request_consent_by_cpr", {
+      _cpr: data.cpr,
+      _duration: DURATIONS[data.duration],
+    });
+    if (error) throw new Error(error.message);
+    return result as {
+      ok: boolean;
+      reason?: string;
+      id?: string;
+      patient_name?: string;
+    };
+  });
+
+/** Consent requests addressed to the signed-in patient. */
+export const getMyConsentRequests = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("patient_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!profile?.patient_id) return { requests: [] };
+
+    const { data, error } = await supabase
+      .from("consent_grant")
+      .select(
+        "id, status, expires_at, granted_at, created_at, is_emergency_override, justification_notes, practitioner:practitioner(id, full_name, title, role, specialization, organization:organization(name))",
+      )
+      .eq("patient_id", profile.patient_id)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    return { requests: data ?? [] };
+  });
+
+/** Patient accepts or declines a consent request (after mock biometric check). */
+export const respondToConsent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ consentId: z.string().uuid(), accept: z.boolean() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("consent_grant")
+      .update(
+        data.accept
+          ? { status: "ACTIVE" as const, granted_at: new Date().toISOString() }
+          : { status: "REVOKED" as const },
+      )
+      .eq("id", data.consentId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Patient registry: everyone who has granted the signed-in practitioner access. */
+export const getMyPatients = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("practitioner_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!profile?.practitioner_id) return { grants: [] };
+
+    const { data, error } = await supabase
+      .from("consent_grant")
+      .select(
+        "id, status, granted_at, expires_at, created_at, is_emergency_override, patient:patient(id, full_name, cpr_number, date_of_birth, sex, postal_code, phone_number, primary_language)",
+      )
+      .eq("practitioner_id", profile.practitioner_id)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    return { grants: data ?? [] };
+  });
+
+/** Full record view for one patient the practitioner has access to. */
+export const getPatientRecord = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ patientId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const [patient, records, prescriptions, observations, visits] = await Promise.all([
+      supabase.from("patient").select("*").eq("id", data.patientId).maybeSingle(),
+      supabase
+        .from("clinical_record")
+        .select("*")
+        .eq("patient_id", data.patientId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("drug_prescription")
+        .select("*")
+        .eq("patient_id", data.patientId)
+        .order("start_date", { ascending: false }),
+      supabase
+        .from("observation")
+        .select("*")
+        .eq("patient_id", data.patientId)
+        .order("recorded_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("visit")
+        .select("id, visit_date, encounter_type, urgency_level, status, conclusion")
+        .eq("patient_id", data.patientId)
+        .order("visit_date", { ascending: false })
+        .limit(20),
+    ]);
+
+    return {
+      patient: patient.data,
+      records: records.data ?? [],
+      prescriptions: prescriptions.data ?? [],
+      observations: observations.data ?? [],
+      visits: visits.data ?? [],
+    };
+  });
