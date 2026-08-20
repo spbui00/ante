@@ -35,6 +35,8 @@ const visitsQuery = queryOptions({
   queryFn: () => getMyVisitHistory(),
 });
 
+type VisitItem = Awaited<ReturnType<typeof getMyVisitHistory>>["visits"][number];
+
 export const Route = createFileRoute("/_authenticated/visits")({
   head: () => ({
     meta: [
