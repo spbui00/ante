@@ -62,14 +62,14 @@ function PassportPage() {
         <Section title="Conditions" icon={<Stethoscope className="size-4" />}>
           {conditions.length === 0 ? <Empty /> : null}
           {conditions.map((c) => (
-            <Row key={c.id} primary={c.title} secondary={c.code_value ?? c.status ?? ""} />
+            <Row key={c.id} primary={c.description} secondary={[c.code, c.status].filter(Boolean).join(" · ")} />
           ))}
         </Section>
 
         <Section title="Allergies" icon={<AlertTriangle className="size-4" />}>
           {allergies.length === 0 ? <Empty label="No known allergies" /> : null}
           {allergies.map((a) => (
-            <Row key={a.id} primary={a.title} secondary={a.notes ?? ""} />
+            <Row key={a.id} primary={a.description} secondary={a.status} />
           ))}
         </Section>
 
@@ -89,8 +89,8 @@ function PassportPage() {
           {data.observations.slice(0, 8).map((o) => (
             <Row
               key={o.id}
-              primary={o.display_name ?? o.loinc_code ?? "Observation"}
-              secondary={`${o.value_numeric ?? o.value_text ?? "—"} ${o.unit ?? ""} · ${formatDate(o.recorded_at)}`}
+              primary={o.test_name}
+              secondary={`${o.value ?? "—"} ${o.unit ?? ""} · ${formatDate(o.recorded_at)}`}
             />
           ))}
         </Section>
@@ -107,8 +107,8 @@ function PassportPage() {
                   {(v as { practitioner?: { full_name?: string } }).practitioner?.full_name ?? ""}
                 </span>
               </div>
-              {v.symptoms_summary ? (
-                <p className="mt-1 text-sm text-muted-foreground">{v.symptoms_summary}</p>
+              {v.symptoms ? (
+                <p className="mt-1 text-sm text-muted-foreground">{v.symptoms}</p>
               ) : null}
               {v.recommendation ? (
                 <p className="mt-1 text-sm text-foreground">{v.recommendation}</p>

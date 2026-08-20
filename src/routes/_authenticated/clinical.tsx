@@ -185,7 +185,7 @@ function ClinicalPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Block label="Symptoms" value={selected.symptoms_summary} />
+                <Block label="Symptoms" value={selected.symptoms} />
 
                 <div className="space-y-2">
                   <Label htmlFor="conclusion">Conclusion</Label>
@@ -249,8 +249,10 @@ function ClinicalPage() {
                 <CardTitle className="text-sm">Coding</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap items-center gap-2">
-                {selected.primary_icd_10 ? (
-                  <CodeChip code={selected.primary_icd_10} system="ICD-10" />
+                {codesOf(selected.symptom_icd_codes).length ? (
+                  codesOf(selected.symptom_icd_codes).map((c) => (
+                    <CodeChip key={c} code={c} system="ICD-10" />
+                  ))
                 ) : (
                   <span className="text-sm text-muted-foreground">
                     No codes extracted yet — coding runs on transcript processing.
@@ -295,6 +297,10 @@ function ClinicalPage() {
       </Dialog>
     </AppShell>
   );
+}
+
+function codesOf(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
 }
 
 function Block({ label, value }: { label: string; value: string | null | undefined }) {

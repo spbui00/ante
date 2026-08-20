@@ -69,13 +69,14 @@ export const Route = createFileRoute("/api/process-visit")({
             patient_id: input.patientId,
             practitioner_id: input.practitionerId,
             encounter_type: input.encounterType,
-            symptoms_summary: input.symptomsSummary,
+            symptoms: input.symptomsSummary,
             conclusion: input.conclusion,
             recommendation: input.recommendation,
             urgency_level: input.urgencyLevel,
             disposition: input.disposition,
             status: "COMPLETED",
-            raw_transcript: input.transcript,
+            intake_transcript: input.transcript,
+            symptom_icd_codes: input.symptomIcdCodes,
           })
           .select("id, visit_date")
           .single();
@@ -101,7 +102,6 @@ export const Route = createFileRoute("/api/process-visit")({
           symptom_duration_category: symptomDurationCategory(input.symptomDurationDays),
           urgency_level: input.urgencyLevel,
           disposition: input.disposition,
-          clinical_summary_text: input.symptomsSummary,
         });
 
         return json({
