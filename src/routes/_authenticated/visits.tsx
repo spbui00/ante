@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { RichText } from "@/components/ante/rich-text";
 import { VisitCard } from "@/components/ante/visit-card";
+import { VisitDetailDrawer } from "@/components/ante/visit-detail-drawer";
 import { VoiceIntakeModal } from "@/components/ante/voice-intake-modal";
 import { toast } from "sonner";
 import { getMyVisitHistory } from "@/lib/ante.functions";
