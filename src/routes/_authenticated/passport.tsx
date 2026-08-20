@@ -97,24 +97,15 @@ function PassportPage() {
 
         <Section title="Visit history" icon={<Stethoscope className="size-4" />} className="lg:col-span-2">
           {data.visits.length === 0 ? <Empty /> : null}
-          {data.visits.map((v) => (
-            <div key={v.id} className="border-b border-border py-3 last:border-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{formatDate(v.visit_date)}</span>
-                <UrgencyBadge level={v.urgency_level} />
-                <DispositionBadge value={v.disposition} />
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {(v as { practitioner?: { full_name?: string } }).practitioner?.full_name ?? ""}
-                </span>
-              </div>
-              {v.symptoms ? (
-                <p className="mt-1 text-sm text-muted-foreground">{v.symptoms}</p>
-              ) : null}
-              {v.recommendation ? (
-                <p className="mt-1 text-sm text-foreground">{v.recommendation}</p>
-              ) : null}
-            </div>
-          ))}
+          <div className="space-y-3">
+            {data.visits.map((v) => (
+              <VisitCard
+                key={v.id}
+                visit={v as VisitCardData}
+                onClick={() => navigate({ to: "/visits" })}
+              />
+            ))}
+          </div>
         </Section>
       </div>
 
