@@ -41,8 +41,8 @@ export const completeOnboarding = createServerFn({ method: "POST" })
 
     const { error } = await supabase.rpc("apply_onboarding", {
       _role: data.role,
-      _full_name: data.fullName ?? null,
-      _license: data.role === "PRACTITIONER" ? (data.authorisationId ?? null) : null,
+      _full_name: data.fullName ?? undefined,
+      _license: data.role === "PRACTITIONER" ? data.authorisationId : undefined,
       _practitioner_role: practitionerRole,
       _verified: verified,
     });
