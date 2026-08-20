@@ -139,21 +139,93 @@ function PassportPage() {
           ))}
         </Section>
 
-        <Section title="Visit history" icon={<Stethoscope className="size-4" />} className="lg:col-span-2">
-          {data.visits.length === 0 ? <Empty /> : null}
+        <Section
+          title="Scheduled visits"
+          icon={<CalendarClock className="size-4" />}
+          className="lg:col-span-2"
+        >
+          {scheduled.length === 0 ? <Empty label="No upcoming visits" /> : null}
           <div className="space-y-3">
-            {data.visits.map((v) => (
+            {scheduled.map((v) => (
               <VisitCard
                 key={v.id}
                 visit={v as VisitCardData}
-                onClick={() => navigate({ to: "/visits" })}
+                onClick={() => {
+                  setSelectedVisit(v as VisitDetail);
+                  setDetailOpen(true);
+                }}
+                onEdit={() => {
+                  setSelectedVisit(v as VisitDetail);
+                  setEditOpen(true);
+                }}
+                onDelete={() => setPendingDelete(v as VisitDetail)}
+              />
+            ))}
+          </div>
+        </Section>
+
+        <Section title="Visit history" icon={<Stethoscope className="size-4" />} className="lg:col-span-2">
+          {past.length === 0 ? <Empty /> : null}
+          <div className="space-y-3">
+            {past.map((v) => (
+              <VisitCard
+                key={v.id}
+                visit={v as VisitCardData}
+                onClick={() => {
+                  setSelectedVisit(v as VisitDetail);
+                  setDetailOpen(true);
+                }}
               />
             ))}
           </div>
         </Section>
       </div>
 
-      <VoiceIntakeModal open={intakeOpen} onOpenChange={setIntakeOpen} />
+      <VisitDetailDrawer
+        visit={selectedVisit}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onEdit={() => {
+          setDetailOpen(false);
+          setEditOpen(true);
+        }}
+        onDelete={() => selectedVisit && setPendingDelete(selectedVisit)}
+      />
+
+      {selectedVisit && selectedVisit.status === "SCHEDULED" ? (
+        <VoiceIntakeModal
+          key={selectedVisit.id}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          visit={selectedVisit as never}
+          onSaved={refresh}
+        />
+      ) : null}
+
+      <Drawer open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <DrawerContent>
+          <div className="mx-auto w-full max-w-md">
+            <DrawerHeader>
+              <DrawerTitle>Delete this scheduled visit?</DrawerTitle>
+              <DrawerDescription>
+                Your pre-intake answers for{" "}
+                {pendingDelete ? formatDate(pendingDelete.visit_date) : ""} will be permanently
+                removed. This cannot be undone.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="flex-row justify-end gap-2">
+              <Button variant="outline" disabled={deleting} onClick={() => setPendingDelete(null)}>
+                Keep it
+              </Button>
+              <Button variant="destructive" disabled={deleting} onClick={() => void confirmDelete()}>
+                {deleting ? "Deleting…" : "Delete"}
+              </Button>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      <VoiceIntakeModal open={intakeOpen} onOpenChange={setIntakeOpen} onSaved={refresh} />
     </AppShell>
   );
 }
