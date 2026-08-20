@@ -390,7 +390,7 @@ function VisitsPage() {
           visit={selectedVisit as never}
           onSaved={() => {
             void queryClient.invalidateQueries({ queryKey: ["my-visit-history"] });
-            void queryClient.invalidateQueries({ queryKey: ["my-passport"] });
+            void queryClient.invalidateQueries({ queryKey: ["passport"] });
           }}
         />
       ) : null}
