@@ -25,6 +25,7 @@ export const completeOnboarding = createServerFn({ method: "POST" })
         practitionerRole: z.enum(["DOCTOR", "NURSE"]).optional(),
         specialization: z.string().max(80).optional(),
         authorisationId: z.string().max(32).optional(),
+        phoneNumber: z.string().max(30).optional(),
       })
       .parse(input),
   )
@@ -57,8 +58,14 @@ export const completeOnboarding = createServerFn({ method: "POST" })
       _last_name?: string;
       _title?: string;
       _specialization?: string;
+      _phone?: string;
     } = { _role: data.role, _practitioner_role: practitionerRole, _verified: verified };
     if (composedName) args._full_name = composedName;
+    if (data.role === "PATIENT") {
+      if (data.firstName) args._first_name = data.firstName;
+      if (data.lastName) args._last_name = data.lastName;
+      if (data.phoneNumber) args._phone = data.phoneNumber;
+    }
     if (data.role === "PRACTITIONER") {
       if (data.authorisationId) args._license = data.authorisationId;
       if (data.firstName) args._first_name = data.firstName;

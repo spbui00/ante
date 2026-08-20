@@ -280,7 +280,7 @@ export const getMySettings = createServerFn({ method: "GET" })
     if (profile?.patient_id) {
       const { data } = await supabase
         .from("patient")
-        .select("id, full_name, date_of_birth, gender, postal_code, industry, primary_language")
+        .select("id, full_name, first_name, last_name, phone_number, date_of_birth, gender, postal_code, industry, primary_language")
         .eq("id", profile.patient_id)
         .maybeSingle();
       patient = data;
@@ -324,6 +324,7 @@ export const updateMySettings = createServerFn({ method: "POST" })
         practitionerRole: z.enum(["DOCTOR", "NURSE"]).optional(),
         specialization: z.string().max(80).optional().nullable(),
         licenseNumber: z.string().max(32).optional().nullable(),
+        phoneNumber: z.string().max(30).optional().nullable(),
       })
       .parse(input),
   )
@@ -367,6 +368,9 @@ export const updateMySettings = createServerFn({ method: "POST" })
         .from("patient")
         .update({
           full_name: data.fullName,
+          first_name: data.firstName || null,
+          last_name: data.lastName || null,
+          phone_number: data.phoneNumber || null,
           date_of_birth: data.dateOfBirth || null,
           gender: data.gender || null,
           postal_code: data.postalCode || null,
