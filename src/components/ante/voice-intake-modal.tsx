@@ -132,7 +132,7 @@ export function VoiceIntakeModal({
     }
     const id = setInterval(
       () => setPhraseIndex((i) => (i + 1) % FINALISING_PHRASES.length),
-      2200,
+      4200,
     );
     return () => clearInterval(id);
   }, [analysing]);
@@ -278,7 +278,9 @@ export function VoiceIntakeModal({
           transcript: conversationText,
           symptoms:
             [
-              result.symptomDetail?.trim() ||
+              (/^\s*(patient|assistant)\s*:/im.test(result.symptomDetail ?? "")
+                ? ""
+                : result.symptomDetail?.trim()) ||
                 result.symptoms.join(", ") ||
                 result.summary,
               result.pertinentNegatives?.length
