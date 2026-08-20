@@ -122,38 +122,31 @@ function PassportPage() {
         <QueueStatusCard />
 
         {scheduled.length > 0 ? (
-        <Section
-          title="Scheduled visits"
-          icon={<CalendarClock className="size-4" />}
-          className="lg:col-span-3 border-primary/30 bg-primary/[0.04]"
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            {scheduled.map((v) => (
-              <VisitCard
-                key={v.id}
-                visit={v as VisitCardData}
-                className="bg-card/60"
-                onClick={() => {
-                  setSelectedVisit(v as VisitDetail);
-                  setDetailOpen(true);
-                }}
-                onEdit={() => {
-                  setSelectedVisit(v as VisitDetail);
-                  setEditOpen(true);
-                }}
-                onDelete={() => setPendingDelete(v as VisitDetail)}
-              />
-            ))}
-          </div>
-        </Section>
+          <Section
+            title="Scheduled visits"
+            icon={<CalendarClock className="size-4" />}
+            className="lg:col-span-3 border-primary/30 bg-primary/[0.04]"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              {scheduled.map((v) => (
+                <VisitCard
+                  key={v.id}
+                  visit={v as VisitCardData}
+                  className="bg-card/60"
+                  onClick={() => {
+                    setNavigatorVisit(v as VisitDetail);
+                    setNavigatorOpen(true);
+                  }}
+                  onEdit={() => {
+                    setSelectedVisit(v as VisitDetail);
+                    setEditOpen(true);
+                  }}
+                  onDelete={() => setPendingDelete(v as VisitDetail)}
+                />
+              ))}
+            </div>
+          </Section>
         ) : null}
-
-        {scheduled[0] ? (
-          <CareNavigatorCard key={scheduled[0].id} visitId={scheduled[0].id} />
-        ) : null}
-
-
-
 
         <Section title="Conditions" icon={<Stethoscope className="size-4" />}>
           {conditions.length === 0 ? <Empty /> : null}
