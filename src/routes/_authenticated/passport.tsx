@@ -139,6 +139,8 @@ function PassportPage() {
             ))}
           </div>
         </Section>
+        ) : null}
+
 
         <Section title="Conditions" icon={<Stethoscope className="size-4" />}>
           {conditions.length === 0 ? <Empty /> : null}
