@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Mic, Send, Sparkles, Square } from "lucide-react";
+import { Loader2, Mic, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useCortiDictation } from "@/lib/use-corti-dictation";
 
 import { CodeChip, UrgencyBadge } from "@/components/ante/badges";
 import { Waveform } from "@/components/ante/waveform";
