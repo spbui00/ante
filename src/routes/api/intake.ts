@@ -38,6 +38,10 @@ function fallback(transcript: string) {
       ? `Reported ${hits.map((h) => h.label.toLowerCase()).join(", ")}.`
       : "Symptoms recorded; no red-flag keywords detected in the description.",
     symptoms: hits.map((h) => h.label),
+    symptomDetail: transcript.slice(0, 4000),
+    pertinentNegatives: [] as string[],
+    symptomDurationDays: null as number | null,
+    travelHistory: [] as string[],
     symptomCodes: hits.map((h) => ({ code: h.code, label: h.label })),
     facts: [] as { group: string; text: string }[],
     followUpQuestions: [] as string[],
@@ -50,9 +54,13 @@ function fallback(transcript: string) {
 
 const SYSTEM_PROMPT = `You are a clinical pre-intake assistant for a Danish primary-care service.
 From the patient's own words and the extracted clinical facts, respond with STRICT JSON only:
-{"summary": string, "symptoms": string[], "followUpQuestions": string[], "urgencyLevel": "LOW"|"MEDIUM"|"HIGH_RED_FLAG", "recommendation": string}
+{"summary": string, "symptoms": string[], "symptomDetail": string, "pertinentNegatives": string[], "symptomDurationDays": number|null, "travelHistory": string[], "followUpQuestions": string[], "urgencyLevel": "LOW"|"MEDIUM"|"HIGH_RED_FLAG", "recommendation": string}
 summary: 1-3 neutral clinical sentences written for the reviewing clinician.
-symptoms: short symptom labels.
+symptoms: short symptom labels for every symptom the patient reported (present symptoms only).
+symptomDetail: one compact clinical narrative of the presenting complaint covering every symptom, onset/duration, severity, progression, aggravating/relieving factors, exposures, and explicitly denied symptoms. Include everything the patient said — do not drop details.
+pertinentNegatives: symptoms the patient explicitly denied (e.g. "no fever").
+symptomDurationDays: duration in days if stated, else null.
+travelHistory: recent travel or exposure mentions, empty array if none/denied.
 followUpQuestions: up to 4 targeted questions about missing clinical features (onset, duration, travel, red flags). Empty if nothing material is missing.
 urgencyLevel: HIGH_RED_FLAG only for potential emergencies (chest pain, breathing difficulty, neurological deficit, sepsis signs).
 Never diagnose or prescribe.`;
@@ -88,6 +96,10 @@ export const Route = createFileRoute("/api/intake")({
           const gen = JSON.parse(jsonText) as {
             summary?: string;
             symptoms?: string[];
+            symptomDetail?: string;
+            pertinentNegatives?: string[];
+            symptomDurationDays?: number | null;
+            travelHistory?: string[];
             followUpQuestions?: string[];
             urgencyLevel?: string;
             recommendation?: string;
@@ -102,6 +114,11 @@ export const Route = createFileRoute("/api/intake")({
             source: "corti",
             summary: gen.summary ?? "",
             symptoms: gen.symptoms ?? [],
+            symptomDetail: gen.symptomDetail ?? "",
+            pertinentNegatives: gen.pertinentNegatives ?? [],
+            symptomDurationDays:
+              typeof gen.symptomDurationDays === "number" ? gen.symptomDurationDays : null,
+            travelHistory: Array.isArray(gen.travelHistory) ? gen.travelHistory.slice(0, 10) : [],
             facts,
             followUpQuestions: (gen.followUpQuestions ?? []).slice(0, 4),
             symptomCodes: codes.slice(0, 8).map((c) => ({ code: c.code, label: c.display })),
