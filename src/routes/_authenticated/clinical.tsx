@@ -46,6 +46,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
+
 import {
   finaliseVisit,
   findScheduledVisitsByCpr,
