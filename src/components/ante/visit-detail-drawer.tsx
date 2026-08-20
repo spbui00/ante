@@ -15,7 +15,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { ENCOUNTER_TYPE_LABEL, formatDate } from "@/lib/clinical-utils";
+import { ENCOUNTER_TYPE_LABEL, formatDate, formatDateTime } from "@/lib/clinical-utils";
 
 export const VISIT_STATUS_LABEL: Record<string, string> = {
   SCHEDULED: "Scheduled",
@@ -159,6 +159,15 @@ function DetailSection({ label, value }: { label: string; value: string }) {
     <div className="space-y-1">
       <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</h4>
       <RichText text={value} />
+    </div>
+  );
+}
+
+function TimelineItem({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-sm text-foreground">{value ? formatDateTime(value) : "—"}</dd>
     </div>
   );
 }
