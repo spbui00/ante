@@ -422,8 +422,10 @@ export function VoiceIntakeModal({
           </div>
         ) : null}
       </DrawerContent>
+      </Drawer>
 
       <Drawer open={confirmOpen} onOpenChange={setConfirmOpen}>
+
         <DrawerContent className="max-h-[85dvh]">
           <div className="mx-auto w-full max-w-md overflow-y-auto px-4 pb-6">
             <DrawerHeader className="px-0 text-left">
