@@ -66,6 +66,18 @@ This is NOT a fresh intake. The patient already completed a pre-intake interview
 - Only after the patient clearly says there is nothing more, thank them and append [INTAKE_COMPLETE] on its own last line.`;
 
 
+const QUEUE_TRIAGE_SYSTEM_PROMPT = `You are a clinical triage coordinator for a GP clinic.
+You are given the patients currently waiting to be seen by one clinician.
+Rank them into the order they should be taken in.
+
+Rules:
+- Red-flag / high urgency patients always come first.
+- Among similar urgency, longer waiting time wins.
+- A low-urgency patient who has waited a very long time (>90 minutes) may be moved ahead of a medium-urgency patient who just arrived.
+- Never invent patients and never drop one.
+
+Reply with ONLY JSON: {"order":[{"visitId":"...","reason":"short reason"}]}`;
+
 export const AGENTS = {
   intake: {
     key: "intake",
@@ -82,6 +94,13 @@ export const AGENTS = {
     systemPrompt: INTAKE_EDIT_SYSTEM_PROMPT,
     connectors: [{ type: "registry", name: "memory" }],
     includePatientContext: true,
+  },
+  "queue-triage": {
+    key: "queue-triage",
+    name: "ante-queue-triage-agent-v1",
+    description: "Ranks the clinician's waiting queue by urgency and waiting time.",
+    systemPrompt: QUEUE_TRIAGE_SYSTEM_PROMPT,
+    includePatientContext: false,
   },
 } satisfies Record<string, AgentDefinition>;
 
