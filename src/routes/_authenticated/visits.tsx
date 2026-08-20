@@ -27,6 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RichText } from "@/components/ante/rich-text";
+import { VisitCard } from "@/components/ante/visit-card";
 import { getMyVisitHistory } from "@/lib/ante.functions";
 import { DISPOSITION_LABEL, ENCOUNTER_TYPE_LABEL, URGENCY_LABEL, formatDate } from "@/lib/clinical-utils";
 
