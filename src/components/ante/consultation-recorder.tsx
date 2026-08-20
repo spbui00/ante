@@ -14,6 +14,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
+import { MarkdownEditor } from "@/components/ante/markdown-editor";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -22,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   draftConsultation,
   extractConsultationFacts,
@@ -225,20 +225,18 @@ export function ConsultationRecorder({
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="draft-conclusion">Conclusion</Label>
-                    <Textarea
+                    <MarkdownEditor
                       id="draft-conclusion"
-                      rows={4}
                       value={draft.conclusion}
-                      onChange={(e) => setDraft({ ...draft, conclusion: e.target.value })}
+                      onChange={(v) => setDraft({ ...draft, conclusion: v })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="draft-recommendation">Recommendation</Label>
-                    <Textarea
+                    <MarkdownEditor
                       id="draft-recommendation"
-                      rows={4}
                       value={draft.recommendation}
-                      onChange={(e) => setDraft({ ...draft, recommendation: e.target.value })}
+                      onChange={(v) => setDraft({ ...draft, recommendation: v })}
                     />
                   </div>
 

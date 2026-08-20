@@ -22,6 +22,7 @@ import { AppShell } from "@/components/ante/app-shell";
 
 import { UrgencyBadge } from "@/components/ante/badges";
 import { RichText, RichTextInline } from "@/components/ante/rich-text";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -501,17 +502,29 @@ function ClinicalPage() {
               <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm">
                   <Stethoscope className="size-4" />
-                  Active intake
+                  {selected.status === "COMPLETED" ? "Past visit" : "Active intake"}
                 </CardTitle>
-                <Button size="sm" asChild>
-                  <Link
-                    to="/consultation/$visitId"
-                    params={{ visitId: selected.id }}
-                  >
-                    <Mic className="size-4" />
-                    Start consultation
-                  </Link>
-                </Button>
+                {selected.status === "COMPLETED" ? (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">Completed</Badge>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to="/consultation/$visitId" params={{ visitId: selected.id }}>
+                        View visit
+                      </Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <Button size="sm" asChild>
+                    <Link
+                      to="/consultation/$visitId"
+                      params={{ visitId: selected.id }}
+                    >
+                      <Mic className="size-4" />
+                      Start consultation
+                    </Link>
+                  </Button>
+                )}
+
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2">

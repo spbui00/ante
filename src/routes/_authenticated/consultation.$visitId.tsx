@@ -9,6 +9,9 @@ import { ConsultationRecorder } from "@/components/ante/consultation-recorder";
 import { PatientPassportPanel } from "@/components/ante/patient-passport-panel";
 
 import { UrgencyBadge } from "@/components/ante/badges";
+import { MarkdownEditor } from "@/components/ante/markdown-editor";
+import { RichText } from "@/components/ante/rich-text";
+import { Badge } from "@/components/ui/badge";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
 import { VisitTranscript } from "@/components/ante/visit-transcript";
 
@@ -22,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { finaliseVisit, getVisitDetail, updateVisitSymptoms } from "@/lib/ante.functions";
 import { getVisitClinicalItems } from "@/lib/visit-clinical.functions";
 
@@ -157,6 +159,7 @@ function ConsultationPage() {
   if (recordCount === 0) missing.push("at least one clinical record");
 
 
+  const isCompleted = visit?.status === "COMPLETED";
   const patientName = visit?.patient?.full_name ?? "Patient";
 
   return (
@@ -171,10 +174,17 @@ function ConsultationPage() {
             Back to console
           </Link>
         </Button>
-        <Button className="ml-auto" onClick={() => setRecorderOpen(true)} disabled={!visit}>
-          <Mic className="size-4" />
-          Start recording
-        </Button>
+        {isCompleted ? (
+          <Badge variant="secondary" className="ml-auto">
+            Completed · read-only
+          </Badge>
+        ) : (
+          <Button className="ml-auto" onClick={() => setRecorderOpen(true)} disabled={!visit}>
+            <Mic className="size-4" />
+            Start recording
+          </Button>
+        )}
+
       </div>
 
       {isPending ? (
@@ -198,7 +208,18 @@ function ConsultationPage() {
                   <span className="text-xs text-muted-foreground">
                     {ENCOUNTER_TYPE_LABEL[visit.encounter_type ?? ""] ?? "Visit"}
                   </span>
+                  {isCompleted ? (
+                    <Badge variant="secondary" className="ml-auto">
+                      Completed
+                    </Badge>
+                  ) : null}
                 </div>
+
+                {isCompleted ? (
+                  <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                    This consultation is signed off and read-only.
+                  </p>
+                ) : null}
 
                 <div className="grid gap-3 sm:grid-cols-3">
                   <Field label="Arrived" value={visit.arrived_at} />
@@ -209,53 +230,63 @@ function ConsultationPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="symptoms">Symptoms</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => saveSymptoms.mutate()}
-                      disabled={
-                        saveSymptoms.isPending || symptoms === (visit.symptoms ?? "")
-                      }
-                    >
-                      {saveSymptoms.isPending ? "Saving…" : "Save symptoms"}
-                    </Button>
+                    {isCompleted ? null : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => saveSymptoms.mutate()}
+                        disabled={
+                          saveSymptoms.isPending || symptoms === (visit.symptoms ?? "")
+                        }
+                      >
+                        {saveSymptoms.isPending ? "Saving…" : "Save symptoms"}
+                      </Button>
+                    )}
                   </div>
-                  <Textarea
-                    id="symptoms"
-                    rows={4}
-                    value={symptoms}
-                    onChange={(e) => setSymptoms(e.target.value)}
-                    placeholder="Reported symptoms…"
-                  />
+                  {isCompleted ? (
+                    <RichText text={symptoms || "Not recorded"} />
+                  ) : (
+                    <MarkdownEditor
+                      id="symptoms"
+                      value={symptoms}
+                      onChange={setSymptoms}
+                      placeholder="Reported symptoms…"
+                    />
+                  )}
                 </div>
-
 
                 <div className="space-y-2">
                   <Label htmlFor="conclusion">Conclusion</Label>
-                  <Textarea
-                    id="conclusion"
-                    rows={4}
-                    value={conclusion}
-                    onChange={(e) => setConclusion(e.target.value)}
-                    placeholder="Clinical conclusion…"
-                  />
+                  {isCompleted ? (
+                    <RichText text={conclusion || "Not recorded"} />
+                  ) : (
+                    <MarkdownEditor
+                      id="conclusion"
+                      value={conclusion}
+                      onChange={setConclusion}
+                      placeholder="Clinical conclusion…"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="recommendation">Recommendation</Label>
-                  <Textarea
-                    id="recommendation"
-                    rows={4}
-                    value={recommendation}
-                    onChange={(e) => setRecommendation(e.target.value)}
-                    placeholder="Plan and follow-up…"
-                  />
+                  {isCompleted ? (
+                    <RichText text={recommendation || "Not recorded"} />
+                  ) : (
+                    <MarkdownEditor
+                      id="recommendation"
+                      value={recommendation}
+                      onChange={setRecommendation}
+                      placeholder="Plan and follow-up…"
+                    />
+                  )}
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Urgency</Label>
-                    <Select value={urgency} onValueChange={setUrgency}>
+                    <Select value={urgency} onValueChange={setUrgency} disabled={isCompleted}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -268,7 +299,11 @@ function ConsultationPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Disposition</Label>
-                    <Select value={disposition} onValueChange={setDisposition}>
+                    <Select
+                      value={disposition}
+                      onValueChange={setDisposition}
+                      disabled={isCompleted}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -281,18 +316,23 @@ function ConsultationPage() {
                   </div>
                 </div>
 
-                {missing.length ? (
-                  <p className="text-xs text-muted-foreground">
-                    Before signing off, add {missing.join(", ")}.
-                  </p>
-                ) : null}
+                {isCompleted ? null : (
+                  <>
+                    {missing.length ? (
+                      <p className="text-xs text-muted-foreground">
+                        Before signing off, add {missing.join(", ")}.
+                      </p>
+                    ) : null}
 
-                <Button
-                  onClick={() => signOff.mutate()}
-                  disabled={signOff.isPending || missing.length > 0}
-                >
-                  {signOff.isPending ? "Signing off…" : "Sign off consultation"}
-                </Button>
+                    <Button
+                      onClick={() => signOff.mutate()}
+                      disabled={signOff.isPending || missing.length > 0}
+                    >
+                      {signOff.isPending ? "Signing off…" : "Sign off consultation"}
+                    </Button>
+                  </>
+                )}
+
 
               </CardContent>
             </Card>

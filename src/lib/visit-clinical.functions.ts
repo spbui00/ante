@@ -19,13 +19,16 @@ export const getVisitClinicalItems = createServerFn({ method: "GET" })
 
     const [{ data: profile }, { data: visit }] = await Promise.all([
       supabase.from("profiles").select("practitioner_id").eq("id", userId).maybeSingle(),
-      supabase.from("visit").select("id, patient_id, practitioner_id").eq("id", data.visitId).maybeSingle(),
+      supabase.from("visit").select("id, patient_id, practitioner_id, status").eq("id", data.visitId).maybeSingle(),
     ]);
 
     if (!visit) return { canEdit: false, observations: [], prescriptions: [], records: [] };
 
+    // Signed-off visits are historical records: read-only for everyone.
     const canEdit = Boolean(
-      profile?.practitioner_id && visit.practitioner_id === profile.practitioner_id,
+      profile?.practitioner_id &&
+        visit.practitioner_id === profile.practitioner_id &&
+        visit.status !== "COMPLETED",
     );
 
     const [observations, prescriptions, records] = await Promise.all([
