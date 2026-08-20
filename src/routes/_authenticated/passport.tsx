@@ -5,7 +5,7 @@ import { Activity, AlertTriangle, CalendarClock, Mic, Pill, Stethoscope } from "
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
-import { CareNavigatorCard } from "@/components/ante/care-navigator-card";
+import { CareNavigatorDrawer } from "@/components/ante/care-navigator-drawer";
 import { ConsentRequests } from "@/components/ante/consent-requests";
 import { QueueStatusCard } from "@/components/ante/queue-status-card";
 
@@ -34,6 +34,7 @@ const passportQuery = queryOptions({
   queryFn: () => getPassport(),
 });
 
+
 export const Route = createFileRoute("/_authenticated/passport")({
   head: () => ({
     meta: [
@@ -59,6 +60,8 @@ function PassportPage() {
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<VisitDetail | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [navigatorVisit, setNavigatorVisit] = useState<VisitDetail | null>(null);
+  const [navigatorOpen, setNavigatorOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<VisitDetail | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -68,6 +71,7 @@ function PassportPage() {
   const active = data.prescriptions.filter((p) => !p.end_date);
   const scheduled = data.visits.filter((v) => v.status === "SCHEDULED");
   const past = data.visits.filter((v) => v.status !== "SCHEDULED");
+
 
   function refresh() {
     void queryClient.invalidateQueries({ queryKey: ["passport"] });
@@ -118,38 +122,31 @@ function PassportPage() {
         <QueueStatusCard />
 
         {scheduled.length > 0 ? (
-        <Section
-          title="Scheduled visits"
-          icon={<CalendarClock className="size-4" />}
-          className="lg:col-span-3 border-primary/30 bg-primary/[0.04]"
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            {scheduled.map((v) => (
-              <VisitCard
-                key={v.id}
-                visit={v as VisitCardData}
-                className="bg-card/60"
-                onClick={() => {
-                  setSelectedVisit(v as VisitDetail);
-                  setDetailOpen(true);
-                }}
-                onEdit={() => {
-                  setSelectedVisit(v as VisitDetail);
-                  setEditOpen(true);
-                }}
-                onDelete={() => setPendingDelete(v as VisitDetail)}
-              />
-            ))}
-          </div>
-        </Section>
+          <Section
+            title="Scheduled visits"
+            icon={<CalendarClock className="size-4" />}
+            className="lg:col-span-3 border-primary/30 bg-primary/[0.04]"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              {scheduled.map((v) => (
+                <VisitCard
+                  key={v.id}
+                  visit={v as VisitCardData}
+                  className="bg-card/60"
+                  onClick={() => {
+                    setNavigatorVisit(v as VisitDetail);
+                    setNavigatorOpen(true);
+                  }}
+                  onEdit={() => {
+                    setSelectedVisit(v as VisitDetail);
+                    setEditOpen(true);
+                  }}
+                  onDelete={() => setPendingDelete(v as VisitDetail)}
+                />
+              ))}
+            </div>
+          </Section>
         ) : null}
-
-        {scheduled[0] ? (
-          <CareNavigatorCard key={scheduled[0].id} visitId={scheduled[0].id} />
-        ) : null}
-
-
-
 
         <Section title="Conditions" icon={<Stethoscope className="size-4" />}>
           {conditions.length === 0 ? <Empty /> : null}
@@ -213,6 +210,19 @@ function PassportPage() {
           setEditOpen(true);
         }}
         onDelete={() => selectedVisit && setPendingDelete(selectedVisit)}
+      />
+
+      <CareNavigatorDrawer
+        visitId={navigatorVisit?.id ?? null}
+        open={navigatorOpen}
+        onOpenChange={setNavigatorOpen}
+        onViewDetails={() => {
+          if (navigatorVisit) {
+            setSelectedVisit(navigatorVisit);
+            setNavigatorOpen(false);
+            setDetailOpen(true);
+          }
+        }}
       />
 
       {selectedVisit && selectedVisit.status === "SCHEDULED" ? (
