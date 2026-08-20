@@ -271,6 +271,16 @@ function ConsultationPage() {
                 <VisitClinicalItems visitId={visitId} />
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Transcript</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VisitTranscript transcript={visit.intake_transcript} />
+              </CardContent>
+            </Card>
+
           </div>
         </div>
       )}
