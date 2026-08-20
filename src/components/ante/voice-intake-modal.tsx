@@ -1,17 +1,18 @@
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Mic, Send, Square } from "lucide-react";
+import { Loader2, Mic, Send, Sparkles, Square } from "lucide-react";
 import { toast } from "sonner";
 
 import { CodeChip, UrgencyBadge } from "@/components/ante/badges";
+import { Waveform } from "@/components/ante/waveform";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createPreIntakeVisit } from "@/lib/intake.functions";
@@ -81,6 +82,7 @@ export function VoiceIntakeModal({
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<IntakeResult | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
 
   const audioRef = useRef<{
     stream: MediaStream;
@@ -98,13 +100,16 @@ export function VoiceIntakeModal({
       const ctx = new AudioContext();
       const source = ctx.createMediaStreamSource(stream);
       const node = ctx.createScriptProcessor(4096, 1, 1);
+      const meter = ctx.createAnalyser();
+      meter.fftSize = 1024;
+      source.connect(meter);
       const chunks: Float32Array[] = [];
       node.onaudioprocess = (e) => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
       source.connect(node);
       node.connect(ctx.destination);
       audioRef.current = { stream, ctx, node, source, chunks };
+      setAnalyser(meter);
       setRecording(true);
-      toast.info("Listening — describe your symptoms");
     } catch {
       toast.error("Microphone unavailable. You can type instead.");
     }
@@ -114,6 +119,7 @@ export function VoiceIntakeModal({
     const rec = audioRef.current;
     audioRef.current = null;
     setRecording(false);
+    setAnalyser(null);
     if (!rec) return;
 
     rec.stream.getTracks().forEach((t) => t.stop());
@@ -199,101 +205,125 @@ export function VoiceIntakeModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] max-w-md overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Tell us what's wrong</DialogTitle>
-          <DialogDescription>
-            Speak or type. Ante prepares a structured summary for your clinician.
-          </DialogDescription>
-        </DialogHeader>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[92dvh]">
+        <div className="mx-auto flex w-full max-w-md flex-col overflow-y-auto px-4 pb-8">
+          <DrawerHeader className="px-0 text-left">
+            <DrawerTitle className="text-2xl">Tell us what's wrong</DrawerTitle>
+            <DrawerDescription>
+              Speak naturally. Ante turns it into a structured summary for your clinician.
+            </DrawerDescription>
+          </DrawerHeader>
 
-        <div className="flex flex-col items-center py-4">
-          <div className="relative">
-            {recording ? (
-              <span className="ante-pulse-ring absolute inset-0 rounded-full bg-accent" />
-            ) : null}
-            <button
-              type="button"
-              onClick={recording ? stopRecording : startRecording}
-              disabled={transcribing}
-              aria-label={recording ? "Stop recording" : "Start recording"}
-              className="relative grid size-20 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95 disabled:opacity-60"
-            >
-              {transcribing ? (
-                <Loader2 className="size-7 animate-spin" />
-              ) : recording ? (
-                <Square className="size-7" />
-              ) : (
-                <Mic className="size-8" />
-              )}
-            </button>
+          {/* Voice stage */}
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-secondary to-card p-5">
+            <div
+              className={`pointer-events-none absolute -top-24 left-1/2 size-56 -translate-x-1/2 rounded-full bg-accent blur-3xl transition-opacity duration-700 ${
+                recording ? "opacity-70" : "opacity-25"
+              }`}
+            />
+
+            <Waveform
+              analyser={analyser}
+              active={recording}
+              className="relative h-24 w-full text-primary"
+            />
+
+            <div className="relative mt-4 flex flex-col items-center">
+              <button
+                type="button"
+                onClick={recording ? stopRecording : startRecording}
+                disabled={transcribing}
+                aria-label={recording ? "Stop recording" : "Start recording"}
+                className={`relative grid size-20 place-items-center rounded-full text-primary-foreground shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-60 ${
+                  recording
+                    ? "bg-destructive shadow-destructive/30 scale-105"
+                    : "bg-primary shadow-primary/25 hover:scale-105"
+                }`}
+              >
+                {recording ? (
+                  <span className="ante-pulse-ring absolute inset-0 rounded-full bg-destructive" />
+                ) : null}
+                {transcribing ? (
+                  <Loader2 className="size-7 animate-spin" />
+                ) : recording ? (
+                  <Square className="size-7 fill-current" />
+                ) : (
+                  <Mic className="size-8" />
+                )}
+              </button>
+              <p className="mt-3 text-xs font-medium tracking-wide text-muted-foreground">
+                {transcribing
+                  ? "Transcribing your recording…"
+                  : recording
+                    ? "Listening… tap to stop"
+                    : "Tap the mic to start"}
+              </p>
+            </div>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            {transcribing
-              ? "Transcribing…"
-              : recording
-                ? "Recording… tap to stop"
-                : "Tap to start recording"}
-          </p>
-        </div>
 
-        <Textarea
-          rows={4}
-          placeholder="e.g. Dry cough for four days, fever last night, chest feels tight."
-          value={transcript}
-          onChange={(e) => setTranscript(e.target.value)}
-        />
+          <Textarea
+            className="mt-4"
+            rows={4}
+            placeholder="e.g. Dry cough for four days, fever last night, chest feels tight."
+            value={transcript}
+            onChange={(e) => setTranscript(e.target.value)}
+          />
 
-        <Button onClick={submit} disabled={submitting || transcribing}>
-          {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-          Submit pre-intake
-        </Button>
+          <Button className="mt-3" onClick={submit} disabled={submitting || transcribing}>
+            {submitting ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Sparkles className="size-4" />
+            )}
+            Analyse symptoms
+          </Button>
 
-        {result ? (
-          <div className="rounded-md border border-border bg-secondary p-3 text-sm">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="font-medium text-foreground">Pre-intake summary</span>
-              <UrgencyBadge level={result.urgencyLevel} />
-            </div>
-            <p className="text-muted-foreground">{result.summary}</p>
-
-            <div className="mt-3 flex flex-wrap gap-1">
-              {result.symptomCodes.map((c) => (
-                <CodeChip key={c.code} code={c.code} system="ICD-10" />
-              ))}
-            </div>
-
-            {result.followUpQuestions?.length ? (
-              <div className="mt-4 space-y-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  A few more questions
-                </p>
-                {result.followUpQuestions.map((q) => (
-                  <div key={q} className="space-y-1">
-                    <p className="text-foreground">{q}</p>
-                    <Input
-                      value={answers[q] ?? ""}
-                      onChange={(e) => setAnswers((a) => ({ ...a, [q]: e.target.value }))}
-                      placeholder="Your answer"
-                    />
-                  </div>
-                ))}
-                <Button variant="secondary" size="sm" onClick={submit} disabled={submitting}>
-                  Update summary
-                </Button>
+          {result ? (
+            <div className="mt-4 rounded-2xl border border-border bg-secondary p-4 text-sm">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-medium text-foreground">Pre-intake summary</span>
+                <UrgencyBadge level={result.urgencyLevel} />
               </div>
-            ) : null}
+              <p className="text-muted-foreground">{result.summary}</p>
 
-            <p className="mt-3 text-muted-foreground">{result.recommendation}</p>
+              <div className="mt-3 flex flex-wrap gap-1">
+                {result.symptomCodes.map((c) => (
+                  <CodeChip key={c.code} code={c.code} system="ICD-10" />
+                ))}
+              </div>
 
-            <Button className="mt-3 w-full" onClick={sendToClinic} disabled={saving}>
-              {saving ? <Loader2 className="size-4 animate-spin" /> : null}
-              Send to clinic
-            </Button>
-          </div>
-        ) : null}
-      </DialogContent>
-    </Dialog>
+              {result.followUpQuestions?.length ? (
+                <div className="mt-4 space-y-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    A few more questions
+                  </p>
+                  {result.followUpQuestions.map((q) => (
+                    <div key={q} className="space-y-1">
+                      <p className="text-foreground">{q}</p>
+                      <Input
+                        value={answers[q] ?? ""}
+                        onChange={(e) => setAnswers((a) => ({ ...a, [q]: e.target.value }))}
+                        placeholder="Your answer"
+                      />
+                    </div>
+                  ))}
+                  <Button variant="secondary" size="sm" onClick={submit} disabled={submitting}>
+                    Update summary
+                  </Button>
+                </div>
+              ) : null}
+
+              <p className="mt-3 text-muted-foreground">{result.recommendation}</p>
+
+              <Button className="mt-3 w-full" onClick={sendToClinic} disabled={saving}>
+                {saving ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                Send to clinic
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
