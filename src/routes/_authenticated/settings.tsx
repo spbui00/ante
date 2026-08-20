@@ -220,6 +220,14 @@ function SettingsPage() {
 
             {data.patient ? (
               <>
+                <div className="grid gap-2">
+                  <Label htmlFor="preferredName">Preferred name</Label>
+                  <Input
+                    id="preferredName"
+                    value={preferredName ?? ""}
+                    onChange={(event) => setPreferredName(event.target.value)}
+                  />
+                </div>
                 <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="dob">Date of birth</Label>
@@ -231,11 +239,143 @@ function SettingsPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="gender">Gender</Label>
+                    <Label htmlFor="sex">Sex</Label>
+                    <Select value={sex} onValueChange={setSex}>
+                      <SelectTrigger id="sex">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SEX_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="genderIdentity">Gender identity</Label>
+                    <Select value={genderIdentity} onValueChange={setGenderIdentity}>
+                      <SelectTrigger id="genderIdentity">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GENDER_IDENTITY_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="lang">Primary language</Label>
+                    <Select value={primaryLanguage} onValueChange={setPrimaryLanguage}>
+                      <SelectTrigger id="lang">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGE_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Race / ethnicity</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {RACE_ETHNICITY_OPTIONS.map((option) => {
+                      const active = raceEthnicity.includes(option);
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() =>
+                            setRaceEthnicity((current) =>
+                              current.includes(option)
+                                ? current.filter((value) => value !== option)
+                                : [...current, option],
+                            )
+                          }
+                          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                            active
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="marital">Marital status</Label>
+                    <Select value={maritalStatus} onValueChange={setMaritalStatus}>
+                      <SelectTrigger id="marital">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MARITAL_STATUS_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="employment">Employment</Label>
+                    <Select value={employmentStatus} onValueChange={setEmploymentStatus}>
+                      <SelectTrigger id="employment">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EMPLOYMENT_STATUS_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3 sm:gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="insuranceType">Insurance</Label>
+                    <Select value={insuranceType} onValueChange={setInsuranceType}>
+                      <SelectTrigger id="insuranceType">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INSURANCE_TYPE_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="insuranceProvider">Insurer</Label>
                     <Input
-                      id="gender"
-                      value={gender ?? ""}
-                      onChange={(event) => setGender(event.target.value)}
+                      id="insuranceProvider"
+                      value={insuranceProvider ?? ""}
+                      onChange={(event) => setInsuranceProvider(event.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="insuranceMemberId">Member ID</Label>
+                    <Input
+                      id="insuranceMemberId"
+                      value={insuranceMemberId ?? ""}
+                      onChange={(event) => setInsuranceMemberId(event.target.value)}
                     />
                   </div>
                 </div>
@@ -249,11 +389,11 @@ function SettingsPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="lang">Preferred language</Label>
+                    <Label htmlFor="gender">Gender (legacy free text)</Label>
                     <Input
-                      id="lang"
-                      value={primaryLanguage ?? ""}
-                      onChange={(event) => setPrimaryLanguage(event.target.value)}
+                      id="gender"
+                      value={gender ?? ""}
+                      onChange={(event) => setGender(event.target.value)}
                     />
                   </div>
                 </div>
