@@ -156,6 +156,7 @@ export async function sendAgentMessage(opts: {
 
   return {
     text,
-    contextId: task?.contextId ?? task?.status?.message?.contextId ??     taskId: task?.id ?? null,
+    contextId: task?.contextId ?? task?.status?.message?.contextId ?? null,
+    taskId: task?.id ?? null,
   };
 }
