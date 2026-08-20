@@ -712,7 +712,6 @@ export const removePatientFromRegistry = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!profile?.practitioner_id) throw new Error("No practitioner record linked to this account");
 
-    // Leave the care team first, while the grant still allows access.
     // Block removal while a visit with this patient is still open in the queue.
     const { data: openVisits, error: openError } = await supabase
       .from("visit")
