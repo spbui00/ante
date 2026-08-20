@@ -504,10 +504,37 @@ export const removeCareTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("patient_care_team").delete().eq("id", data.id);
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("patient_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!profile?.patient_id) throw new Error("No patient record linked to this account");
+
+    // Look up the member first so we know which practitioner's consent to revoke.
+    const { data: member } = await supabase
+      .from("patient_care_team")
+      .select("id, practitioner_id")
+      .eq("id", data.id)
+      .eq("patient_id", profile.patient_id)
+      .maybeSingle();
+    if (!member) throw new Error("Care team member not found");
+
+    const { error: consentError } = await supabase
+      .from("consent_grant")
+      .update({ status: "REVOKED" })
+      .eq("patient_id", profile.patient_id)
+      .eq("practitioner_id", member.practitioner_id)
+      .in("status", ["ACTIVE", "PENDING"]);
+    if (consentError) throw new Error(consentError.message);
+
+    const { error } = await supabase.from("patient_care_team").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 /** Full visit history for the signed-in patient, plus the doctors seen. */
 export const getMyVisitHistory = createServerFn({ method: "GET" })
