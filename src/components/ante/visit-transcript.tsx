@@ -11,7 +11,7 @@ export function VisitTranscript({
   defaultOpen = false,
   className,
 }: {
-  transcript?: string | null;
+  transcript?: string | null | undefined;
   defaultOpen?: boolean;
   className?: string;
 }) {
