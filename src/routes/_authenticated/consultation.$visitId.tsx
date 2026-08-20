@@ -131,6 +131,8 @@ function ConsultationPage() {
           visitId,
           conclusion,
           recommendation,
+          symptoms,
+
           urgencyLevel: urgency as "LOW" | "MEDIUM" | "HIGH_RED_FLAG",
           disposition: disposition as "HOME_CARE" | "PRESCRIPTION" | "ER_REFERRAL",
         },
