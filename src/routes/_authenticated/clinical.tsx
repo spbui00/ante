@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   CalendarPlus,
   Filter,
+  Mic,
+
   GripVertical,
   Pin,
   PinOff,
@@ -18,6 +20,8 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
+import { ConsultationRecorder } from "@/components/ante/consultation-recorder";
+
 import { CodeChip, DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
 import { RichText, RichTextInline } from "@/components/ante/rich-text";
 import { Button } from "@/components/ui/button";
@@ -122,6 +126,8 @@ function ClinicalPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(data.visits[0]?.id ?? null);
   const [glassOpen, setGlassOpen] = useState(false);
+  const [recorderOpen, setRecorderOpen] = useState(false);
+
   const [justification, setJustification] = useState("");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -548,10 +554,17 @@ function ClinicalPage() {
                   <Sparkles className="size-4" />
                   AI visit summary
                 </CardTitle>
-                <Button variant="outline" size="sm" onClick={() => setGlassOpen(true)}>
-                  <ShieldAlert className="size-4" />
-                  Break glass
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={() => setRecorderOpen(true)}>
+                    <Mic className="size-4" />
+                    Start recording
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setGlassOpen(true)}>
+                    <ShieldAlert className="size-4" />
+                    Break glass
+                  </Button>
+                </div>
+
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -652,7 +665,18 @@ function ClinicalPage() {
         )}
       </div>
 
+      {selected ? (
+        <ConsultationRecorder
+          visitId={selected.id}
+          patientName={(selected.patient as { full_name?: string } | null)?.full_name ?? "Patient"}
+          open={recorderOpen}
+          onOpenChange={setRecorderOpen}
+          onSigned={() => void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] })}
+        />
+      ) : null}
+
       <Drawer open={glassOpen} onOpenChange={setGlassOpen}>
+
         <DrawerContent>
           <div className="mx-auto w-full max-w-lg">
             <DrawerHeader>
