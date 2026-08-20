@@ -415,6 +415,15 @@ export const updateMySettings = createServerFn({ method: "POST" })
           gender: data.gender || null,
           postal_code: data.postalCode || null,
           primary_language: data.primaryLanguage || "da",
+          preferred_name: data.preferredName || null,
+          sex: data.sex || null,
+          gender_identity: data.genderIdentity || null,
+          race_ethnicity: data.raceEthnicity ?? [],
+          marital_status: data.maritalStatus || null,
+          employment_status: data.employmentStatus || null,
+          insurance_type: data.insuranceType || null,
+          insurance_provider: data.insuranceProvider || null,
+          insurance_member_id: data.insuranceMemberId || null,
         })
         .eq("id", profile.patient_id);
       if (error) throw new Error(error.message);
