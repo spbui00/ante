@@ -257,6 +257,7 @@ export function VoiceIntakeModal({
   }
 
   return (
+    <>
     <Drawer
       open={open}
       dismissible={!analysing}
@@ -265,7 +266,8 @@ export function VoiceIntakeModal({
         onOpenChange(v);
       }}
     >
-      <DrawerContent className="relative max-h-[88dvh]">
+
+      <DrawerContent className="max-h-[88dvh]">
         <div
           aria-hidden={analysing}
           className={`mx-auto flex h-full max-h-[84dvh] w-full max-w-md flex-col px-4 pb-6 ${
@@ -420,8 +422,10 @@ export function VoiceIntakeModal({
           </div>
         ) : null}
       </DrawerContent>
+      </Drawer>
 
       <Drawer open={confirmOpen} onOpenChange={setConfirmOpen}>
+
         <DrawerContent className="max-h-[85dvh]">
           <div className="mx-auto w-full max-w-md overflow-y-auto px-4 pb-6">
             <DrawerHeader className="px-0 text-left">
@@ -487,7 +491,8 @@ export function VoiceIntakeModal({
           </div>
         </DrawerContent>
       </Drawer>
-    </Drawer>
+    </>
+
   );
 }
 
