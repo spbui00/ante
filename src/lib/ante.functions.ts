@@ -443,12 +443,12 @@ export const getMyCareTeam = createServerFn({ method: "GET" })
       .eq("id", userId)
       .maybeSingle();
 
-    if (!profile?.patient_id) return { careTeam: [], practitioners: [] };
+    if (!profile?.patient_id) return { careTeam: [], practitioners: [], consents: [] };
 
     const { data: careTeam, error } = await supabase
       .from("patient_care_team")
       .select(
-        "id, specialization, is_primary, status, assigned_at, practitioner:practitioner(id, full_name, title, role, specialization, organization:organization(name))",
+        "id, specialization, is_primary, status, assigned_at, practitioner:practitioner(id, full_name, title, role, specialization, license_number, organization:organization(name, region, type))",
       )
       .eq("patient_id", profile.patient_id)
       .order("is_primary", { ascending: false });
@@ -459,8 +459,15 @@ export const getMyCareTeam = createServerFn({ method: "GET" })
       .select("id, full_name, title, role, specialization")
       .order("full_name");
 
-    return { careTeam: careTeam ?? [], practitioners: practitioners ?? [] };
+    const { data: consents } = await supabase
+      .from("consent_grant")
+      .select("id, practitioner_id, status, granted_at, expires_at, created_at, is_emergency_override")
+      .eq("patient_id", profile.patient_id)
+      .order("created_at", { ascending: false });
+
+    return { careTeam: careTeam ?? [], practitioners: practitioners ?? [], consents: consents ?? [] };
   });
+
 
 export const addCareTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
