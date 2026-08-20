@@ -35,6 +35,8 @@ const visitsQuery = queryOptions({
   queryFn: () => getMyVisitHistory(),
 });
 
+type VisitItem = Awaited<ReturnType<typeof getMyVisitHistory>>["visits"][number];
+
 export const Route = createFileRoute("/_authenticated/visits")({
   head: () => ({
     meta: [
@@ -101,6 +103,8 @@ function VisitsPage() {
   const { data } = useSuspenseQuery(visitsQuery);
   const [filters, setFilters] = useState<Filters>(EMPTY);
   const [open, setOpen] = useState(false);
+  const [selectedVisit, setSelectedVisit] = useState<VisitItem | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const doctors = useMemo(() => {
     const map = new Map<string, string>();
@@ -299,7 +303,14 @@ function VisitsPage() {
           const practitioner = (v as { practitioner?: { full_name?: string; title?: string | null; specialization?: string | null } })
             .practitioner;
           return (
-            <Card key={v.id} className="transition-colors hover:border-primary/40">
+            <Card
+              key={v.id}
+              className="cursor-pointer transition-colors hover:border-primary/40 hover:bg-accent/40"
+              onClick={() => {
+                setSelectedVisit(v as VisitItem);
+                setDetailOpen(true);
+              }}
+            >
               <CardContent className="space-y-2 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
@@ -333,6 +344,60 @@ function VisitsPage() {
           );
         })}
       </div>
+
+      <Drawer open={detailOpen} onOpenChange={setDetailOpen}>
+        <DrawerContent className="max-h-[85vh]">
+          <div className="mx-auto w-full max-w-2xl">
+            <DrawerHeader>
+              <DrawerTitle>Visit details</DrawerTitle>
+              <DrawerDescription>
+                {selectedVisit ? formatDate(selectedVisit.visit_date) : "—"}
+              </DrawerDescription>
+            </DrawerHeader>
+
+            {selectedVisit ? (
+              <div className="space-y-6 overflow-y-auto px-4 pb-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedVisit.encounter_type ? (
+                    <Badge variant="outline">{ENCOUNTER_TYPE_LABEL[selectedVisit.encounter_type] ?? selectedVisit.encounter_type}</Badge>
+                  ) : null}
+                  <UrgencyBadge level={selectedVisit.urgency_level} />
+                  {selectedVisit.status ? (
+                    <Badge variant="secondary">{STATUS_LABEL[selectedVisit.status] ?? selectedVisit.status}</Badge>
+                  ) : null}
+                  <DispositionBadge value={selectedVisit.disposition} />
+                </div>
+
+                <DetailSection
+                  label="Clinician"
+                  value={(() => {
+                    const p = selectedVisit.practitioner;
+                    if (!p?.full_name) return "—";
+                    return [
+                      [p.title, p.full_name].filter(Boolean).join(" "),
+                      p.specialization,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ");
+                  })()}
+                />
+
+                <DetailSection label="Symptoms" value={selectedVisit.symptoms ?? "No symptoms recorded."} />
+                <DetailSection label="Conclusion" value={selectedVisit.conclusion ?? "No conclusion recorded."} />
+                <DetailSection label="Recommendation" value={selectedVisit.recommendation ?? "No recommendation recorded."} />
+              </div>
+            ) : (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">Select a visit to view details.</div>
+            )}
+
+            <DrawerFooter className="flex-row justify-end">
+              <DrawerClose asChild>
+                <Button variant="outline">Close</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </AppShell>
   );
 }
@@ -371,5 +436,14 @@ function Picker({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+function DetailSection({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</h4>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{value}</p>
+    </div>
   );
 }
