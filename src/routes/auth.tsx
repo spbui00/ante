@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, BadgeCheck, Loader2 } from "lucide-react";
@@ -53,6 +54,7 @@ const PENDING_KEY = "ante.pending-onboarding";
 
 function AuthPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -69,7 +71,7 @@ function AuthPage() {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) return;
       await finishPendingOnboarding();
-      await routeByRole(navigate);
+      await routeByRole(navigate, queryClient);
     });
   }, [navigate]);
 
@@ -82,7 +84,7 @@ function AuthPage() {
       toast.error(error.message);
       return;
     }
-    await routeByRole(navigate);
+    await routeByRole(navigate, queryClient);
   }
 
   async function handleSignUp(e: React.FormEvent) {
@@ -140,7 +142,7 @@ function AuthPage() {
       toast.success(
         result.title ? `Verified as ${result.title} in Autorisationsregisteret` : "Account created",
       );
-      await routeByRole(navigate);
+      await routeByRole(navigate, queryClient);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not create the account");
     } finally {
@@ -193,7 +195,7 @@ function AuthPage() {
     }
     if (result.redirected) return;
     await finishPendingOnboarding();
-    await routeByRole(navigate);
+    await routeByRole(navigate, queryClient);
   }
 
   return (
@@ -479,7 +481,7 @@ async function finishPendingOnboarding() {
   }
 }
 
-async function routeByRole(navigate: ReturnType<typeof useNavigate>) {
+async function routeByRole(navigate: ReturnType<typeof useNavigate>, queryClient?: QueryClient) {
   const { data } = await supabase.auth.getUser();
   if (!data.user) return;
   const { data: roles } = await supabase
@@ -487,5 +489,6 @@ async function routeByRole(navigate: ReturnType<typeof useNavigate>) {
     .select("role")
     .eq("user_id", data.user.id);
   const role = (roles?.[0]?.role ?? "PATIENT") as AnteRole;
+  await queryClient?.invalidateQueries({ queryKey: ["user-roles"] });
   navigate({ to: ROLE_HOME[role], replace: true });
 }
