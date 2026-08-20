@@ -92,7 +92,13 @@ function PassportPage() {
       title={data.patient?.full_name ?? "My passport"}
       subtitle={
         data.patient
-          ? `${maskCpr(data.patient.cpr_number)} · born ${formatDate(data.patient.date_of_birth)} · ${data.patient.postal_code ?? "—"}`
+          ? [
+              maskCpr(data.patient.cpr_number),
+              data.patient.date_of_birth ? `born ${formatDate(data.patient.date_of_birth)}` : null,
+              data.patient.postal_code,
+            ]
+              .filter((part) => part && part !== "—")
+              .join(" · ") || "No CPR or address on file yet."
           : "No clinical record is linked to this account yet."
       }
       actions={

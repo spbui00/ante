@@ -28,7 +28,7 @@ export async function buildPatientContext(supabase: SupabaseLike, userId: string
   const [patient, records, prescriptions, observations, visits] = await Promise.all([
     supabase
       .from("patient")
-      .select("full_name, date_of_birth, sex, gender, primary_language")
+      .select("full_name, date_of_birth, sex, primary_language")
       .eq("id", patientId)
       .maybeSingle(),
     supabase
@@ -72,7 +72,7 @@ export async function buildPatientContext(supabase: SupabaseLike, userId: string
   const sections: string[] = [];
 
   sections.push(
-    `PATIENT: ${line([p?.full_name, age ? `${age}y` : null, p?.sex ?? p?.gender, p?.primary_language])}`,
+    `PATIENT: ${line([p?.full_name, age ? `${age}y` : null, p?.sex, p?.primary_language])}`,
   );
 
   sections.push(

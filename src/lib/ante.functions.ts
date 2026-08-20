@@ -110,7 +110,7 @@ export const getClinicalQueue = createServerFn({ method: "GET" })
     const [visits, consents] = await Promise.all([
       supabase
         .from("visit")
-        .select("*, patient:patient(id, full_name, date_of_birth, gender, postal_code, cpr_number)")
+        .select("*, patient:patient(id, full_name, date_of_birth, sex, postal_code, cpr_number)")
         .order("visit_date", { ascending: false })
         .limit(50),
       supabase
@@ -281,7 +281,7 @@ export const getMySettings = createServerFn({ method: "GET" })
       const { data } = await supabase
         .from("patient")
         .select(
-          "id, full_name, first_name, last_name, preferred_name, phone_number, date_of_birth, gender, sex, gender_identity, race_ethnicity, marital_status, employment_status, insurance_type, insurance_provider, insurance_member_id, postal_code, industry, primary_language",
+          "id, full_name, first_name, last_name, preferred_name, phone_number, date_of_birth, sex, gender_identity, race_ethnicity, marital_status, employment_status, insurance_type, insurance_provider, insurance_member_id, postal_code, industry, primary_language",
         )
         .eq("id", profile.patient_id)
         .maybeSingle();
@@ -318,7 +318,6 @@ export const updateMySettings = createServerFn({ method: "POST" })
       .object({
         fullName: z.string().min(1).max(120),
         dateOfBirth: z.string().max(10).optional().nullable(),
-        gender: z.string().max(30).optional().nullable(),
         postalCode: z.string().max(10).optional().nullable(),
         primaryLanguage: z.string().max(10).optional().nullable(),
         firstName: z.string().max(60).optional().nullable(),
@@ -412,7 +411,6 @@ export const updateMySettings = createServerFn({ method: "POST" })
           last_name: data.lastName || null,
           phone_number: data.phoneNumber || null,
           date_of_birth: data.dateOfBirth || null,
-          gender: data.gender || null,
           postal_code: data.postalCode || null,
           primary_language: data.primaryLanguage || "da",
           preferred_name: data.preferredName || null,
