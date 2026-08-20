@@ -351,8 +351,9 @@ function ConsultationPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">Transcript</CardTitle>
               </CardHeader>
-              <CardContent>
-                <VisitTranscript transcript={visit.intake_transcript} />
+              <CardContent className="space-y-1">
+                <VisitTranscript transcript={visit.intake_transcript} label="Intake transcript" />
+                <VisitTranscript transcript={visit.visit_transcript} label="Visit transcript" />
               </CardContent>
             </Card>
 
