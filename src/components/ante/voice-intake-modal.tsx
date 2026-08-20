@@ -386,6 +386,32 @@ export function VoiceIntakeModal({
             </PromptInputFooter>
           </PromptInput>
         </div>
+
+        {analysing ? (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 rounded-[inherit] bg-background/85 px-6 text-center backdrop-blur-sm">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p
+              key={phraseIndex}
+              className="animate-in fade-in text-lg font-medium text-foreground"
+            >
+              {FINALISING_PHRASES[phraseIndex]}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              (please don't close this)
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                cancelledRef.current = true;
+                setAnalysing(false);
+              }}
+            >
+              Cancel intake
+            </Button>
+          </div>
+        ) : null}
       </DrawerContent>
 
       <Drawer open={confirmOpen} onOpenChange={setConfirmOpen}>
