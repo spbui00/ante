@@ -194,6 +194,7 @@ export function VoiceIntakeModal({
       toast.error("Describe your symptoms first");
       return;
     }
+    cancelledRef.current = false;
     setAnalysing(true);
     try {
       const res = await fetch("/api/intake", {
