@@ -30,45 +30,6 @@ type IntakeResult = {
   warning?: string;
 };
 
-/** Encode captured PCM as a 16-bit mono WAV so every browser uploads a decodable file. */
-function encodeWav(chunks: Float32Array[], sampleRate: number) {
-  const length = chunks.reduce((n, c) => n + c.length, 0);
-  const samples = new Float32Array(length);
-  let offset = 0;
-  for (const c of chunks) {
-    samples.set(c, offset);
-    offset += c.length;
-  }
-
-  const buffer = new ArrayBuffer(44 + samples.length * 2);
-  const view = new DataView(buffer);
-  const writeString = (pos: number, str: string) => {
-    for (let i = 0; i < str.length; i++) view.setUint8(pos + i, str.charCodeAt(i));
-  };
-
-  writeString(0, "RIFF");
-  view.setUint32(4, 36 + samples.length * 2, true);
-  writeString(8, "WAVE");
-  writeString(12, "fmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeString(36, "data");
-  view.setUint32(40, samples.length * 2, true);
-
-  let pos = 44;
-  for (const sample of samples) {
-    const s = Math.max(-1, Math.min(1, sample));
-    view.setInt16(pos, s < 0 ? s * 0x8000 : s * 0x7fff, true);
-    pos += 2;
-  }
-  return new Blob([buffer], { type: "audio/wav" });
-}
-
 export function VoiceIntakeModal({
   open,
   onOpenChange,
@@ -76,79 +37,22 @@ export function VoiceIntakeModal({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const [recording, setRecording] = useState(false);
-  const [transcribing, setTranscribing] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<IntakeResult | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
-
-  const audioRef = useRef<{
-    stream: MediaStream;
-    ctx: AudioContext;
-    node: ScriptProcessorNode;
-    source: MediaStreamAudioSourceNode;
-    chunks: Float32Array[];
-  } | null>(null);
 
   const savePreIntake = useServerFn(createPreIntakeVisit);
 
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const ctx = new AudioContext();
-      const source = ctx.createMediaStreamSource(stream);
-      const node = ctx.createScriptProcessor(4096, 1, 1);
-      const meter = ctx.createAnalyser();
-      meter.fftSize = 1024;
-      source.connect(meter);
-      const chunks: Float32Array[] = [];
-      node.onaudioprocess = (e) => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-      source.connect(node);
-      node.connect(ctx.destination);
-      audioRef.current = { stream, ctx, node, source, chunks };
-      setAnalyser(meter);
-      setRecording(true);
-    } catch {
-      toast.error("Microphone unavailable. You can type instead.");
-    }
-  }
+  const dictation = useCortiDictation({
+    language: "en",
+    onFinal: (text) => setTranscript((prev) => `${prev} ${text}`.trim()),
+    onError: (message) => toast.error(message),
+  });
 
-  async function stopRecording() {
-    const rec = audioRef.current;
-    audioRef.current = null;
-    setRecording(false);
-    setAnalyser(null);
-    if (!rec) return;
-
-    rec.stream.getTracks().forEach((t) => t.stop());
-    rec.node.disconnect();
-    rec.source.disconnect();
-    const blob = encodeWav(rec.chunks, rec.ctx.sampleRate);
-    await rec.ctx.close();
-
-    if (blob.size < 4096) {
-      toast.error("That recording was empty — please try again.");
-      return;
-    }
-
-    setTranscribing(true);
-    try {
-      const form = new FormData();
-      form.append("file", blob, "recording.wav");
-      form.append("language", "en");
-      const res = await fetch("/api/transcribe", { method: "POST", body: form });
-      const data = (await res.json()) as { transcript?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Transcription failed");
-      setTranscript((prev) => `${prev} ${data.transcript ?? ""}`.trim());
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not transcribe audio");
-    } finally {
-      setTranscribing(false);
-    }
-  }
+  const recording = dictation.status === "listening";
+  const connecting = dictation.status === "connecting";
 
   async function submit() {
     if (!transcript.trim()) {
