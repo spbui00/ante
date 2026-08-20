@@ -263,3 +263,91 @@ export const getSurveillance = createServerFn({ method: "GET" })
 
     return { rows: rows ?? [], since };
   });
+
+/** Profile + demographics for the account settings page. */
+export const getMySettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, email, full_name, patient_id, practitioner_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    let patient = null;
+    if (profile?.patient_id) {
+      const { data } = await supabase
+        .from("patient")
+        .select("id, full_name, date_of_birth, gender, postal_code, industry, primary_language")
+        .eq("id", profile.patient_id)
+        .maybeSingle();
+      patient = data;
+    }
+
+    let practitioner = null;
+    if (profile?.practitioner_id) {
+      const { data } = await supabase
+        .from("practitioner")
+        .select("id, full_name, role, license_number, organization:organization(name, region)")
+        .eq("id", profile.practitioner_id)
+        .maybeSingle();
+      practitioner = data;
+    }
+
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+
+    return {
+      profile: profile ?? null,
+      patient,
+      practitioner,
+      role: (roles?.[0]?.role ?? "PATIENT") as "PATIENT" | "PRACTITIONER" | "ANALYST",
+    };
+  });
+
+/** Update the signed-in account's own profile and patient demographics. */
+export const updateMySettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        fullName: z.string().min(1).max(120),
+        dateOfBirth: z.string().max(10).optional().nullable(),
+        gender: z.string().max(30).optional().nullable(),
+        postalCode: z.string().max(10).optional().nullable(),
+        primaryLanguage: z.string().max(10).optional().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ full_name: data.fullName })
+      .eq("id", userId);
+    if (profileError) throw new Error(profileError.message);
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("patient_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profile?.patient_id) {
+      const { error } = await supabase
+        .from("patient")
+        .update({
+          full_name: data.fullName,
+          date_of_birth: data.dateOfBirth || null,
+          gender: data.gender || null,
+          postal_code: data.postalCode || null,
+          primary_language: data.primaryLanguage || "da",
+        })
+        .eq("id", profile.patient_id);
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
