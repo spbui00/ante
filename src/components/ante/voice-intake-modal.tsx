@@ -129,7 +129,7 @@ export function VoiceIntakeModal({
             />
 
             <Waveform
-              analyser={analyser}
+              analyser={dictation.analyser}
               active={recording}
               className="relative h-24 w-full text-primary"
             />
@@ -137,10 +137,16 @@ export function VoiceIntakeModal({
             <div className="relative mt-4 flex flex-col items-center">
               <button
                 type="button"
-                onClick={recording ? stopRecording : startRecording}
-                disabled={transcribing}
-                aria-label={recording ? "Stop recording" : "Start recording"}
-                className={`relative grid size-20 place-items-center rounded-full text-primary-foreground shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-60 ${
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  void dictation.start();
+                }}
+                onPointerUp={() => dictation.stop()}
+                onPointerCancel={() => dictation.stop()}
+                onContextMenu={(e) => e.preventDefault()}
+                aria-label="Hold to talk"
+                className={`relative grid size-20 touch-none select-none place-items-center rounded-full text-primary-foreground shadow-lg transition-all duration-300 active:scale-95 ${
                   recording
                     ? "bg-destructive shadow-destructive/30 scale-105"
                     : "bg-primary shadow-primary/25 hover:scale-105"
@@ -149,33 +155,37 @@ export function VoiceIntakeModal({
                 {recording ? (
                   <span className="ante-pulse-ring absolute inset-0 rounded-full bg-destructive" />
                 ) : null}
-                {transcribing ? (
+                {connecting ? (
                   <Loader2 className="size-7 animate-spin" />
-                ) : recording ? (
-                  <Square className="size-7 fill-current" />
                 ) : (
                   <Mic className="size-8" />
                 )}
               </button>
               <p className="mt-3 text-xs font-medium tracking-wide text-muted-foreground">
-                {transcribing
-                  ? "Transcribing your recording…"
+                {connecting
+                  ? "Connecting…"
                   : recording
-                    ? "Listening… tap to stop"
-                    : "Tap the mic to start"}
+                    ? "Listening… release to stop"
+                    : "Hold the mic to talk"}
               </p>
             </div>
           </div>
 
-          <Textarea
-            className="mt-4"
-            rows={4}
-            placeholder="e.g. Dry cough for four days, fever last night, chest feels tight."
-            value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-          />
+          <div className="relative mt-4">
+            <Textarea
+              rows={4}
+              placeholder="e.g. Dry cough for four days, fever last night, chest feels tight."
+              value={transcript}
+              onChange={(e) => setTranscript(e.target.value)}
+            />
+            {dictation.interim ? (
+              <p className="mt-1 px-1 text-sm italic text-muted-foreground">
+                {dictation.interim}
+              </p>
+            ) : null}
+          </div>
 
-          <Button className="mt-3" onClick={submit} disabled={submitting || transcribing}>
+          <Button className="mt-3" onClick={submit} disabled={submitting || recording}>
             {submitting ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
