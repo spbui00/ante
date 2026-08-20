@@ -86,8 +86,8 @@ export const saveVisitObservation = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const patientId = await assertOwnership(supabase as never, data.visitId);
+    const { supabase, userId } = context;
+    const patientId = await assertOwnership(supabase, userId, data.visitId);
 
     const payload = {
       patient_id: patientId,
@@ -124,8 +124,8 @@ export const saveVisitPrescription = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const patientId = await assertOwnership(supabase as never, data.visitId);
+    const { supabase, userId } = context;
+    const patientId = await assertOwnership(supabase, userId, data.visitId);
 
     const payload = {
       patient_id: patientId,
@@ -161,8 +161,8 @@ export const saveVisitRecord = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const patientId = await assertOwnership(supabase as never, data.visitId);
+    const { supabase, userId } = context;
+    const patientId = await assertOwnership(supabase, userId, data.visitId);
 
     const payload = {
       patient_id: patientId,
@@ -193,8 +193,8 @@ export const deleteVisitClinicalItem = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    await assertOwnership(supabase as never, data.visitId);
+    const { supabase, userId } = context;
+    await assertOwnership(supabase, userId, data.visitId);
 
     const table =
       data.kind === "observation"
