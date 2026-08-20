@@ -82,6 +82,7 @@ function ConsultationPage() {
         status?: string | null;
         symptoms?: string | null;
         intake_transcript?: string | null;
+        visit_transcript?: string | null;
 
         conclusion?: string | null;
         recommendation?: string | null;
