@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Filter, Search, ShieldAlert, Sparkles, X } from "lucide-react";
+import { CalendarPlus, Filter, Search, ShieldAlert, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { breakGlass, finaliseVisit, getClinicalQueue } from "@/lib/ante.functions";
+import { breakGlass, finaliseVisit, findScheduledVisitsByCpr, getClinicalQueue, registerVisitArrival } from "@/lib/ante.functions";
 import {
   ENCOUNTER_TYPE_LABEL,
   URGENCY_LABEL,
@@ -207,6 +207,8 @@ function ClinicalPage() {
       title="Consultation console"
       subtitle={`${visits.length} of ${data.visits.length} visits · ${data.consents.filter((c) => c.status === "ACTIVE").length} active consents`}
     >
+      <RegisterVisit />
+
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -499,6 +501,147 @@ function ClinicalPage() {
         </DrawerContent>
       </Drawer>
     </AppShell>
+  );
+}
+
+type ScheduledLookup = Awaited<ReturnType<typeof findScheduledVisitsByCpr>>;
+
+function RegisterVisit() {
+  const queryClient = useQueryClient();
+  const [cpr, setCpr] = useState("");
+  const [open, setOpen] = useState(false);
+  const [result, setResult] = useState<Extract<ScheduledLookup, { ok: true }> | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const lookup = useMutation({
+    mutationFn: () => findScheduledVisitsByCpr({ data: { cpr } }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error(
+          res.reason === "not_found"
+            ? "No consented patient found with that CPR number"
+            : "This account is not a practitioner account",
+        );
+        return;
+      }
+      setResult(res);
+      setSelected(res.visits[0]?.id ?? null);
+      setOpen(true);
+    },
+    onError: () => toast.error("Could not look up scheduled visits"),
+  });
+
+  const register = useMutation({
+    mutationFn: () => registerVisitArrival({ data: { visitId: selected! } }),
+    onSuccess: () => {
+      toast.success("Visit registered — patient added to your queue");
+      setOpen(false);
+      setCpr("");
+      setResult(null);
+      setSelected(null);
+      void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
+    },
+    onError: () => toast.error("Could not register the visit"),
+  });
+
+  return (
+    <>
+      <Card className="mb-4 border-primary/30 bg-primary/[0.04]">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <CalendarPlus className="size-4" />
+            Register a visit
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[180px] flex-1 space-y-2">
+            <Label htmlFor="visit-cpr">Patient CPR number</Label>
+            <Input
+              id="visit-cpr"
+              value={cpr}
+              onChange={(e) => setCpr(e.target.value)}
+              placeholder="DDMMYY-XXXX"
+              maxLength={15}
+              className="font-mono"
+            />
+          </div>
+          <Button
+            disabled={cpr.trim().length < 6 || lookup.isPending}
+            onClick={() => lookup.mutate()}
+          >
+            {lookup.isPending ? "Checking…" : "Create visit"}
+          </Button>
+          <p className="w-full text-xs text-muted-foreground">
+            Use this when the patient arrives physically — it moves their pre-intake into your
+            consultation queue.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerContent>
+          <div className="mx-auto flex max-h-[85vh] w-full max-w-2xl flex-col">
+            <DrawerHeader>
+              <DrawerTitle>Scheduled visits</DrawerTitle>
+              <DrawerDescription>
+                {result?.patient.full_name} · {formatCpr(result?.patient.cpr_number)} — pick the
+                pre-intake the patient is here for.
+              </DrawerDescription>
+            </DrawerHeader>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-4">
+              {result && result.visits.length > 0 ? (
+                <div className="space-y-2">
+                  {result.visits.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setSelected(v.id)}
+                      className={`block w-full rounded-lg border px-4 py-3 text-left transition-colors ${
+                        selected === v.id
+                          ? "border-primary bg-accent"
+                          : "border-border hover:bg-muted"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground">
+                          {formatDateTime(v.visit_date)}
+                        </span>
+                        <span className="ml-auto">
+                          <UrgencyBadge level={v.urgency_level} />
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {ENCOUNTER_TYPE_LABEL[v.encounter_type ?? ""] ?? "Visit"}
+                      </p>
+                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                        {v.symptoms || v.conclusion || "No pre-intake detail recorded."}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="py-6 text-sm text-muted-foreground">
+                  This patient has no scheduled pre-intake forms.
+                </p>
+              )}
+            </div>
+
+            <DrawerFooter className="flex-row justify-end gap-2">
+              <DrawerClose asChild>
+                <Button variant="ghost">Cancel</Button>
+              </DrawerClose>
+              <Button
+                disabled={!selected || register.isPending}
+                onClick={() => register.mutate()}
+              >
+                {register.isPending ? "Registering…" : "Register"}
+              </Button>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }
 
