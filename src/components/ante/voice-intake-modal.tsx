@@ -251,28 +251,20 @@ export function VoiceIntakeModal({
               ) : null}
 
               {result ? (
-                <div className="rounded-2xl border border-border bg-card p-4 text-sm">
+                <button
+                  type="button"
+                  onClick={() => setConfirmOpen(true)}
+                  className="rounded-2xl border border-border bg-card p-4 text-left text-sm"
+                >
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="font-medium text-foreground">Pre-intake summary</span>
+                    <span className="font-medium text-foreground">Draft pre-intake ready</span>
                     <UrgencyBadge level={result.urgencyLevel} />
                   </div>
                   <p className="text-muted-foreground">{result.summary}</p>
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {result.symptomCodes.map((c) => (
-                      <CodeChip key={c.code} code={c.code} system="ICD-10" />
-                    ))}
-                  </div>
-                  <p className="mt-3 text-muted-foreground">{result.recommendation}</p>
-                  <Button className="mt-3 w-full" onClick={sendToClinic} disabled={saving}>
-                    {saving ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <Send className="size-4" />
-                    )}
-                    Send to clinic
-                  </Button>
-                </div>
+                  <p className="mt-2 text-xs text-primary">Tap to review and submit</p>
+                </button>
               ) : null}
+
             </ConversationContent>
             <ConversationScrollButton />
           </Conversation>
