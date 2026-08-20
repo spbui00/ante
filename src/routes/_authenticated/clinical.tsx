@@ -472,7 +472,7 @@ function ClinicalPage() {
                   transition={{ type: "spring", stiffness: 500, damping: 40, mass: 0.6 }}
                   draggable
                   onDragStart={() => setDragId(v.id)}
-                  onDragOver={(e) => e.preventDefault()}
+                  onDragOver={(e: React.DragEvent) => e.preventDefault()}
                   onDragEnter={() => dragId && dragId !== v.id && previewMove(v.id)}
                   onDrop={() => commitOrder()}
                   onDragEnd={() => commitOrder()}
