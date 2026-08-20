@@ -10,6 +10,8 @@ import { PatientPassportPanel } from "@/components/ante/patient-passport-panel";
 import { RichText } from "@/components/ante/rich-text";
 import { UrgencyBadge } from "@/components/ante/badges";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
+import { VisitTranscript } from "@/components/ante/visit-transcript";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
