@@ -1,9 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
+
+type Sb = SupabaseClient<Database>;
 
 const nullableString = (max: number) => z.string().max(max).optional().nullable();
+
 
 /** Observations, prescriptions and clinical records attached to one visit. */
 export const getVisitClinicalItems = createServerFn({ method: "GET" })
