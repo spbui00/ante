@@ -207,6 +207,8 @@ function ClinicalPage() {
       title="Consultation console"
       subtitle={`${visits.length} of ${data.visits.length} visits · ${data.consents.filter((c) => c.status === "ACTIVE").length} active consents`}
     >
+      <RegisterVisit />
+
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
