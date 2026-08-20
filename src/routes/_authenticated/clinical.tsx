@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Filter, Search, ShieldAlert, Sparkles, X } from "lucide-react";
+import { CalendarPlus, Filter, Search, ShieldAlert, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { breakGlass, finaliseVisit, getClinicalQueue } from "@/lib/ante.functions";
+import { breakGlass, finaliseVisit, findScheduledVisitsByCpr, getClinicalQueue, registerVisitArrival } from "@/lib/ante.functions";
 import {
   ENCOUNTER_TYPE_LABEL,
   URGENCY_LABEL,
