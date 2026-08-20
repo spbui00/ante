@@ -282,7 +282,7 @@ function SettingsPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="sex">Sex</Label>
-                    <Select value={sex} onValueChange={setSex}>
+                    <Select value={sex} onValueChange={(v) => setSex(v as SexValue)}>
                       <SelectTrigger id="sex">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
@@ -299,7 +299,7 @@ function SettingsPage() {
                 <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="genderIdentity">Gender identity</Label>
-                    <Select value={genderIdentity} onValueChange={setGenderIdentity}>
+                    <Select value={genderIdentity} onValueChange={(v) => setGenderIdentity(v as GenderIdentityValue)}>
                       <SelectTrigger id="genderIdentity">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
@@ -359,7 +359,7 @@ function SettingsPage() {
                 <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="marital">Marital status</Label>
-                    <Select value={maritalStatus} onValueChange={setMaritalStatus}>
+                    <Select value={maritalStatus} onValueChange={(v) => setMaritalStatus(v as MaritalStatusValue)}>
                       <SelectTrigger id="marital">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
@@ -374,7 +374,7 @@ function SettingsPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="employment">Employment</Label>
-                    <Select value={employmentStatus} onValueChange={setEmploymentStatus}>
+                    <Select value={employmentStatus} onValueChange={(v) => setEmploymentStatus(v as EmploymentStatusValue)}>
                       <SelectTrigger id="employment">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
@@ -391,7 +391,7 @@ function SettingsPage() {
                 <div className="grid gap-2 sm:grid-cols-3 sm:gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="insuranceType">Insurance</Label>
-                    <Select value={insuranceType} onValueChange={setInsuranceType}>
+                    <Select value={insuranceType} onValueChange={(v) => setInsuranceType(v as InsuranceTypeValue)}>
                       <SelectTrigger id="insuranceType">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
