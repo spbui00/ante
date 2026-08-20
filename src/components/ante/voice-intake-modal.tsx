@@ -63,7 +63,10 @@ export type EditableIntakeVisit = {
 const FINALISING_PHRASES = [
   "Filling the intake form…",
   "Structuring your symptoms…",
+  "Vitamin D is important, but so do other vitamins…",
   "Matching medical codes…",
+  "Do doctors partners avoid apples?",
+  "Be patient, you are a patient afterall…",
   "Almost there…",
 ];
 
@@ -381,7 +384,9 @@ export function VoiceIntakeModal({
                     <span className="font-medium text-foreground">Draft pre-intake ready</span>
                     <UrgencyBadge level={result.urgencyLevel} />
                   </div>
-                  <p className="text-muted-foreground">{result.summary}</p>
+                  <p className="text-muted-foreground">
+                    {result.symptomDetail || result.summary}
+                  </p>
                   <p className="mt-2 text-xs text-primary">Tap to review and submit</p>
                 </button>
               ) : null}
@@ -519,11 +524,10 @@ export function VoiceIntakeModal({
                   <span className="font-medium text-foreground">Symptom summary</span>
                   <UrgencyBadge level={result.urgencyLevel} />
                 </div>
-                <p className="text-muted-foreground">{result.summary}</p>
                 {result.symptomDetail ? (
-                  <p className="mt-3 text-foreground">{result.symptomDetail}</p>
+                  <p className="text-foreground">{result.symptomDetail}</p>
                 ) : result.symptoms.length ? (
-                  <p className="mt-3 text-foreground">{result.symptoms.join(", ")}</p>
+                  <p className="text-foreground">{result.symptoms.join(", ")}</p>
                 ) : null}
                 {result.pertinentNegatives?.length ? (
                   <p className="mt-2 text-muted-foreground">
