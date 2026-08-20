@@ -258,8 +258,13 @@ export function VoiceIntakeModal({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[88dvh]">
-        <div className="mx-auto flex h-full max-h-[84dvh] w-full max-w-md flex-col px-4 pb-6">
+      <DrawerContent className="relative max-h-[88dvh]">
+        <div
+          aria-hidden={analysing}
+          className={`mx-auto flex h-full max-h-[84dvh] w-full max-w-md flex-col px-4 pb-6 ${
+            analysing ? "pointer-events-none select-none" : ""
+          }`}
+        >
           <DrawerHeader className="px-0 pb-2 text-left">
             <DrawerTitle className="text-2xl">Tell us what's wrong</DrawerTitle>
             <DrawerDescription>
