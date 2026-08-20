@@ -257,7 +257,14 @@ export function VoiceIntakeModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer
+      open={open}
+      dismissible={!analysing}
+      onOpenChange={(v) => {
+        if (analysing && !v) return;
+        onOpenChange(v);
+      }}
+    >
       <DrawerContent className="relative max-h-[88dvh]">
         <div
           aria-hidden={analysing}
