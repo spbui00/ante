@@ -234,13 +234,8 @@ export const getSurveillance = createServerFn({ method: "GET" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
 
-    const { data: isAnalyst } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "ANALYST",
-    });
-    if (!isAnalyst) throw new Error("Analyst role required");
 
     const since = new Date(Date.now() - data.days * 24 * 3600 * 1000).toISOString();
 
