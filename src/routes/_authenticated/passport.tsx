@@ -142,6 +142,11 @@ function PassportPage() {
         </Section>
         ) : null}
 
+        {scheduled[0] && !data.queueStatusHidden ? (
+          <CareNavigatorCard key={scheduled[0].id} visitId={scheduled[0].id} />
+        ) : null}
+
+
 
         <Section title="Conditions" icon={<Stethoscope className="size-4" />}>
           {conditions.length === 0 ? <Empty /> : null}
