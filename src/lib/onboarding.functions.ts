@@ -4,9 +4,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { lookupAuthorisation } from "@/lib/license-registry";
 
-/** Mocked Autorisationsregisteret verification for a practitioner sign-up. */
+/** Mocked Autorisationsregisteret verification for a practitioner sign-up (pre-auth). */
 export const verifyPractitioner = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+
   .inputValidator((input: unknown) =>
     z.object({ fullName: z.string().max(120).default(""), authorisationId: z.string().max(32) }).parse(input),
   )
