@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   queryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
@@ -11,10 +10,7 @@ import { IdCard, Search, ShieldAlert, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
-import { RichTextInline } from "@/components/ante/rich-text";
-import { VisitCard } from "@/components/ante/visit-card";
-import { VisitDetailDrawer, type VisitDetail } from "@/components/ante/visit-detail-drawer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PatientPassportPanel } from "@/components/ante/patient-passport-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,11 +32,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UrgencyBadge } from "@/components/ante/badges";
 import {
   forceRequestPatientConsent,
   getMyPatients,
-  getPatientRecord,
   removePatientFromRegistry,
   requestPatientConsent,
 } from "@/lib/ante.functions";
