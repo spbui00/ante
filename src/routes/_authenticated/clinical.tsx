@@ -102,11 +102,58 @@ function ClinicalPage() {
   const [selectedId, setSelectedId] = useState<string | null>(data.visits[0]?.id ?? null);
   const [glassOpen, setGlassOpen] = useState(false);
   const [justification, setJustification] = useState("");
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const visits = useMemo(() => {
+    const q = filters.q.trim().toLowerCase();
+    return data.visits.filter((v) => {
+      if (filters.activeOnly && v.status === "COMPLETED") return false;
+      if (filters.urgency !== ANY && v.urgency_level !== filters.urgency) return false;
+      if (filters.encounterType !== ANY && v.encounter_type !== filters.encounterType) return false;
+      if (filters.from && new Date(v.visit_date) < new Date(filters.from)) return false;
+      if (filters.to && new Date(v.visit_date) > new Date(`${filters.to}T23:59:59`)) return false;
+      if (q) {
+        const patient = v.patient as { full_name?: string; cpr_number?: string } | null;
+        const hay = [patient?.full_name, patient?.cpr_number, v.symptoms, v.conclusion]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [data.visits, filters]);
+
+  const activeChips = useMemo(() => {
+    const chips: { key: keyof Filters; label: string }[] = [];
+    if (filters.activeOnly) chips.push({ key: "activeOnly", label: "Active only" });
+    if (filters.urgency !== ANY)
+      chips.push({ key: "urgency", label: `Urgency: ${URGENCY_LABEL[filters.urgency]}` });
+    if (filters.encounterType !== ANY)
+      chips.push({
+        key: "encounterType",
+        label: `Type: ${ENCOUNTER_TYPE_LABEL[filters.encounterType]}`,
+      });
+    if (filters.from) chips.push({ key: "from", label: `From ${filters.from}` });
+    if (filters.to) chips.push({ key: "to", label: `To ${filters.to}` });
+    return chips;
+  }, [filters]);
+
+  function set<K extends keyof Filters>(key: K, value: Filters[K]) {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function clearChip(key: keyof Filters) {
+    if (key === "activeOnly") return set("activeOnly", false);
+    set(key, (key === "from" || key === "to" ? "" : ANY) as Filters[typeof key]);
+  }
 
   const selected = useMemo(
-    () => data.visits.find((v) => v.id === selectedId) ?? null,
-    [data.visits, selectedId],
+    () => visits.find((v) => v.id === selectedId) ?? null,
+    [visits, selectedId],
   );
+
 
   const [conclusion, setConclusion] = useState("");
   const [recommendation, setRecommendation] = useState("");
