@@ -50,6 +50,10 @@ export function AppShell({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { roles, loading: rolesLoading } = useRoles();
+  const visibleNav = rolesLoading
+    ? []
+    : NAV.filter((item) => item.roles.some((role) => roles.includes(role)));
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
