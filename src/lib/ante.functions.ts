@@ -693,6 +693,40 @@ export const getMyPatients = createServerFn({ method: "GET" })
     return { grants: data ?? [] };
   });
 
+/** Practitioner removes a patient from their registry: revokes consent + leaves the care team. */
+export const removePatientFromRegistry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ patientId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("practitioner_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!profile?.practitioner_id) throw new Error("No practitioner record linked to this account");
+
+    // Leave the care team first, while the grant still allows access.
+    const { error: teamError } = await supabase
+      .from("patient_care_team")
+      .delete()
+      .eq("patient_id", data.patientId)
+      .eq("practitioner_id", profile.practitioner_id);
+    if (teamError) throw new Error(teamError.message);
+
+    const { error: consentError } = await supabase
+      .from("consent_grant")
+      .update({ status: "REVOKED" as const })
+      .eq("patient_id", data.patientId)
+      .eq("practitioner_id", profile.practitioner_id)
+      .in("status", ["ACTIVE", "PENDING"]);
+    if (consentError) throw new Error(consentError.message);
+
+    return { ok: true };
+  });
+
+
 /** Full record view for one patient the practitioner has access to. */
 export const getPatientRecord = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
