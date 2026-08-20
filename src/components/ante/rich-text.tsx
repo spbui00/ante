@@ -72,8 +72,8 @@ function parseBlocks(input: string): Block[] {
     const bulleted = line.trim().match(/^[-*•]\s+(.*)$/);
 
     if (ordered || bulleted) {
-      const kind = ordered ? "ol" : "ul";
-      const text = ordered ? ordered[2] : bulleted![1];
+      const kind: "ol" | "ul" = ordered ? "ol" : "ul";
+      const text = (ordered ? ordered[2] : bulleted?.[1]) ?? "";
       const prev = blocks[blocks.length - 1];
       if (prev && prev.kind === kind) prev.items.push({ text, indented });
       else blocks.push({ kind, items: [{ text, indented }] });
