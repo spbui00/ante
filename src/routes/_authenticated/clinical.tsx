@@ -122,6 +122,8 @@ function ClinicalPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(data.visits[0]?.id ?? null);
   const [glassOpen, setGlassOpen] = useState(false);
+  const [recorderOpen, setRecorderOpen] = useState(false);
+
   const [justification, setJustification] = useState("");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
