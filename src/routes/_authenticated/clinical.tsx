@@ -501,17 +501,22 @@ function ClinicalPage() {
               <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm">
                   <Stethoscope className="size-4" />
-                  Active intake
+                  {selected.status === "COMPLETED" ? "Past visit" : "Active intake"}
                 </CardTitle>
-                <Button size="sm" asChild>
-                  <Link
-                    to="/consultation/$visitId"
-                    params={{ visitId: selected.id }}
-                  >
-                    <Mic className="size-4" />
-                    Start consultation
-                  </Link>
-                </Button>
+                {selected.status === "COMPLETED" ? (
+                  <Badge variant="secondary">Completed</Badge>
+                ) : (
+                  <Button size="sm" asChild>
+                    <Link
+                      to="/consultation/$visitId"
+                      params={{ visitId: selected.id }}
+                    >
+                      <Mic className="size-4" />
+                      Start consultation
+                    </Link>
+                  </Button>
+                )}
+
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
