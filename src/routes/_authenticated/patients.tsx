@@ -137,33 +137,52 @@ function PatientsPage() {
               } | null;
               const usable = g.status === "ACTIVE" && Boolean(p?.id);
               return (
-                <button
+                <div
                   key={g.id}
-                  type="button"
-                  disabled={!usable}
-                  onClick={() => setOpenId(p!.id!)}
-                  className={`block w-full border-b border-border px-4 py-3 text-left transition-colors last:border-0 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60 ${
+                  className={`flex items-start gap-1 border-b border-border pr-2 transition-colors last:border-0 hover:bg-muted ${
                     openId && openId === p?.id ? "bg-accent" : ""
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">
-                      {p?.full_name ?? "Unknown"}
-                    </span>
-                    <span className="ml-auto">
-                      <StatusPill status={g.status} emergency={g.is_emergency_override} />
-                    </span>
-                  </div>
-                  <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                    {formatCpr(p?.cpr_number)}
-                    {p?.date_of_birth ? ` · born ${formatDate(p.date_of_birth)}` : ""}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {g.expires_at ? `Until ${formatDateTime(g.expires_at)}` : "No expiry"}
-                  </p>
-                </button>
+                  <button
+                    type="button"
+                    disabled={!usable}
+                    onClick={() => setOpenId(p!.id!)}
+                    className="block flex-1 px-4 py-3 text-left disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">
+                        {p?.full_name ?? "Unknown"}
+                      </span>
+                      <span className="ml-auto">
+                        <StatusPill status={g.status} emergency={g.is_emergency_override} />
+                      </span>
+                    </div>
+                    <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                      {formatCpr(p?.cpr_number)}
+                      {p?.date_of_birth ? ` · born ${formatDate(p.date_of_birth)}` : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {g.expires_at ? `Until ${formatDateTime(g.expires_at)}` : "No expiry"}
+                    </p>
+                  </button>
+                  {p?.id ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Remove ${p.full_name ?? "patient"} from registry`}
+                      className="mt-2 size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={() =>
+                        setRemoveTarget({ id: p.id!, name: p.full_name ?? "this patient" })
+                      }
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  ) : null}
+                </div>
               );
             })}
+
             {grants.length === 0 ? (
               <p className="px-4 py-6 text-sm text-muted-foreground">
                 {data.grants.length === 0
