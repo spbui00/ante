@@ -10,33 +10,121 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedClinicalRouteImport } from './routes/_authenticated/clinical'
+import { Route as AuthenticatedPassportRouteImport } from './routes/_authenticated/passport'
+import { Route as AuthenticatedSurveillanceRouteImport } from './routes/_authenticated/surveillance'
+import { Route as ApiIntakeRouteImport } from './routes/api/intake'
+import { Route as ApiProcessVisitRouteImport } from './routes/api/process-visit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedClinicalRoute = AuthenticatedClinicalRouteImport.update({
+  id: '/clinical',
+  path: '/clinical',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPassportRoute = AuthenticatedPassportRouteImport.update({
+  id: '/passport',
+  path: '/passport',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSurveillanceRoute =
+  AuthenticatedSurveillanceRouteImport.update({
+    id: '/surveillance',
+    path: '/surveillance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiIntakeRoute = ApiIntakeRouteImport.update({
+  id: '/api/intake',
+  path: '/api/intake',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProcessVisitRoute = ApiProcessVisitRouteImport.update({
+  id: '/api/process-visit',
+  path: '/api/process-visit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/clinical': typeof AuthenticatedClinicalRoute
+  '/passport': typeof AuthenticatedPassportRoute
+  '/surveillance': typeof AuthenticatedSurveillanceRoute
+  '/api/intake': typeof ApiIntakeRoute
+  '/api/process-visit': typeof ApiProcessVisitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/clinical': typeof AuthenticatedClinicalRoute
+  '/passport': typeof AuthenticatedPassportRoute
+  '/surveillance': typeof AuthenticatedSurveillanceRoute
+  '/api/intake': typeof ApiIntakeRoute
+  '/api/process-visit': typeof ApiProcessVisitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/clinical': typeof AuthenticatedClinicalRoute
+  '/_authenticated/passport': typeof AuthenticatedPassportRoute
+  '/_authenticated/surveillance': typeof AuthenticatedSurveillanceRoute
+  '/api/intake': typeof ApiIntakeRoute
+  '/api/process-visit': typeof ApiProcessVisitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/clinical'
+    | '/passport'
+    | '/surveillance'
+    | '/api/intake'
+    | '/api/process-visit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/clinical'
+    | '/passport'
+    | '/surveillance'
+    | '/api/intake'
+    | '/api/process-visit'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/clinical'
+    | '/_authenticated/passport'
+    | '/_authenticated/surveillance'
+    | '/api/intake'
+    | '/api/process-visit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  ApiIntakeRoute: typeof ApiIntakeRoute
+  ApiProcessVisitRoute: typeof ApiProcessVisitRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +136,79 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/clinical': {
+      id: '/_authenticated/clinical'
+      path: '/clinical'
+      fullPath: '/clinical'
+      preLoaderRoute: typeof AuthenticatedClinicalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/passport': {
+      id: '/_authenticated/passport'
+      path: '/passport'
+      fullPath: '/passport'
+      preLoaderRoute: typeof AuthenticatedPassportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/surveillance': {
+      id: '/_authenticated/surveillance'
+      path: '/surveillance'
+      fullPath: '/surveillance'
+      preLoaderRoute: typeof AuthenticatedSurveillanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/intake': {
+      id: '/api/intake'
+      path: '/api/intake'
+      fullPath: '/api/intake'
+      preLoaderRoute: typeof ApiIntakeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/process-visit': {
+      id: '/api/process-visit'
+      path: '/api/process-visit'
+      fullPath: '/api/process-visit'
+      preLoaderRoute: typeof ApiProcessVisitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedClinicalRoute: typeof AuthenticatedClinicalRoute
+  AuthenticatedPassportRoute: typeof AuthenticatedPassportRoute
+  AuthenticatedSurveillanceRoute: typeof AuthenticatedSurveillanceRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedClinicalRoute: AuthenticatedClinicalRoute,
+  AuthenticatedPassportRoute: AuthenticatedPassportRoute,
+  AuthenticatedSurveillanceRoute: AuthenticatedSurveillanceRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  ApiIntakeRoute: ApiIntakeRoute,
+  ApiProcessVisitRoute: ApiProcessVisitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,0 +1,65 @@
+/** Client-safe clinical helpers shared by UI and server functions. */
+
+export const AGE_BRACKETS = ["0-9", "10-19", "20-39", "40-59", "60-79", "80+"] as const;
+
+export function ageBracketFromDob(dob: string | null | undefined): string {
+  if (!dob) return "unknown";
+  const birth = new Date(dob);
+  const age = Math.floor((Date.now() - birth.getTime()) / (365.25 * 24 * 3600 * 1000));
+  if (age < 10) return "0-9";
+  if (age < 20) return "10-19";
+  if (age < 40) return "20-39";
+  if (age < 60) return "40-59";
+  if (age < 80) return "60-79";
+  return "80+";
+}
+
+export function symptomDurationCategory(days: number | null | undefined): string {
+  if (days == null) return "unknown";
+  if (days < 3) return "<3 days";
+  if (days <= 7) return "3-7 days";
+  if (days <= 28) return "1-4 weeks";
+  return ">1 month";
+}
+
+export const URGENCY_LABEL: Record<string, string> = {
+  LOW: "Low",
+  MEDIUM: "Medium",
+  HIGH_RED_FLAG: "Red flag",
+};
+
+export const DISPOSITION_LABEL: Record<string, string> = {
+  HOME_CARE: "Home care",
+  PRESCRIPTION: "Prescription",
+  ER_REFERRAL: "ER referral",
+};
+
+export const ENCOUNTER_TYPE_LABEL: Record<string, string> = {
+  NEW_ISSUE: "New issue",
+  FOLLOW_UP: "Follow-up",
+  CHRONIC_FLARE_UP: "Chronic flare-up",
+};
+
+export function maskCpr(cpr: string | null | undefined): string {
+  if (!cpr) return "—";
+  return `${cpr.slice(0, 6)}-••••`;
+}
+
+export function formatDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
