@@ -66,8 +66,13 @@ function SettingsPage() {
   const [gender, setGender] = useState(data.patient?.gender ?? "");
   const [postalCode, setPostalCode] = useState(data.patient?.postal_code ?? "");
   const [primaryLanguage, setPrimaryLanguage] = useState(data.patient?.primary_language ?? "da");
-  const [firstName, setFirstName] = useState(data.practitioner?.first_name ?? "");
-  const [lastName, setLastName] = useState(data.practitioner?.last_name ?? "");
+  const [firstName, setFirstName] = useState(
+    data.practitioner?.first_name ?? data.patient?.first_name ?? "",
+  );
+  const [lastName, setLastName] = useState(
+    data.practitioner?.last_name ?? data.patient?.last_name ?? "",
+  );
+  const [phoneNumber, setPhoneNumber] = useState(data.patient?.phone_number ?? "");
   const [practitionerRole, setPractitionerRole] = useState<PractitionerRoleValue>(
     (data.practitioner?.role as PractitionerRoleValue) ?? "DOCTOR",
   );
@@ -78,7 +83,7 @@ function SettingsPage() {
     mutationFn: () =>
       updateMySettings({
         data: {
-          fullName: data.practitioner ? `${firstName} ${lastName}`.trim() || fullName : fullName,
+          fullName: `${firstName} ${lastName}`.trim() || fullName,
           dateOfBirth,
           gender,
           postalCode,
@@ -88,6 +93,7 @@ function SettingsPage() {
           practitionerRole,
           specialization,
           licenseNumber,
+          phoneNumber,
         },
       }),
     onSuccess: async () => {
@@ -170,14 +176,46 @@ function SettingsPage() {
                 </div>
               </>
             ) : (
-              <div className="grid gap-2">
-                <Label htmlFor="fullName">Full name</Label>
-                <Input
-                  id="fullName"
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                />
-              </div>
+              <>
+                <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="firstName">First name</Label>
+                    <Input
+                      id="firstName"
+                      value={firstName}
+                      onChange={(event) => setFirstName(event.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="lastName">Last name</Label>
+                    <Input
+                      id="lastName"
+                      value={lastName}
+                      onChange={(event) => setLastName(event.target.value)}
+                    />
+                  </div>
+                </div>
+                {data.patient ? (
+                  <div className="grid gap-2">
+                    <Label htmlFor="phone">Phone number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phoneNumber ?? ""}
+                      onChange={(event) => setPhoneNumber(event.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <div className="grid gap-2">
+                    <Label htmlFor="fullName">Full name</Label>
+                    <Input
+                      id="fullName"
+                      value={fullName}
+                      onChange={(event) => setFullName(event.target.value)}
+                    />
+                  </div>
+                )}
+              </>
             )}
 
             {data.patient ? (

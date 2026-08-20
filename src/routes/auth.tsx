@@ -62,6 +62,7 @@ function AuthPage() {
   const [practitionerRole, setPractitionerRole] = useState<PractitionerRoleValue>("DOCTOR");
   const [specialization, setSpecialization] = useState<string>("General practice");
   const [authorisationId, setAuthorisationId] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [role, setRole] = useState<AnteRole | null>(null);
 
   useEffect(() => {
@@ -89,13 +90,13 @@ function AuthPage() {
     if (!role) return;
     setBusy(true);
     try {
-      if (role === "PRACTITIONER") {
+      if (role !== "ANALYST") {
         if (!firstName.trim() || !lastName.trim()) {
           throw new Error("Enter your first and last name.");
         }
-        if (!AUTH_ID_PATTERN.test(authorisationId.trim())) {
-          throw new Error("AutorisationsID must look like 00000-00000.");
-        }
+      }
+      if (role === "PRACTITIONER" && !AUTH_ID_PATTERN.test(authorisationId.trim())) {
+        throw new Error("AutorisationsID must look like 00000-00000.");
       }
 
       const { error } = await supabase.auth.signUp({
@@ -127,6 +128,13 @@ function AuthPage() {
                 specialization,
               }
             : {}),
+          ...(role === "PATIENT"
+            ? {
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                phoneNumber: phoneNumber.trim(),
+              }
+            : {}),
         },
       });
       toast.success(
@@ -141,9 +149,7 @@ function AuthPage() {
   }
 
   function signupName() {
-    return role === "PRACTITIONER"
-      ? `${firstName.trim()} ${lastName.trim()}`.trim()
-      : fullName;
+    return role === "ANALYST" ? fullName : `${firstName.trim()} ${lastName.trim()}`.trim();
   }
 
   async function handleCheckLicense() {
@@ -172,6 +178,7 @@ function AuthPage() {
           authorisationId: authorisationId.trim(),
           firstName: firstName.trim(),
           lastName: lastName.trim(),
+          phoneNumber: phoneNumber.trim(),
           practitionerRole,
           specialization,
         }),
@@ -310,6 +317,30 @@ function AuthPage() {
                             </Select>
                           </div>
                         </>
+                      ) : role === "PATIENT" ? (
+                        <>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <Field
+                              id="firstName"
+                              label="First name"
+                              value={firstName}
+                              onChange={setFirstName}
+                            />
+                            <Field
+                              id="lastName"
+                              label="Last name"
+                              value={lastName}
+                              onChange={setLastName}
+                            />
+                          </div>
+                          <Field
+                            id="phone"
+                            label="Phone number"
+                            type="tel"
+                            value={phoneNumber}
+                            onChange={setPhoneNumber}
+                          />
+                        </>
                       ) : (
                         <Field id="name" label="Full name" value={fullName} onChange={setFullName} />
                       )}
@@ -422,6 +453,7 @@ async function finishPendingOnboarding() {
       authorisationId?: string;
       firstName?: string;
       lastName?: string;
+      phoneNumber?: string;
       practitionerRole?: "DOCTOR" | "NURSE";
       specialization?: string;
     };
@@ -436,6 +468,7 @@ async function finishPendingOnboarding() {
         ...(pending.authorisationId ? { authorisationId: pending.authorisationId } : {}),
         ...(pending.firstName ? { firstName: pending.firstName } : {}),
         ...(pending.lastName ? { lastName: pending.lastName } : {}),
+        ...(pending.phoneNumber ? { phoneNumber: pending.phoneNumber } : {}),
         ...(pending.practitionerRole ? { practitionerRole: pending.practitionerRole } : {}),
         ...(pending.specialization ? { specialization: pending.specialization } : {}),
       },
