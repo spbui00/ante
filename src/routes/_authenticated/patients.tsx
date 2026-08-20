@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Search, Users } from "lucide-react";
 
 import { AppShell } from "@/components/ante/app-shell";
+import { RichTextInline } from "@/components/ante/rich-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -263,8 +264,10 @@ function Group({
 function Line({ primary, secondary }: { primary: string; secondary?: string | undefined }) {
   return (
     <div className="border-b border-border py-2 last:border-0">
-      <p className="text-sm font-medium text-foreground">{primary}</p>
-      {secondary ? <p className="text-xs text-muted-foreground">{secondary}</p> : null}
+      <RichTextInline className="text-sm font-medium text-foreground" text={primary} />
+      {secondary ? (
+        <RichTextInline className="text-xs text-muted-foreground" text={secondary} />
+      ) : null}
     </div>
   );
 }
