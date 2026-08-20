@@ -14,6 +14,7 @@ import {
   Wand2,
   X,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
