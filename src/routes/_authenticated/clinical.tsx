@@ -548,10 +548,17 @@ function ClinicalPage() {
                   <Sparkles className="size-4" />
                   AI visit summary
                 </CardTitle>
-                <Button variant="outline" size="sm" onClick={() => setGlassOpen(true)}>
-                  <ShieldAlert className="size-4" />
-                  Break glass
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={() => setRecorderOpen(true)}>
+                    <Mic className="size-4" />
+                    Start recording
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setGlassOpen(true)}>
+                    <ShieldAlert className="size-4" />
+                    Break glass
+                  </Button>
+                </div>
+
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-3">
