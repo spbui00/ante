@@ -418,7 +418,6 @@ export type Database = {
           family_medical_history_icd_codes: Json
           first_name: string | null
           full_name: string
-          gender: string | null
           gender_identity:
             | Database["public"]["Enums"]["gender_identity_enum"]
             | null
@@ -450,7 +449,6 @@ export type Database = {
           family_medical_history_icd_codes?: Json
           first_name?: string | null
           full_name: string
-          gender?: string | null
           gender_identity?:
             | Database["public"]["Enums"]["gender_identity_enum"]
             | null
@@ -482,7 +480,6 @@ export type Database = {
           family_medical_history_icd_codes?: Json
           first_name?: string | null
           full_name?: string
-          gender?: string | null
           gender_identity?:
             | Database["public"]["Enums"]["gender_identity_enum"]
             | null
