@@ -411,7 +411,7 @@ function DetailSection({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
       <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</h4>
-      <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{value}</p>
+      <RichText text={value} />
     </div>
   );
 }
