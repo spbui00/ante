@@ -465,31 +465,68 @@ function ClinicalPage() {
         )}
       </div>
 
-      <Dialog open={glassOpen} onOpenChange={setGlassOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Emergency access</DialogTitle>
-            <DialogDescription>
-              Break-glass access is logged against your licence and expires after 24 hours. A
-              justification of at least 20 characters is mandatory.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            rows={4}
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Clinical reason for overriding consent…"
-          />
-          <Button
-            variant="destructive"
-            onClick={() => emergency.mutate()}
-            disabled={emergency.isPending}
-          >
-            Confirm emergency access
-          </Button>
-        </DialogContent>
-      </Dialog>
+      <Drawer open={glassOpen} onOpenChange={setGlassOpen}>
+        <DrawerContent>
+          <div className="mx-auto w-full max-w-lg">
+            <DrawerHeader>
+              <DrawerTitle>Emergency access</DrawerTitle>
+              <DrawerDescription>
+                Break-glass access is logged against your licence and expires after 24 hours. A
+                justification of at least 20 characters is mandatory.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4">
+              <Textarea
+                rows={4}
+                value={justification}
+                onChange={(e) => setJustification(e.target.value)}
+                placeholder="Clinical reason for overriding consent…"
+              />
+            </div>
+            <DrawerFooter className="flex-row justify-end gap-2">
+              <DrawerClose asChild>
+                <Button variant="ghost">Cancel</Button>
+              </DrawerClose>
+              <Button
+                variant="destructive"
+                onClick={() => emergency.mutate()}
+                disabled={emergency.isPending}
+              >
+                Confirm emergency access
+              </Button>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </AppShell>
+  );
+}
+
+function Picker({
+  value,
+  onChange,
+  placeholder,
+  options,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  options: [string, string][];
+}) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={ANY}>{placeholder}</SelectItem>
+        {options.map(([val, label]) => (
+          <SelectItem key={val} value={val}>
+            {label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -505,3 +542,4 @@ function Block({ label, value }: { label: string; value: string | null | undefin
     </div>
   );
 }
+
