@@ -188,7 +188,7 @@ export const signOffConsultation = createServerFn({ method: "POST" })
       supabase.from("profiles").select("practitioner_id").eq("id", userId).maybeSingle(),
       supabase
         .from("visit")
-        .select("id, patient_id, practitioner_id, intake_transcript")
+        .select("id, patient_id, practitioner_id, visit_transcript")
         .eq("id", data.visitId)
         .maybeSingle(),
     ]);
