@@ -347,80 +347,17 @@ function VisitsPage() {
         ))}
       </div>
 
-      <Drawer open={detailOpen} onOpenChange={setDetailOpen}>
-        <DrawerContent className="max-h-[85vh]">
-          <div className="mx-auto w-full max-w-2xl">
-            <DrawerHeader>
-              <DrawerTitle>Visit details</DrawerTitle>
-              <DrawerDescription>
-                {selectedVisit ? formatDate(selectedVisit.visit_date) : "—"}
-              </DrawerDescription>
-            </DrawerHeader>
+      <VisitDetailDrawer
+        visit={selectedVisit}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onEdit={() => {
+          setDetailOpen(false);
+          setEditOpen(true);
+        }}
+        onDelete={() => selectedVisit && setPendingDelete(selectedVisit)}
+      />
 
-            {selectedVisit ? (
-              <div className="space-y-6 overflow-y-auto px-4 pb-6">
-                <div className="flex flex-wrap items-center gap-2">
-                  {selectedVisit.encounter_type ? (
-                    <Badge variant="outline">{ENCOUNTER_TYPE_LABEL[selectedVisit.encounter_type] ?? selectedVisit.encounter_type}</Badge>
-                  ) : null}
-                  <UrgencyBadge level={selectedVisit.urgency_level} />
-                  {selectedVisit.status ? (
-                    <Badge variant="secondary">{STATUS_LABEL[selectedVisit.status] ?? selectedVisit.status}</Badge>
-                  ) : null}
-                  <DispositionBadge value={selectedVisit.disposition} />
-                </div>
-
-                <DetailSection
-                  label="Clinician"
-                  value={(() => {
-                    const p = selectedVisit.practitioner;
-                    if (!p?.full_name) return "—";
-                    return [
-                      [p.title, p.full_name].filter(Boolean).join(" "),
-                      p.specialization,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ");
-                  })()}
-                />
-
-                <DetailSection label="Symptoms" value={selectedVisit.symptoms ?? "No symptoms recorded."} />
-                <DetailSection label="Conclusion" value={selectedVisit.conclusion ?? "No conclusion recorded."} />
-                <DetailSection label="Recommendation" value={selectedVisit.recommendation ?? "No recommendation recorded."} />
-              </div>
-            ) : (
-              <div className="px-4 py-8 text-center text-sm text-muted-foreground">Select a visit to view details.</div>
-            )}
-
-            <DrawerFooter className="flex-row justify-end">
-              {canEdit && selectedVisit ? (
-                <Button
-                  variant="ghost"
-                  className="mr-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => setPendingDelete(selectedVisit)}
-                >
-                  <Trash2 className="size-4" />
-                  Delete
-                </Button>
-              ) : null}
-              {canEdit ? (
-                <Button
-                  onClick={() => {
-                    setDetailOpen(false);
-                    setEditOpen(true);
-                  }}
-                >
-                  <Pencil className="size-4" />
-                  Edit intake
-                </Button>
-              ) : null}
-              <DrawerClose asChild>
-                <Button variant="outline">Close</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </div>
-        </DrawerContent>
-      </Drawer>
 
       {selectedVisit && selectedVisit.status === "SCHEDULED" ? (
         <VoiceIntakeModal
