@@ -120,8 +120,20 @@ function ConsultationPage() {
       void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
       void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
     },
-    onError: () => toast.error("Could not save the consultation"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : "Could not save the consultation",
+      ),
   });
+
+  const recordCount = clinicalItems?.records?.length ?? 0;
+  const missing: string[] = [];
+  if (!conclusion.trim()) missing.push("a conclusion");
+  if (!recommendation.trim()) missing.push("a recommendation");
+  if (recordCount === 0) missing.push("at least one clinical record");
+
 
   const patientName = visit?.patient?.full_name ?? "Patient";
 
