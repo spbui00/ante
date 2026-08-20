@@ -131,7 +131,7 @@ function ToolbarButton({
 }: {
   label: string;
   onClick: () => void;
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   children: React.ReactNode;
 }) {
   return (
