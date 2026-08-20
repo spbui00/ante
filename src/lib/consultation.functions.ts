@@ -212,10 +212,8 @@ export const signOffConsultation = createServerFn({ method: "POST" })
 
 
     const transcript = data.transcript
-      ? [visit.intake_transcript, `--- Consultation ---\n${data.transcript}`]
-          .filter(Boolean)
-          .join("\n\n")
-      : visit.intake_transcript;
+      ? [visit.visit_transcript, data.transcript].filter(Boolean).join("\n\n")
+      : visit.visit_transcript;
 
     const { error: visitError } = await supabase
       .from("visit")
