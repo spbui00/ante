@@ -22,6 +22,7 @@ import { AppShell } from "@/components/ante/app-shell";
 
 import { UrgencyBadge } from "@/components/ante/badges";
 import { RichText, RichTextInline } from "@/components/ante/rich-text";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -504,7 +505,14 @@ function ClinicalPage() {
                   {selected.status === "COMPLETED" ? "Past visit" : "Active intake"}
                 </CardTitle>
                 {selected.status === "COMPLETED" ? (
-                  <Badge variant="secondary">Completed</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">Completed</Badge>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to="/consultation/$visitId" params={{ visitId: selected.id }}>
+                        View visit
+                      </Link>
+                    </Button>
+                  </div>
                 ) : (
                   <Button size="sm" asChild>
                     <Link
