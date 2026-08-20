@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -11,7 +11,7 @@ import {
   Pin,
   PinOff,
   Search,
-  Sparkles,
+  Stethoscope,
   Wand2,
   X,
 } from "lucide-react";
