@@ -40,6 +40,10 @@ type IntakeResult = {
   source?: string;
   summary: string;
   symptoms: string[];
+  symptomDetail?: string;
+  pertinentNegatives?: string[];
+  symptomDurationDays?: number | null;
+  travelHistory?: string[];
   symptomCodes: { code: string; label: string }[];
   urgencyLevel: string;
   recommendation: string;
@@ -199,12 +203,23 @@ export function VoiceIntakeModal({
       await savePreIntake({
         data: {
           transcript: conversationText,
-          symptoms: result.symptoms.join(", ") || result.summary,
+          symptoms:
+            [
+              result.symptomDetail?.trim() ||
+                result.symptoms.join(", ") ||
+                result.summary,
+              result.pertinentNegatives?.length
+                ? `Denies: ${result.pertinentNegatives.join(", ")}.`
+                : "",
+            ]
+              .filter(Boolean)
+              .join("\n\n") || result.summary,
           symptomIcdCodes: result.symptomCodes.map((c) => c.code),
           urgencyLevel:
             (result.urgencyLevel as "LOW" | "MEDIUM" | "HIGH_RED_FLAG") ?? "LOW",
           recommendation: "",
-          travelHistory: [],
+          travelHistory: result.travelHistory ?? [],
+          symptomDurationDays: result.symptomDurationDays ?? null,
         },
       });
       toast.success("Pre-intake sent — your clinician will see it at check-in");
@@ -373,8 +388,15 @@ export function VoiceIntakeModal({
                   <UrgencyBadge level={result.urgencyLevel} />
                 </div>
                 <p className="text-muted-foreground">{result.summary}</p>
-                {result.symptoms.length ? (
+                {result.symptomDetail ? (
+                  <p className="mt-3 text-foreground">{result.symptomDetail}</p>
+                ) : result.symptoms.length ? (
                   <p className="mt-3 text-foreground">{result.symptoms.join(", ")}</p>
+                ) : null}
+                {result.pertinentNegatives?.length ? (
+                  <p className="mt-2 text-muted-foreground">
+                    Denies: {result.pertinentNegatives.join(", ")}.
+                  </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-1">
                   {result.symptomCodes.map((c) => (
