@@ -3,6 +3,8 @@ import { Pencil, Trash2 } from "lucide-react";
 import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
 import { RichText } from "@/components/ante/rich-text";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
+import { VisitTranscript } from "@/components/ante/visit-transcript";
+
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,8 @@ export type VisitDetail = {
   urgency_level?: string | null;
   disposition?: string | null;
   symptoms?: string | null;
+  intake_transcript?: string | null;
+
   conclusion?: string | null;
   recommendation?: string | null;
   arrived_at?: string | null;
@@ -116,9 +120,12 @@ export function VisitDetailDrawer({
                 value={visit.recommendation ?? "No recommendation recorded."}
               />
 
+              <VisitTranscript transcript={visit.intake_transcript} />
+
               <div className="border-t border-border pt-4">
                 <VisitClinicalItems visitId={visit.id} />
               </div>
+
             </div>
           ) : (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">

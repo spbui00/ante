@@ -10,6 +10,8 @@ import { PatientPassportPanel } from "@/components/ante/patient-passport-panel";
 import { RichText } from "@/components/ante/rich-text";
 import { UrgencyBadge } from "@/components/ante/badges";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
+import { VisitTranscript } from "@/components/ante/visit-transcript";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -77,6 +79,8 @@ function ConsultationPage() {
         visit_date: string;
         status?: string | null;
         symptoms?: string | null;
+        intake_transcript?: string | null;
+
         conclusion?: string | null;
         recommendation?: string | null;
         urgency_level?: string | null;
@@ -269,6 +273,16 @@ function ConsultationPage() {
                 <VisitClinicalItems visitId={visitId} />
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Transcript</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VisitTranscript transcript={visit.intake_transcript} />
+              </CardContent>
+            </Card>
+
           </div>
         </div>
       )}
