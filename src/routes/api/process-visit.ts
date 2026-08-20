@@ -86,7 +86,7 @@ export const Route = createFileRoute("/api/process-visit")({
         // --- Write 2: de-identified population row ---------------------
         const { data: patient } = await supabase
           .from("patient")
-          .select("date_of_birth, gender, postal_code, industry")
+          .select("date_of_birth, sex, postal_code, industry")
           .eq("id", input.patientId)
           .maybeSingle();
 
@@ -94,7 +94,7 @@ export const Route = createFileRoute("/api/process-visit")({
           encounter_date: visit.visit_date ?? new Date().toISOString(),
           postal_code: patient?.postal_code ?? null,
           age_bracket: ageBracketFromDob(patient?.date_of_birth),
-          gender: patient?.gender ?? null,
+          gender: patient?.sex ?? null,
           industry: patient?.industry ?? null,
           primary_icd_10: input.primaryIcd10 ?? null,
           symptom_icd_codes: input.symptomIcdCodes,

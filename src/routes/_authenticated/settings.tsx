@@ -59,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
       { title: "Account Settings — Ante" },
       {
         name: "description",
-        content: "Update the name, date of birth, gender and postal code on your Ante account.",
+        content: "Update the name, date of birth, sex and postal code on your Ante account.",
       },
       { property: "og:title", content: "Account Settings — Ante" },
       { property: "og:description", content: "Manage your Ante profile details." },
@@ -89,7 +89,6 @@ function SettingsPage() {
     data.patient?.full_name ?? data.profile?.full_name ?? "",
   );
   const [dateOfBirth, setDateOfBirth] = useState(data.patient?.date_of_birth ?? "");
-  const [gender, setGender] = useState(data.patient?.gender ?? "");
   const [postalCode, setPostalCode] = useState(data.patient?.postal_code ?? "");
   const [primaryLanguage, setPrimaryLanguage] = useState(data.patient?.primary_language ?? "da");
   const [firstName, setFirstName] = useState(
@@ -130,7 +129,6 @@ function SettingsPage() {
         data: {
           fullName: `${firstName} ${lastName}`.trim() || fullName,
           dateOfBirth,
-          gender,
           postalCode,
           primaryLanguage,
           firstName,
@@ -440,14 +438,6 @@ function SettingsPage() {
                       id="postal"
                       value={postalCode ?? ""}
                       onChange={(event) => setPostalCode(event.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="gender">Gender (legacy free text)</Label>
-                    <Input
-                      id="gender"
-                      value={gender ?? ""}
-                      onChange={(event) => setGender(event.target.value)}
                     />
                   </div>
                 </div>
