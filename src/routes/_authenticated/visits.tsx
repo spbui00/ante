@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { CalendarDays, Filter, Search, X } from "lucide-react";
+import { CalendarDays, Filter, Pencil, Search, X } from "lucide-react";
 
 import { AppShell } from "@/components/ante/app-shell";
 import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { RichText } from "@/components/ante/rich-text";
 import { VisitCard } from "@/components/ante/visit-card";
+import { VoiceIntakeModal } from "@/components/ante/voice-intake-modal";
 import { getMyVisitHistory } from "@/lib/ante.functions";
 import { DISPOSITION_LABEL, ENCOUNTER_TYPE_LABEL, URGENCY_LABEL, formatDate } from "@/lib/clinical-utils";
 
@@ -107,6 +108,9 @@ function VisitsPage() {
   const [open, setOpen] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<VisitItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const canEdit = selectedVisit?.status === "SCHEDULED";
 
   const doctors = useMemo(() => {
     const map = new Map<string, string>();
@@ -359,6 +363,17 @@ function VisitsPage() {
             )}
 
             <DrawerFooter className="flex-row justify-end">
+              {canEdit ? (
+                <Button
+                  onClick={() => {
+                    setDetailOpen(false);
+                    setEditOpen(true);
+                  }}
+                >
+                  <Pencil className="size-4" />
+                  Edit intake
+                </Button>
+              ) : null}
               <DrawerClose asChild>
                 <Button variant="outline">Close</Button>
               </DrawerClose>
@@ -366,6 +381,19 @@ function VisitsPage() {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {selectedVisit && selectedVisit.status === "SCHEDULED" ? (
+        <VoiceIntakeModal
+          key={selectedVisit.id}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          visit={selectedVisit as never}
+          onSaved={() => {
+            void queryClient.invalidateQueries({ queryKey: ["my-visit-history"] });
+            void queryClient.invalidateQueries({ queryKey: ["my-passport"] });
+          }}
+        />
+      ) : null}
     </AppShell>
   );
 }
