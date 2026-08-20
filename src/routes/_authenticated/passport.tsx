@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Activity, AlertTriangle, Mic, Pill, Stethoscope } from "lucide-react";
 
 import { AppShell } from "@/components/ante/app-shell";
-import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
+import { VisitCard, type VisitCardData } from "@/components/ante/visit-card";
 import { VoiceIntakeModal } from "@/components/ante/voice-intake-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
