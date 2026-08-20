@@ -54,32 +54,20 @@ export const getVisitClinicalItems = createServerFn({ method: "GET" })
     };
   });
 
-async function assertOwnership(
-  supabase: { from: (t: string) => never } | never,
-  visitId: string,
-): Promise<string> {
-  const client = supabase as unknown as {
-    from: (t: string) => {
-      select: (s: string) => {
-        eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: unknown }> };
-      };
-    };
-    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }>;
-  };
-
-  const { data: visit } = (await client
-    .from("visit")
-    .select("id, patient_id, practitioner_id")
-    .eq("id", visitId)
-    .maybeSingle()) as { data: { patient_id: string; practitioner_id: string | null } | null };
+async function assertOwnership(supabase: Sb, userId: string, visitId: string): Promise<string> {
+  const [{ data: profile }, { data: visit }] = await Promise.all([
+    supabase.from("profiles").select("practitioner_id").eq("id", userId).maybeSingle(),
+    supabase.from("visit").select("patient_id, practitioner_id").eq("id", visitId).maybeSingle(),
+  ]);
 
   if (!visit) throw new Error("Visit not found");
-
-  const { data: owns } = await client.rpc("owns_visit", { _visit_id: visitId });
-  if (!owns) throw new Error("Only the clinician who ran this visit can edit its records");
+  if (!profile?.practitioner_id || visit.practitioner_id !== profile.practitioner_id) {
+    throw new Error("Only the clinician who ran this visit can edit its records");
+  }
 
   return visit.patient_id;
 }
+
 
 export const saveVisitObservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
