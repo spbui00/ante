@@ -214,7 +214,66 @@ function ClinicalPage() {
     setRecommendation(v.recommendation ?? "");
     setDisposition(v.disposition ?? "HOME_CARE");
     setUrgency(v.urgency_level ?? "LOW");
+    if (v.status === "IN_PROGRESS" && !v.taken_in_at) {
+      takeIn({ data: { visitId: v.id } }).catch(() => undefined);
+    }
   }
+
+  const takeIn = useServerFn(markVisitTakenIn);
+  const persistOrder = useServerFn(saveQueueOrder);
+  const runTriage = useServerFn(prioritizeQueue);
+
+  function persist(nextOrder: string[], nextPinned: string[]) {
+    persistOrder({
+      data: {
+        items: nextOrder.map((visitId, index) => ({
+          visitId,
+          position: index,
+          pinned: nextPinned.includes(visitId),
+        })),
+      },
+    }).catch(() => toast.error("Could not save the queue order"));
+  }
+
+  function currentOrder() {
+    const ids = visits.map((v) => v.id);
+    for (const id of order) if (!ids.includes(id)) ids.push(id);
+    return ids;
+  }
+
+  function togglePin(visitId: string) {
+    const next = pinnedIds.includes(visitId)
+      ? pinnedIds.filter((id) => id !== visitId)
+      : [...pinnedIds, visitId];
+    setPinnedIds(next);
+    const ids = currentOrder();
+    setOrder(ids);
+    persist(ids, next);
+  }
+
+  function dropOn(targetId: string) {
+    if (!dragId || dragId === targetId) return;
+    const ids = currentOrder().filter((id) => id !== dragId);
+    const at = ids.indexOf(targetId);
+    ids.splice(at < 0 ? ids.length : at, 0, dragId);
+    setOrder(ids);
+    setDragId(null);
+    persist(ids, pinnedIds);
+  }
+
+  const triage = useMutation({
+    mutationFn: async () => runTriage({ data: undefined }),
+    onSuccess: (res) => {
+      toast.success(
+        res?.source === "agent"
+          ? "Queue prioritised by the triage agent"
+          : "Queue prioritised by urgency and waiting time",
+      );
+      queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
+    },
+    onError: () => toast.error("Could not prioritise the queue"),
+  });
+
 
   const signOff = useMutation({
     mutationFn: async () => {
