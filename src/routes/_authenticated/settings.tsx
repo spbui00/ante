@@ -15,6 +15,20 @@ import {
   type PractitionerRoleValue,
 } from "@/lib/practitioner-options";
 import {
+  EMPLOYMENT_STATUS_OPTIONS,
+  GENDER_IDENTITY_OPTIONS,
+  INSURANCE_TYPE_OPTIONS,
+  LANGUAGE_OPTIONS,
+  MARITAL_STATUS_OPTIONS,
+  RACE_ETHNICITY_OPTIONS,
+  SEX_OPTIONS,
+  type EmploymentStatusValue,
+  type GenderIdentityValue,
+  type InsuranceTypeValue,
+  type MaritalStatusValue,
+  type SexValue,
+} from "@/lib/demographics-options";
+import {
   Select,
   SelectContent,
   SelectItem,
