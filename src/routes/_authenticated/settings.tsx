@@ -68,7 +68,7 @@ function SettingsPage() {
   });
 
   return (
-    <AppShell title="Settings" subtitle={data.profile?.email ?? undefined}>
+    <AppShell title="Settings" subtitle={data.profile?.email ?? "Manage your account details"}>
       <div className="grid max-w-2xl gap-6">
         <Card>
           <CardHeader>
