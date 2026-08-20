@@ -124,7 +124,23 @@ function ClinicalPage() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const visits = useMemo(() => {
+  const [order, setOrder] = useState<string[]>([]);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [dragId, setDragId] = useState<string | null>(null);
+
+  // Sync local queue state whenever the server queue changes.
+  useEffect(() => {
+    setOrder(data.queue.map((q) => q.visit_id));
+    setPinnedIds(data.queue.filter((q) => q.pinned).map((q) => q.visit_id));
+  }, [data.queue]);
+
+  const rationaleById = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const q of data.queue) if (q.rationale) map[q.visit_id] = q.rationale;
+    return map;
+  }, [data.queue]);
+
+  const filtered = useMemo(() => {
     const q = filters.q.trim().toLowerCase();
     return data.visits.filter((v) => {
       if (filters.activeOnly && v.status === "COMPLETED") return false;
@@ -143,6 +159,19 @@ function ClinicalPage() {
       return true;
     });
   }, [data.visits, filters]);
+
+  const visits = useMemo(() => {
+    const rank = new Map(order.map((id, index) => [id, index]));
+    return [...filtered].sort((a, b) => {
+      const ra = rank.get(a.id);
+      const rb = rank.get(b.id);
+      if (ra !== undefined && rb !== undefined) return ra - rb;
+      if (ra !== undefined) return -1;
+      if (rb !== undefined) return 1;
+      return new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime();
+    });
+  }, [filtered, order]);
+
 
   const activeChips = useMemo(() => {
     const chips: { key: keyof Filters; label: string }[] = [];
