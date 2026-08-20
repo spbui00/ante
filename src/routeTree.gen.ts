@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedClinicalRouteImport } from './routes/_authenticated/clinical'
 import { Route as AuthenticatedPassportRouteImport } from './routes/_authenticated/passport'
+import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticated/patients'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSurveillanceRouteImport } from './routes/_authenticated/surveillance'
 import { Route as AuthenticatedVisitsRouteImport } from './routes/_authenticated/visits'
@@ -45,6 +46,11 @@ const AuthenticatedClinicalRoute = AuthenticatedClinicalRouteImport.update({
 const AuthenticatedPassportRoute = AuthenticatedPassportRouteImport.update({
   id: '/passport',
   path: '/passport',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPatientsRoute = AuthenticatedPatientsRouteImport.update({
+  id: '/patients',
+  path: '/patients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/clinical': typeof AuthenticatedClinicalRoute
   '/passport': typeof AuthenticatedPassportRoute
+  '/patients': typeof AuthenticatedPatientsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/surveillance': typeof AuthenticatedSurveillanceRoute
   '/visits': typeof AuthenticatedVisitsRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/clinical': typeof AuthenticatedClinicalRoute
   '/passport': typeof AuthenticatedPassportRoute
+  '/patients': typeof AuthenticatedPatientsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/surveillance': typeof AuthenticatedSurveillanceRoute
   '/visits': typeof AuthenticatedVisitsRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/clinical': typeof AuthenticatedClinicalRoute
   '/_authenticated/passport': typeof AuthenticatedPassportRoute
+  '/_authenticated/patients': typeof AuthenticatedPatientsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/surveillance': typeof AuthenticatedSurveillanceRoute
   '/_authenticated/visits': typeof AuthenticatedVisitsRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/clinical'
     | '/passport'
+    | '/patients'
     | '/settings'
     | '/surveillance'
     | '/visits'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/clinical'
     | '/passport'
+    | '/patients'
     | '/settings'
     | '/surveillance'
     | '/visits'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/clinical'
     | '/_authenticated/passport'
+    | '/_authenticated/patients'
     | '/_authenticated/settings'
     | '/_authenticated/surveillance'
     | '/_authenticated/visits'
@@ -225,6 +237,13 @@ declare module '@tanstack/react-router' {
       path: '/passport'
       fullPath: '/passport'
       preLoaderRoute: typeof AuthenticatedPassportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/patients': {
+      id: '/_authenticated/patients'
+      path: '/patients'
+      fullPath: '/patients'
+      preLoaderRoute: typeof AuthenticatedPatientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -289,6 +308,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedClinicalRoute: typeof AuthenticatedClinicalRoute
   AuthenticatedPassportRoute: typeof AuthenticatedPassportRoute
+  AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSurveillanceRoute: typeof AuthenticatedSurveillanceRoute
   AuthenticatedVisitsRoute: typeof AuthenticatedVisitsRoute
@@ -297,6 +317,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClinicalRoute: AuthenticatedClinicalRoute,
   AuthenticatedPassportRoute: AuthenticatedPassportRoute,
+  AuthenticatedPatientsRoute: AuthenticatedPatientsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSurveillanceRoute: AuthenticatedSurveillanceRoute,
   AuthenticatedVisitsRoute: AuthenticatedVisitsRoute,

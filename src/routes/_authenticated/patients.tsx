@@ -259,7 +259,7 @@ function Group({
   );
 }
 
-function Line({ primary, secondary }: { primary: string; secondary?: string }) {
+function Line({ primary, secondary }: { primary: string; secondary?: string | undefined }) {
   return (
     <div className="border-b border-border py-2 last:border-0">
       <p className="text-sm font-medium text-foreground">{primary}</p>
