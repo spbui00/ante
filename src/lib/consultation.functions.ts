@@ -224,7 +224,7 @@ export const signOffConsultation = createServerFn({ method: "POST" })
         disposition: data.disposition,
         status: "COMPLETED",
         completed_at: new Date().toISOString(),
-        intake_transcript: transcript,
+        visit_transcript: transcript,
       })
       .eq("id", data.visitId);
     if (visitError) throw new Error(visitError.message);
