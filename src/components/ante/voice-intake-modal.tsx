@@ -62,6 +62,8 @@ export function VoiceIntakeModal({
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<IntakeResult | null>(null);
   const contextId = useRef<string | null>(null);
+  const autoSendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wasDictatingRef = useRef(false);
 
   const savePreIntake = useServerFn(createPreIntakeVisit);
   const askAgent = useServerFn(sendAgentTurn);
