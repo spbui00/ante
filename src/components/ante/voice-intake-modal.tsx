@@ -52,6 +52,13 @@ type IntakeResult = {
 
 type ChatMessage = { id: string; role: "user" | "assistant"; text: string };
 
+const FINALISING_PHRASES = [
+  "Filling the intake form…",
+  "Structuring your symptoms…",
+  "Matching medical codes…",
+  "Almost there…",
+];
+
 export function VoiceIntakeModal({
   open,
   onOpenChange,
@@ -96,6 +103,20 @@ export function VoiceIntakeModal({
   }
 
   const finishRef = useRef<(() => Promise<void>) | null>(null);
+  const cancelledRef = useRef(false);
+  const [phraseIndex, setPhraseIndex] = useState(0);
+
+  useEffect(() => {
+    if (!analysing) {
+      setPhraseIndex(0);
+      return;
+    }
+    const id = setInterval(
+      () => setPhraseIndex((i) => (i + 1) % FINALISING_PHRASES.length),
+      2200,
+    );
+    return () => clearInterval(id);
+  }, [analysing]);
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -173,6 +194,7 @@ export function VoiceIntakeModal({
       toast.error("Describe your symptoms first");
       return;
     }
+    cancelledRef.current = false;
     setAnalysing(true);
     try {
       const res = await fetch("/api/intake", {
@@ -182,11 +204,12 @@ export function VoiceIntakeModal({
       });
       if (!res.ok) throw new Error("Intake failed");
       const data = (await res.json()) as IntakeResult;
+      if (cancelledRef.current) return;
       setResult(data);
       setConfirmOpen(true);
       if (data.warning) toast.warning("Corti unavailable — showing a basic summary");
     } catch {
-      toast.error("Could not process intake");
+      if (!cancelledRef.current) toast.error("Could not process intake");
     } finally {
       setAnalysing(false);
     }
@@ -234,9 +257,21 @@ export function VoiceIntakeModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[88dvh]">
-        <div className="mx-auto flex h-full max-h-[84dvh] w-full max-w-md flex-col px-4 pb-6">
+    <Drawer
+      open={open}
+      dismissible={!analysing}
+      onOpenChange={(v) => {
+        if (analysing && !v) return;
+        onOpenChange(v);
+      }}
+    >
+      <DrawerContent className="relative max-h-[88dvh]">
+        <div
+          aria-hidden={analysing}
+          className={`mx-auto flex h-full max-h-[84dvh] w-full max-w-md flex-col px-4 pb-6 ${
+            analysing ? "pointer-events-none select-none" : ""
+          }`}
+        >
           <DrawerHeader className="px-0 pb-2 text-left">
             <DrawerTitle className="text-2xl">Tell us what's wrong</DrawerTitle>
             <DrawerDescription>
@@ -358,6 +393,32 @@ export function VoiceIntakeModal({
             </PromptInputFooter>
           </PromptInput>
         </div>
+
+        {analysing ? (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 rounded-[inherit] bg-background/85 px-6 text-center backdrop-blur-sm">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p
+              key={phraseIndex}
+              className="animate-in fade-in text-lg font-medium text-foreground"
+            >
+              {FINALISING_PHRASES[phraseIndex]}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              (please don't close this)
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                cancelledRef.current = true;
+                setAnalysing(false);
+              }}
+            >
+              Cancel intake
+            </Button>
+          </div>
+        ) : null}
       </DrawerContent>
 
       <Drawer open={confirmOpen} onOpenChange={setConfirmOpen}>
