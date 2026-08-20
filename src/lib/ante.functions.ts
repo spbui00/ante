@@ -206,40 +206,31 @@ export const finaliseVisit = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Emergency "break glass" access, always logged with a justification. */
-export const breakGlass = createServerFn({ method: "POST" })
+/** Emergency "break glass" access by CPR, always logged with a justification. */
+export const forceRequestPatientConsent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
-        patientId: z.string().uuid(),
-        justification: z.string().min(20).max(1000),
+        cpr: z.string().trim().min(6).max(15),
+        duration: z.enum(["1 hour", "1 day", "1 week", "1 month", "1 year", "3 years"]),
+        justification: z.string().trim().min(20).max(1000),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("practitioner_id")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (!profile?.practitioner_id) throw new Error("Not a practitioner account");
-
-    const { error } = await supabase.from("consent_grant").insert({
-      patient_id: data.patientId,
-      practitioner_id: profile.practitioner_id,
-      status: "ACTIVE",
-      is_emergency_override: true,
-      justification_notes: data.justification,
-      granted_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    const { data: result, error } = await context.supabase.rpc("break_glass_by_cpr", {
+      _cpr: data.cpr,
+      _justification: data.justification,
+      _duration: CONSENT_DURATIONS[data.duration],
     });
-
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return result as {
+      ok: boolean;
+      reason?: string;
+      id?: string;
+      patient_name?: string;
+    };
   });
 
 /** Anonymised surveillance feed for analysts. */
