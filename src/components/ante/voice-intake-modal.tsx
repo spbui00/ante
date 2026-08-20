@@ -204,11 +204,12 @@ export function VoiceIntakeModal({
       });
       if (!res.ok) throw new Error("Intake failed");
       const data = (await res.json()) as IntakeResult;
+      if (cancelledRef.current) return;
       setResult(data);
       setConfirmOpen(true);
       if (data.warning) toast.warning("Corti unavailable — showing a basic summary");
     } catch {
-      toast.error("Could not process intake");
+      if (!cancelledRef.current) toast.error("Could not process intake");
     } finally {
       setAnalysing(false);
     }
