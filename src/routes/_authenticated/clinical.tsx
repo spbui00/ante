@@ -554,6 +554,18 @@ function ClinicalPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Block label="Arrived" value={formatDateTime(selected.arrived_at)} />
+                  <Block
+                    label="Consultation started"
+                    value={selected.taken_in_at ? formatDateTime(selected.taken_in_at) : null}
+                  />
+                  <Block
+                    label="Completed"
+                    value={selected.completed_at ? formatDateTime(selected.completed_at) : null}
+                  />
+                </div>
+
                 <Block label="Symptoms" value={selected.symptoms} />
 
                 <div className="space-y-2">
