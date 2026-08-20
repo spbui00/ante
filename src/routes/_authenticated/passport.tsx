@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
 import { ConsentRequests } from "@/components/ante/consent-requests";
+import { QueueStatusCard } from "@/components/ante/queue-status-card";
 import { VisitCard, type VisitCardData } from "@/components/ante/visit-card";
 import {
   VisitDetailDrawer,
