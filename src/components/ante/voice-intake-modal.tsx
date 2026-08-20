@@ -61,6 +61,8 @@ export function VoiceIntakeModal({
   const [analysing, setAnalysing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<IntakeResult | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const finishedRef = useRef(false);
   const contextId = useRef<string | null>(null);
   const autoSendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasDictatingRef = useRef(false);
@@ -84,8 +86,12 @@ export function VoiceIntakeModal({
     setMessages([]);
     setInput("");
     setResult(null);
+    setConfirmOpen(false);
+    finishedRef.current = false;
     contextId.current = null;
   }
+
+  const finishRef = useRef<(() => Promise<void>) | null>(null);
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -102,10 +108,16 @@ export function VoiceIntakeModal({
         data: { agentKey: "intake", text: trimmed, contextId: contextId.current },
       });
       contextId.current = res.contextId ?? contextId.current;
+      const done = res.reply.includes("[INTAKE_COMPLETE]");
+      const cleaned = res.reply.replace(/\[INTAKE_COMPLETE\]/g, "").trim();
       setMessages((m) => [
         ...m,
-        { id: crypto.randomUUID(), role: "assistant", text: res.reply },
+        { id: crypto.randomUUID(), role: "assistant", text: cleaned },
       ]);
+      if (done && !finishedRef.current) {
+        finishedRef.current = true;
+        setTimeout(() => void finishRef.current?.(), 400);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The assistant is unavailable");
     } finally {
@@ -148,7 +160,7 @@ export function VoiceIntakeModal({
     .map((m) => `${m.role === "user" ? "Patient" : "Assistant"}: ${m.text}`)
     .join("\n");
 
-  async function analyse() {
+  async function finish() {
     if (!messages.some((m) => m.role === "user")) {
       toast.error("Describe your symptoms first");
       return;
@@ -163,6 +175,7 @@ export function VoiceIntakeModal({
       if (!res.ok) throw new Error("Intake failed");
       const data = (await res.json()) as IntakeResult;
       setResult(data);
+      setConfirmOpen(true);
       if (data.warning) toast.warning("Corti unavailable — showing a basic summary");
     } catch {
       toast.error("Could not process intake");
@@ -170,6 +183,10 @@ export function VoiceIntakeModal({
       setAnalysing(false);
     }
   }
+
+  useEffect(() => {
+    finishRef.current = finish;
+  });
 
   async function sendToClinic() {
     if (!result) return;
@@ -182,11 +199,12 @@ export function VoiceIntakeModal({
           symptomIcdCodes: result.symptomCodes.map((c) => c.code),
           urgencyLevel:
             (result.urgencyLevel as "LOW" | "MEDIUM" | "HIGH_RED_FLAG") ?? "LOW",
-          recommendation: result.recommendation,
+          recommendation: "",
           travelHistory: [],
         },
       });
       toast.success("Pre-intake sent — your clinician will see it at check-in");
+      setConfirmOpen(false);
       onOpenChange(false);
       resetAll();
     } catch (error) {
