@@ -33,7 +33,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { createPreIntakeVisit } from "@/lib/intake.functions";
+import { createPreIntakeVisit, updatePreIntakeVisit } from "@/lib/intake.functions";
 import { sendAgentTurn } from "@/lib/agents/agent.functions";
 
 type IntakeResult = {
@@ -52,6 +52,14 @@ type IntakeResult = {
 
 type ChatMessage = { id: string; role: "user" | "assistant"; text: string };
 
+export type EditableIntakeVisit = {
+  id: string;
+  symptoms?: string | null;
+  urgency_level?: string | null;
+  intake_transcript?: string | null;
+  symptom_icd_codes?: string[] | null;
+};
+
 const FINALISING_PHRASES = [
   "Filling the intake form…",
   "Structuring your symptoms…",
@@ -62,10 +70,16 @@ const FINALISING_PHRASES = [
 export function VoiceIntakeModal({
   open,
   onOpenChange,
+  visit = null,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** When set, the drawer edits this existing SCHEDULED draft instead of creating one. */
+  visit?: EditableIntakeVisit | null;
+  onSaved?: () => void;
 }) {
+  const editing = Boolean(visit);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [thinking, setThinking] = useState(false);
@@ -79,6 +93,7 @@ export function VoiceIntakeModal({
   const wasDictatingRef = useRef(false);
 
   const savePreIntake = useServerFn(createPreIntakeVisit);
+  const updateIntake = useServerFn(updatePreIntakeVisit);
   const askAgent = useServerFn(sendAgentTurn);
 
   const dictation = useCortiDictation({
@@ -129,8 +144,29 @@ export function VoiceIntakeModal({
     setInput("");
     setThinking(true);
     try {
+      const priming =
+        editing && !contextId.current
+          ? [
+              "### EXISTING PRE-INTAKE DRAFT",
+              visit?.symptoms ? `Recorded symptoms:\n${visit.symptoms}` : "",
+              visit?.urgency_level ? `Urgency: ${visit.urgency_level}` : "",
+              visit?.symptom_icd_codes?.length
+                ? `Codes: ${visit.symptom_icd_codes.join(", ")}`
+                : "",
+              visit?.intake_transcript
+                ? `\n### PREVIOUS CONVERSATION TRANSCRIPT\n${visit.intake_transcript}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join("\n")
+          : "";
+
       const res = await askAgent({
-        data: { agentKey: "intake", text: trimmed, contextId: contextId.current },
+        data: {
+          agentKey: editing ? "intake-edit" : "intake",
+          text: priming ? `${priming}\n\n### PATIENT SAYS\n${trimmed}` : trimmed,
+          contextId: contextId.current,
+        },
       });
       contextId.current = res.contextId ?? contextId.current;
       const done = res.reply.includes("[INTAKE_COMPLETE]");
@@ -148,7 +184,7 @@ export function VoiceIntakeModal({
     } finally {
       setThinking(false);
     }
-  }, [thinking, askAgent]);
+  }, [thinking, askAgent, editing, visit]);
 
   useEffect(() => {
     const isDictating = recording || connecting || dictation.status === "stopping";
@@ -185,9 +221,14 @@ export function VoiceIntakeModal({
   const enoughData =
     finishedRef.current || (userTurns >= 3 && (result?.symptoms.length ?? 0) > 0);
 
-  const conversationText = messages
-    .map((m) => `${m.role === "user" ? "Patient" : "Assistant"}: ${m.text}`)
-    .join("\n");
+  const conversationText = [
+    editing && visit?.intake_transcript ? visit.intake_transcript.trim() : "",
+    messages
+      .map((m) => `${m.role === "user" ? "Patient" : "Assistant"}: ${m.text}`)
+      .join("\n"),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   async function finish() {
     if (!messages.some((m) => m.role === "user")) {
@@ -223,8 +264,7 @@ export function VoiceIntakeModal({
     if (!result) return;
     setSaving(true);
     try {
-      await savePreIntake({
-        data: {
+      const payload = {
           transcript: conversationText,
           symptoms:
             [
@@ -240,12 +280,21 @@ export function VoiceIntakeModal({
           symptomIcdCodes: result.symptomCodes.map((c) => c.code),
           urgencyLevel:
             (result.urgencyLevel as "LOW" | "MEDIUM" | "HIGH_RED_FLAG") ?? "LOW",
-          recommendation: "",
           travelHistory: result.travelHistory ?? [],
           symptomDurationDays: result.symptomDurationDays ?? null,
-        },
-      });
-      toast.success("Pre-intake sent — your clinician will see it at check-in");
+      };
+
+      if (editing && visit) {
+        await updateIntake({ data: { ...payload, visitId: visit.id } });
+      } else {
+        await savePreIntake({ data: { ...payload, recommendation: "" } });
+      }
+      onSaved?.();
+      toast.success(
+        editing
+          ? "Pre-intake updated — your clinician will see the latest version"
+          : "Pre-intake sent — your clinician will see it at check-in",
+      );
       setConfirmOpen(false);
       onOpenChange(false);
       resetAll();
@@ -275,9 +324,13 @@ export function VoiceIntakeModal({
           }`}
         >
           <DrawerHeader className="px-0 pb-2 text-left">
-            <DrawerTitle className="text-2xl">Tell us what's wrong</DrawerTitle>
+            <DrawerTitle className="text-2xl">
+              {editing ? "Update your intake" : "Tell us what's wrong"}
+            </DrawerTitle>
             <DrawerDescription>
-              Speak naturally — Ante will ask a few follow-up questions before your visit.
+              {editing
+                ? "Tell Ante what changed — it already knows what you shared before."
+                : "Speak naturally — Ante will ask a few follow-up questions before your visit."}
             </DrawerDescription>
           </DrawerHeader>
 
@@ -429,7 +482,9 @@ export function VoiceIntakeModal({
         <DrawerContent className="max-h-[85dvh]">
           <div className="mx-auto w-full max-w-md overflow-y-auto px-4 pb-6">
             <DrawerHeader className="px-0 text-left">
-              <DrawerTitle className="text-xl">Submit your pre-intake?</DrawerTitle>
+              <DrawerTitle className="text-xl">
+                {editing ? "Update your pre-intake?" : "Submit your pre-intake?"}
+              </DrawerTitle>
               <DrawerDescription>
                 Your clinician will see this at check-in. No treatment advice is recorded —
                 that comes from your doctor at the visit.

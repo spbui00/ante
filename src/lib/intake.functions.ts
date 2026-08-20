@@ -55,3 +55,55 @@ export const createPreIntakeVisit = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, visitId: visit.id };
   });
+
+/**
+ * Patient-driven edit of an existing SCHEDULED (draft) pre-intake visit.
+ * Only the patient's own draft visits can be updated, and only while the
+ * visit has not been picked up by a clinician.
+ */
+export const updatePreIntakeVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        visitId: z.string().uuid(),
+        transcript: z.string().min(3).max(20000),
+        symptoms: z.string().max(4000).default(""),
+        symptomIcdCodes: z.array(z.string().max(16)).max(20).default([]),
+        urgencyLevel: z.enum(["LOW", "MEDIUM", "HIGH_RED_FLAG"]).default("LOW"),
+        travelHistory: z.array(z.string().max(120)).max(10).default([]),
+        symptomDurationDays: z.number().int().min(0).max(3650).nullish(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("patient_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!profile?.patient_id) throw new Error("No patient record linked to this account");
+
+    const { data: visit, error } = await supabase
+      .from("visit")
+      .update({
+        intake_transcript: data.transcript,
+        symptoms: data.symptoms,
+        symptom_icd_codes: data.symptomIcdCodes,
+        urgency_level: data.urgencyLevel,
+        travel_history: data.travelHistory,
+        symptom_duration_days: data.symptomDurationDays ?? null,
+      })
+      .eq("id", data.visitId)
+      .eq("patient_id", profile.patient_id)
+      .eq("status", "SCHEDULED")
+      .select("id")
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!visit) throw new Error("This intake can no longer be edited");
+    return { ok: true, visitId: visit.id };
+  });
