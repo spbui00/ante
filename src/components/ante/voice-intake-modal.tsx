@@ -293,7 +293,7 @@ export function VoiceIntakeModal({
                 </Button>
               </PromptInputTools>
               <PromptInputSubmit
-                status={thinking ? "submitted" : undefined}
+                {...(thinking ? { status: "submitted" as const } : {})}
                 disabled={thinking || !composerValue.trim()}
               />
             </PromptInputFooter>
