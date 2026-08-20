@@ -5,8 +5,8 @@
  */
 
 type SupabaseLike = {
-  from: (table: string) => any;
-  rpc: (fn: string) => Promise<unknown>;
+  from: (table: any) => any;
+  rpc: (fn: any, ...args: any[]) => any;
 };
 
 function line(parts: (string | null | undefined)[]) {
