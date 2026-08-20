@@ -2,6 +2,8 @@ import { Pencil, Trash2 } from "lucide-react";
 
 import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
 import { RichText } from "@/components/ante/rich-text";
+import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
