@@ -188,7 +188,7 @@ export const signOffConsultation = createServerFn({ method: "POST" })
       supabase.from("profiles").select("practitioner_id").eq("id", userId).maybeSingle(),
       supabase
         .from("visit")
-        .select("id, patient_id, practitioner_id, intake_transcript")
+        .select("id, patient_id, practitioner_id, visit_transcript")
         .eq("id", data.visitId)
         .maybeSingle(),
     ]);
@@ -212,10 +212,8 @@ export const signOffConsultation = createServerFn({ method: "POST" })
 
 
     const transcript = data.transcript
-      ? [visit.intake_transcript, `--- Consultation ---\n${data.transcript}`]
-          .filter(Boolean)
-          .join("\n\n")
-      : visit.intake_transcript;
+      ? [visit.visit_transcript, data.transcript].filter(Boolean).join("\n\n")
+      : visit.visit_transcript;
 
     const { error: visitError } = await supabase
       .from("visit")
@@ -226,7 +224,7 @@ export const signOffConsultation = createServerFn({ method: "POST" })
         disposition: data.disposition,
         status: "COMPLETED",
         completed_at: new Date().toISOString(),
-        intake_transcript: transcript,
+        visit_transcript: transcript,
       })
       .eq("id", data.visitId);
     if (visitError) throw new Error(visitError.message);

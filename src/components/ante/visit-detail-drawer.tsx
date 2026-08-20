@@ -34,6 +34,7 @@ export type VisitDetail = {
   disposition?: string | null;
   symptoms?: string | null;
   intake_transcript?: string | null;
+  visit_transcript?: string | null;
 
   conclusion?: string | null;
   recommendation?: string | null;
@@ -120,7 +121,8 @@ export function VisitDetailDrawer({
                 value={visit.recommendation ?? "No recommendation recorded."}
               />
 
-              <VisitTranscript transcript={visit.intake_transcript} />
+              <VisitTranscript transcript={visit.intake_transcript} label="Intake transcript" />
+              <VisitTranscript transcript={visit.visit_transcript} label="Visit transcript" />
 
               <div className="border-t border-border pt-4">
                 <VisitClinicalItems visitId={visit.id} />

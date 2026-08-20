@@ -8,10 +8,12 @@ import { cn } from "@/lib/utils";
 /** Read-only view of a visit's intake + consultation transcript. */
 export function VisitTranscript({
   transcript,
+  label = "Transcript",
   defaultOpen = false,
   className,
 }: {
   transcript?: string | null | undefined;
+  label?: string;
   defaultOpen?: boolean;
   className?: string;
 }) {
@@ -24,7 +26,7 @@ export function VisitTranscript({
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="-ml-2 gap-2" disabled={!text}>
             <FileText className="size-4" />
-            {text ? "Transcript" : "No transcript recorded"}
+            {text ? label : `No ${label.toLowerCase()} recorded`}
             {text ? (
               <ChevronDown
                 className={cn("size-4 transition-transform", open && "rotate-180")}
