@@ -10,13 +10,6 @@ import { VisitDetailDrawer, type VisitDetail } from "@/components/ante/visit-det
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { getMyPatients, getPatientRecord } from "@/lib/ante.functions";
 import { formatDate, formatDateTime, maskCpr } from "@/lib/clinical-utils";
