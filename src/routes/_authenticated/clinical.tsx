@@ -431,36 +431,90 @@ function ClinicalPage() {
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <Card className="h-fit">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Patient queue</CardTitle>
+          <CardHeader className="gap-2 pb-2">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm">Patient queue</CardTitle>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="ml-auto h-7 gap-1 text-xs"
+                disabled={triage.isPending || visits.length < 2}
+                onClick={() => triage.mutate()}
+              >
+                <Wand2 className="size-3.5" />
+                {triage.isPending ? "Prioritising…" : "Prioritise"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Drag to reorder · pin to lock a position
+            </p>
           </CardHeader>
           <CardContent className="max-h-[70vh] overflow-y-auto p-0">
-            {visits.map((v) => {
+            {visits.map((v, index) => {
               const patient = v.patient as { full_name?: string; cpr_number?: string } | null;
+              const isPinned = pinnedIds.includes(v.id);
+              const waited = Math.max(
+                0,
+                Math.round(
+                  (Date.now() - new Date(v.arrived_at ?? v.visit_date).getTime()) / 60000,
+                ),
+              );
               return (
-                <button
+                <div
                   key={v.id}
-                  type="button"
-                  onClick={() => select(v)}
-                  className={`block w-full border-b border-border px-4 py-3 text-left transition-colors hover:bg-muted ${
+                  draggable
+                  onDragStart={() => setDragId(v.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => dropOn(v.id)}
+                  onDragEnd={() => setDragId(null)}
+                  className={`flex items-start gap-2 border-b border-border px-3 py-3 transition-colors hover:bg-muted ${
                     selectedId === v.id ? "bg-accent" : ""
-                  }`}
+                  } ${dragId === v.id ? "opacity-50" : ""}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">
-                      {patient?.full_name ?? "Unknown patient"}
-                    </span>
-                    <span className="ml-auto">
-                      <UrgencyBadge level={v.urgency_level} />
-                    </span>
+                  <div className="flex flex-col items-center gap-1 pt-0.5 text-muted-foreground">
+                    <GripVertical className="size-4 cursor-grab" />
+                    <span className="text-[10px] font-medium">{index + 1}</span>
                   </div>
-                  <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                    {formatCpr(patient?.cpr_number)}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {formatDateTime(v.visit_date)} · {ENCOUNTER_TYPE_LABEL[v.encounter_type ?? ""] ?? "Visit"}
-                  </p>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => select(v)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {patient?.full_name ?? "Unknown patient"}
+                      </span>
+                      <span className="ml-auto shrink-0">
+                        <UrgencyBadge level={v.urgency_level} />
+                      </span>
+                    </div>
+                    <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                      {formatCpr(patient?.cpr_number)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatDateTime(v.visit_date)} ·{" "}
+                      {ENCOUNTER_TYPE_LABEL[v.encounter_type ?? ""] ?? "Visit"}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Waiting {waited < 60 ? `${waited} min` : `${Math.floor(waited / 60)} h ${waited % 60} min`}
+                    </p>
+                    {rationaleById[v.id] && !isPinned ? (
+                      <p className="mt-1 text-xs italic text-muted-foreground">
+                        {rationaleById[v.id]}
+                      </p>
+                    ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={isPinned ? "Unpin from position" : "Pin position"}
+                    onClick={() => togglePin(v.id)}
+                    className={`rounded-md p-1 transition-colors hover:bg-accent ${
+                      isPinned ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    {isPinned ? <Pin className="size-4" /> : <PinOff className="size-4" />}
+                  </button>
+                </div>
               );
             })}
             {visits.length === 0 ? (
