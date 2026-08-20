@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Activity, AlertTriangle, Mic, Pill, Stethoscope } from "lucide-react";
 
 import { AppShell } from "@/components/ante/app-shell";
-import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
+import { VisitCard, type VisitCardData } from "@/components/ante/visit-card";
 import { VoiceIntakeModal } from "@/components/ante/voice-intake-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +37,7 @@ export const Route = createFileRoute("/_authenticated/passport")({
 
 function PassportPage() {
   const { data } = useSuspenseQuery(passportQuery);
+  const navigate = useNavigate();
   const [intakeOpen, setIntakeOpen] = useState(false);
 
   const conditions = data.records.filter((r) => r.category === "CONDITION");
@@ -97,24 +98,15 @@ function PassportPage() {
 
         <Section title="Visit history" icon={<Stethoscope className="size-4" />} className="lg:col-span-2">
           {data.visits.length === 0 ? <Empty /> : null}
-          {data.visits.map((v) => (
-            <div key={v.id} className="border-b border-border py-3 last:border-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{formatDate(v.visit_date)}</span>
-                <UrgencyBadge level={v.urgency_level} />
-                <DispositionBadge value={v.disposition} />
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {(v as { practitioner?: { full_name?: string } }).practitioner?.full_name ?? ""}
-                </span>
-              </div>
-              {v.symptoms ? (
-                <p className="mt-1 text-sm text-muted-foreground">{v.symptoms}</p>
-              ) : null}
-              {v.recommendation ? (
-                <p className="mt-1 text-sm text-foreground">{v.recommendation}</p>
-              ) : null}
-            </div>
-          ))}
+          <div className="space-y-3">
+            {data.visits.map((v) => (
+              <VisitCard
+                key={v.id}
+                visit={v as VisitCardData}
+                onClick={() => navigate({ to: "/visits" })}
+              />
+            ))}
+          </div>
         </Section>
       </div>
 

@@ -27,6 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RichText } from "@/components/ante/rich-text";
+import { VisitCard } from "@/components/ante/visit-card";
 import { getMyVisitHistory } from "@/lib/ante.functions";
 import { DISPOSITION_LABEL, ENCOUNTER_TYPE_LABEL, URGENCY_LABEL, formatDate } from "@/lib/clinical-utils";
 
@@ -299,50 +301,16 @@ function VisitsPage() {
           </p>
         ) : null}
 
-        {visits.map((v) => {
-          const practitioner = (v as { practitioner?: { full_name?: string; title?: string | null; specialization?: string | null } })
-            .practitioner;
-          return (
-            <Card
-              key={v.id}
-              className="cursor-pointer transition-colors hover:border-primary/40 hover:bg-accent/40"
-              onClick={() => {
-                setSelectedVisit(v as VisitItem);
-                setDetailOpen(true);
-              }}
-            >
-              <CardContent className="space-y-2 p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                    <CalendarDays className="size-4 text-muted-foreground" />
-                    {formatDate(v.visit_date)}
-                  </span>
-                  {v.encounter_type ? (
-                    <Badge variant="outline" className="font-normal">
-                      {ENCOUNTER_TYPE_LABEL[v.encounter_type] ?? v.encounter_type}
-                    </Badge>
-                  ) : null}
-                  <UrgencyBadge level={v.urgency_level} />
-                  {v.status ? (
-                    <Badge variant="secondary" className="font-normal">
-                      {STATUS_LABEL[v.status] ?? v.status}
-                    </Badge>
-                  ) : null}
-                  <DispositionBadge value={v.disposition} />
-                  {practitioner?.full_name ? (
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      {[practitioner.title, practitioner.full_name].filter(Boolean).join(" ")}
-                      {practitioner.specialization ? ` · ${practitioner.specialization}` : ""}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="line-clamp-2 text-sm text-muted-foreground">
-                  {v.conclusion || v.symptoms || "No conclusion recorded."}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {visits.map((v) => (
+          <VisitCard
+            key={v.id}
+            visit={v as VisitItem}
+            onClick={() => {
+              setSelectedVisit(v as VisitItem);
+              setDetailOpen(true);
+            }}
+          />
+        ))}
       </div>
 
       <Drawer open={detailOpen} onOpenChange={setDetailOpen}>
@@ -443,7 +411,7 @@ function DetailSection({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
       <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</h4>
-      <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{value}</p>
+      <RichText text={value} />
     </div>
   );
 }
