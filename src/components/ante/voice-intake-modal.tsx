@@ -116,6 +116,8 @@ export function VoiceIntakeModal({
     setResult(null);
     setConfirmOpen(false);
     finishedRef.current = false;
+    userTurnsRef.current = 0;
+
     contextId.current = null;
   }
 
