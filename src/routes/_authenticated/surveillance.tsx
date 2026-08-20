@@ -64,7 +64,7 @@ export const Route = createFileRoute("/_authenticated/surveillance")({
   errorComponent: () => (
     <AppShell title="Surveillance">
       <p className="text-sm text-muted-foreground">
-        Could not load surveillance data. Please try again.
+        Could not load surveillance data. This dashboard requires the analyst role.
       </p>
     </AppShell>
   ),

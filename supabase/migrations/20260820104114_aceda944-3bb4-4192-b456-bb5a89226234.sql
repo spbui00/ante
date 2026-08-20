@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "authenticated read anonymized" ON public.anonymized_encounter;

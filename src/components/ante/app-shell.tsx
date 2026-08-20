@@ -4,15 +4,26 @@ import { Activity, LogOut, ShieldCheck, Stethoscope, User } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useRoles, type AnteRole } from "@/hooks/use-session";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
-type NavItem = { to: string; label: string; icon: ReactNode };
+type NavItem = { to: string; label: string; icon: ReactNode; roles: AnteRole[] };
 
 const NAV: NavItem[] = [
-  { to: "/passport", label: "Passport", icon: <User className="size-4" /> },
-  { to: "/clinical", label: "Clinical", icon: <Stethoscope className="size-4" /> },
-  { to: "/surveillance", label: "Surveillance", icon: <Activity className="size-4" /> },
+  { to: "/passport", label: "Passport", icon: <User className="size-4" />, roles: ["PATIENT"] },
+  {
+    to: "/clinical",
+    label: "Clinical",
+    icon: <Stethoscope className="size-4" />,
+    roles: ["PRACTITIONER"],
+  },
+  {
+    to: "/surveillance",
+    label: "Surveillance",
+    icon: <Activity className="size-4" />,
+    roles: ["ANALYST"],
+  },
 ];
 
 export function AnteMark({ className }: { className?: string }) {
@@ -39,6 +50,10 @@ export function AppShell({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { roles, loading: rolesLoading } = useRoles();
+  const visibleNav = rolesLoading
+    ? []
+    : NAV.filter((item) => item.roles.some((role) => roles.includes(role)));
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -55,7 +70,7 @@ export function AppShell({
             <AnteMark />
           </Link>
           <nav className="ml-2 hidden items-center gap-1 md:flex">
-            {NAV.map((item) => (
+            {visibleNav.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -86,7 +101,7 @@ export function AppShell({
       </div>
 
       <nav className="sticky bottom-0 z-30 flex border-t border-border bg-background md:hidden">
-        {NAV.map((item) => (
+        {visibleNav.map((item) => (
           <Link
             key={item.to}
             to={item.to}
