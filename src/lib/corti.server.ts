@@ -14,6 +14,9 @@
 const ENVIRONMENT = "eu";
 const TENANT = "base";
 
+export const CORTI_ENVIRONMENT = ENVIRONMENT;
+export const CORTI_TENANT = TENANT;
+
 const API_BASE = `https://api.${ENVIRONMENT}.corti.app/v2`;
 const AUTH_URL = `https://auth.${ENVIRONMENT}.corti.app/realms/${TENANT}/protocol/openid-connect/token`;
 const MODELS_URL = `https://ai.${ENVIRONMENT}.corti.app/v1/chat/completions`;

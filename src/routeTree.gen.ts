@@ -19,6 +19,7 @@ import { Route as AuthenticatedSurveillanceRouteImport } from './routes/_authent
 import { Route as AuthenticatedVisitsRouteImport } from './routes/_authenticated/visits'
 import { Route as ApiIntakeRouteImport } from './routes/api/intake'
 import { Route as ApiProcessVisitRouteImport } from './routes/api/process-visit'
+import { Route as ApiSttSessionRouteImport } from './routes/api/stt-session'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as ApiVerifyDoctorRouteImport } from './routes/api/verify-doctor'
 
@@ -72,6 +73,11 @@ const ApiProcessVisitRoute = ApiProcessVisitRouteImport.update({
   path: '/api/process-visit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSttSessionRoute = ApiSttSessionRouteImport.update({
+  id: '/api/stt-session',
+  path: '/api/stt-session',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   id: '/api/transcribe',
   path: '/api/transcribe',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
+  '/api/stt-session': typeof ApiSttSessionRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/api/verify-doctor': typeof ApiVerifyDoctorRoute
 }
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
+  '/api/stt-session': typeof ApiSttSessionRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/api/verify-doctor': typeof ApiVerifyDoctorRoute
 }
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/_authenticated/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
+  '/api/stt-session': typeof ApiSttSessionRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/api/verify-doctor': typeof ApiVerifyDoctorRoute
 }
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/visits'
     | '/api/intake'
     | '/api/process-visit'
+    | '/api/stt-session'
     | '/api/transcribe'
     | '/api/verify-doctor'
   fileRoutesByTo: FileRoutesByTo
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/visits'
     | '/api/intake'
     | '/api/process-visit'
+    | '/api/stt-session'
     | '/api/transcribe'
     | '/api/verify-doctor'
   id:
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/_authenticated/visits'
     | '/api/intake'
     | '/api/process-visit'
+    | '/api/stt-session'
     | '/api/transcribe'
     | '/api/verify-doctor'
   fileRoutesById: FileRoutesById
@@ -173,6 +185,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiIntakeRoute: typeof ApiIntakeRoute
   ApiProcessVisitRoute: typeof ApiProcessVisitRoute
+  ApiSttSessionRoute: typeof ApiSttSessionRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   ApiVerifyDoctorRoute: typeof ApiVerifyDoctorRoute
 }
@@ -249,6 +262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProcessVisitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/stt-session': {
+      id: '/api/stt-session'
+      path: '/api/stt-session'
+      fullPath: '/api/stt-session'
+      preLoaderRoute: typeof ApiSttSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/transcribe': {
       id: '/api/transcribe'
       path: '/api/transcribe'
@@ -291,6 +311,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiIntakeRoute: ApiIntakeRoute,
   ApiProcessVisitRoute: ApiProcessVisitRoute,
+  ApiSttSessionRoute: ApiSttSessionRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
   ApiVerifyDoctorRoute: ApiVerifyDoctorRoute,
 }
