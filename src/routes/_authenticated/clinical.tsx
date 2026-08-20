@@ -19,6 +19,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
 import { CodeChip, DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
+import { RichText, RichTextInline } from "@/components/ante/rich-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
