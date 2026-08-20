@@ -798,6 +798,7 @@ export type Database = {
           travel_history: Json
           urgency_level: Database["public"]["Enums"]["urgency_enum"]
           visit_date: string
+          visit_transcript: string | null
         }
         Insert: {
           arrived_at?: string | null
@@ -821,6 +822,7 @@ export type Database = {
           travel_history?: Json
           urgency_level?: Database["public"]["Enums"]["urgency_enum"]
           visit_date?: string
+          visit_transcript?: string | null
         }
         Update: {
           arrived_at?: string | null
@@ -844,6 +846,7 @@ export type Database = {
           travel_history?: Json
           urgency_level?: Database["public"]["Enums"]["urgency_enum"]
           visit_date?: string
+          visit_transcript?: string | null
         }
         Relationships: [
           {

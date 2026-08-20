@@ -1,0 +1,1 @@
+ALTER TABLE public.visit ADD COLUMN IF NOT EXISTS visit_transcript text;
