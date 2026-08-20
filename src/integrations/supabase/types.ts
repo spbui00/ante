@@ -457,30 +457,42 @@ export type Database = {
       practitioner: {
         Row: {
           created_at: string
+          first_name: string | null
           full_name: string
           id: string
           is_verified: boolean
+          last_name: string | null
           license_number: string | null
           organization_id: string | null
           role: Database["public"]["Enums"]["practitioner_role_enum"]
+          specialization: string | null
+          title: string | null
         }
         Insert: {
           created_at?: string
+          first_name?: string | null
           full_name: string
           id?: string
           is_verified?: boolean
+          last_name?: string | null
           license_number?: string | null
           organization_id?: string | null
           role?: Database["public"]["Enums"]["practitioner_role_enum"]
+          specialization?: string | null
+          title?: string | null
         }
         Update: {
           created_at?: string
+          first_name?: string | null
           full_name?: string
           id?: string
           is_verified?: boolean
+          last_name?: string | null
           license_number?: string | null
           organization_id?: string | null
           role?: Database["public"]["Enums"]["practitioner_role_enum"]
+          specialization?: string | null
+          title?: string | null
         }
         Relationships: [
           {
@@ -668,16 +680,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      apply_onboarding: {
-        Args: {
-          _full_name?: string
-          _license?: string
-          _practitioner_role?: Database["public"]["Enums"]["practitioner_role_enum"]
-          _role: Database["public"]["Enums"]["app_role"]
-          _verified?: boolean
-        }
-        Returns: undefined
-      }
+      apply_onboarding:
+        | {
+            Args: {
+              _full_name?: string
+              _license?: string
+              _practitioner_role?: Database["public"]["Enums"]["practitioner_role_enum"]
+              _role: Database["public"]["Enums"]["app_role"]
+              _verified?: boolean
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _first_name?: string
+              _full_name?: string
+              _last_name?: string
+              _license?: string
+              _practitioner_role?: Database["public"]["Enums"]["practitioner_role_enum"]
+              _role: Database["public"]["Enums"]["app_role"]
+              _specialization?: string
+              _title?: string
+              _verified?: boolean
+            }
+            Returns: undefined
+          }
       can_read_patient: { Args: { _patient_id: string }; Returns: boolean }
       claim_demo_identity: { Args: never; Returns: undefined }
       current_patient_id: { Args: never; Returns: string }
