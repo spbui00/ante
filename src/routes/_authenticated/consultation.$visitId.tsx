@@ -9,6 +9,9 @@ import { ConsultationRecorder } from "@/components/ante/consultation-recorder";
 import { PatientPassportPanel } from "@/components/ante/patient-passport-panel";
 
 import { UrgencyBadge } from "@/components/ante/badges";
+import { MarkdownEditor } from "@/components/ante/markdown-editor";
+import { RichText } from "@/components/ante/rich-text";
+import { Badge } from "@/components/ui/badge";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
 import { VisitTranscript } from "@/components/ante/visit-transcript";
 
@@ -157,6 +160,7 @@ function ConsultationPage() {
   if (recordCount === 0) missing.push("at least one clinical record");
 
 
+  const isCompleted = visit?.status === "COMPLETED";
   const patientName = visit?.patient?.full_name ?? "Patient";
 
   return (
