@@ -63,6 +63,12 @@ function ConsultationPage() {
     queryFn: () => getVisitDetail({ data: { visitId } }),
   });
 
+  const { data: clinicalItems } = useQuery({
+    queryKey: ["visit-clinical-items", visitId],
+    queryFn: () => getVisitClinicalItems({ data: { visitId } }),
+  });
+
+
   const visit = data?.visit as
     | ({
         id: string;
