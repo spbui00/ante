@@ -245,9 +245,19 @@ function ConsultationPage() {
                   </div>
                 </div>
 
-                <Button onClick={() => signOff.mutate()} disabled={signOff.isPending}>
+                {missing.length ? (
+                  <p className="text-xs text-muted-foreground">
+                    Before signing off, add {missing.join(", ")}.
+                  </p>
+                ) : null}
+
+                <Button
+                  onClick={() => signOff.mutate()}
+                  disabled={signOff.isPending || missing.length > 0}
+                >
                   {signOff.isPending ? "Signing off…" : "Sign off consultation"}
                 </Button>
+
               </CardContent>
             </Card>
 
