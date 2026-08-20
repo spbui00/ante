@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Mic, Send, Sparkles } from "lucide-react";
+import { AlertTriangle, Loader2, Mic, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { useCortiDictation } from "@/lib/use-corti-dictation";
@@ -61,6 +61,8 @@ export function VoiceIntakeModal({
   const [analysing, setAnalysing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<IntakeResult | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const finishedRef = useRef(false);
   const contextId = useRef<string | null>(null);
   const autoSendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasDictatingRef = useRef(false);
@@ -84,8 +86,12 @@ export function VoiceIntakeModal({
     setMessages([]);
     setInput("");
     setResult(null);
+    setConfirmOpen(false);
+    finishedRef.current = false;
     contextId.current = null;
   }
+
+  const finishRef = useRef<(() => Promise<void>) | null>(null);
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -102,10 +108,16 @@ export function VoiceIntakeModal({
         data: { agentKey: "intake", text: trimmed, contextId: contextId.current },
       });
       contextId.current = res.contextId ?? contextId.current;
+      const done = res.reply.includes("[INTAKE_COMPLETE]");
+      const cleaned = res.reply.replace(/\[INTAKE_COMPLETE\]/g, "").trim();
       setMessages((m) => [
         ...m,
-        { id: crypto.randomUUID(), role: "assistant", text: res.reply },
+        { id: crypto.randomUUID(), role: "assistant", text: cleaned },
       ]);
+      if (done && !finishedRef.current) {
+        finishedRef.current = true;
+        setTimeout(() => void finishRef.current?.(), 400);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The assistant is unavailable");
     } finally {
@@ -144,11 +156,15 @@ export function VoiceIntakeModal({
     };
   }, [recording, connecting, dictation.status, composerValue, thinking, send]);
 
+  const userTurns = messages.filter((m) => m.role === "user").length;
+  const enoughData =
+    finishedRef.current || (userTurns >= 3 && (result?.symptoms.length ?? 0) > 0);
+
   const conversationText = messages
     .map((m) => `${m.role === "user" ? "Patient" : "Assistant"}: ${m.text}`)
     .join("\n");
 
-  async function analyse() {
+  async function finish() {
     if (!messages.some((m) => m.role === "user")) {
       toast.error("Describe your symptoms first");
       return;
@@ -163,6 +179,7 @@ export function VoiceIntakeModal({
       if (!res.ok) throw new Error("Intake failed");
       const data = (await res.json()) as IntakeResult;
       setResult(data);
+      setConfirmOpen(true);
       if (data.warning) toast.warning("Corti unavailable — showing a basic summary");
     } catch {
       toast.error("Could not process intake");
@@ -170,6 +187,10 @@ export function VoiceIntakeModal({
       setAnalysing(false);
     }
   }
+
+  useEffect(() => {
+    finishRef.current = finish;
+  });
 
   async function sendToClinic() {
     if (!result) return;
@@ -182,11 +203,12 @@ export function VoiceIntakeModal({
           symptomIcdCodes: result.symptomCodes.map((c) => c.code),
           urgencyLevel:
             (result.urgencyLevel as "LOW" | "MEDIUM" | "HIGH_RED_FLAG") ?? "LOW",
-          recommendation: result.recommendation,
+          recommendation: "",
           travelHistory: [],
         },
       });
       toast.success("Pre-intake sent — your clinician will see it at check-in");
+      setConfirmOpen(false);
       onOpenChange(false);
       resetAll();
     } catch (error) {
@@ -233,28 +255,20 @@ export function VoiceIntakeModal({
               ) : null}
 
               {result ? (
-                <div className="rounded-2xl border border-border bg-card p-4 text-sm">
+                <button
+                  type="button"
+                  onClick={() => setConfirmOpen(true)}
+                  className="rounded-2xl border border-border bg-card p-4 text-left text-sm"
+                >
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="font-medium text-foreground">Pre-intake summary</span>
+                    <span className="font-medium text-foreground">Draft pre-intake ready</span>
                     <UrgencyBadge level={result.urgencyLevel} />
                   </div>
                   <p className="text-muted-foreground">{result.summary}</p>
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {result.symptomCodes.map((c) => (
-                      <CodeChip key={c.code} code={c.code} system="ICD-10" />
-                    ))}
-                  </div>
-                  <p className="mt-3 text-muted-foreground">{result.recommendation}</p>
-                  <Button className="mt-3 w-full" onClick={sendToClinic} disabled={saving}>
-                    {saving ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <Send className="size-4" />
-                    )}
-                    Send to clinic
-                  </Button>
-                </div>
+                  <p className="mt-2 text-xs text-primary">Tap to review and submit</p>
+                </button>
               ) : null}
+
             </ConversationContent>
             <ConversationScrollButton />
           </Conversation>
@@ -311,7 +325,7 @@ export function VoiceIntakeModal({
                   type="button"
                   size="sm"
                   variant="secondary"
-                  onClick={analyse}
+                  onClick={() => void finish()}
                   disabled={analysing || thinking}
                 >
                   {analysing ? (
@@ -319,7 +333,7 @@ export function VoiceIntakeModal({
                   ) : (
                     <Sparkles className="size-4" />
                   )}
-                  Summarise
+                  Finish
                 </Button>
               </PromptInputTools>
               <PromptInputSubmit
@@ -330,6 +344,67 @@ export function VoiceIntakeModal({
           </PromptInput>
         </div>
       </DrawerContent>
+
+      <Drawer open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DrawerContent className="max-h-[85dvh]">
+          <div className="mx-auto w-full max-w-md overflow-y-auto px-4 pb-6">
+            <DrawerHeader className="px-0 text-left">
+              <DrawerTitle className="text-xl">Submit your pre-intake?</DrawerTitle>
+              <DrawerDescription>
+                Your clinician will see this at check-in. No treatment advice is recorded —
+                that comes from your doctor at the visit.
+              </DrawerDescription>
+            </DrawerHeader>
+
+            {enoughData ? null : (
+              <div className="mb-3 flex gap-2 rounded-2xl border border-border bg-secondary/50 p-3 text-sm">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                <p className="text-muted-foreground">
+                  We may not have enough detail yet. Answering a few more questions helps your
+                  doctor — but you can still submit now.
+                </p>
+              </div>
+            )}
+
+            {result ? (
+              <div className="rounded-2xl border border-border bg-card p-4 text-sm">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-medium text-foreground">Symptom summary</span>
+                  <UrgencyBadge level={result.urgencyLevel} />
+                </div>
+                <p className="text-muted-foreground">{result.summary}</p>
+                {result.symptoms.length ? (
+                  <p className="mt-3 text-foreground">{result.symptoms.join(", ")}</p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {result.symptomCodes.map((c) => (
+                    <CodeChip key={c.code} code={c.code} system="ICD-10" />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-4 flex gap-2">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setConfirmOpen(false)}
+              >
+                Keep talking
+              </Button>
+              <Button className="flex-1" onClick={sendToClinic} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Send className="size-4" />
+                )}
+                Submit
+              </Button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </Drawer>
   );
 }
+
