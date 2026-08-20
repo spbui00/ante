@@ -280,7 +280,9 @@ export const getMySettings = createServerFn({ method: "GET" })
     if (profile?.patient_id) {
       const { data } = await supabase
         .from("patient")
-        .select("id, full_name, first_name, last_name, phone_number, date_of_birth, gender, postal_code, industry, primary_language")
+        .select(
+          "id, full_name, first_name, last_name, preferred_name, phone_number, date_of_birth, gender, sex, gender_identity, race_ethnicity, marital_status, employment_status, insurance_type, insurance_provider, insurance_member_id, postal_code, industry, primary_language",
+        )
         .eq("id", profile.patient_id)
         .maybeSingle();
       patient = data;
@@ -325,6 +327,44 @@ export const updateMySettings = createServerFn({ method: "POST" })
         specialization: z.string().max(80).optional().nullable(),
         licenseNumber: z.string().max(32).optional().nullable(),
         phoneNumber: z.string().max(30).optional().nullable(),
+        preferredName: z.string().max(80).optional().nullable(),
+        sex: z.enum(["MALE", "FEMALE", "INTERSEX", "UNKNOWN"]).optional().nullable(),
+        genderIdentity: z
+          .enum([
+            "MAN",
+            "WOMAN",
+            "NON_BINARY",
+            "TRANSGENDER_MAN",
+            "TRANSGENDER_WOMAN",
+            "OTHER",
+            "PREFER_NOT_TO_SAY",
+          ])
+          .optional()
+          .nullable(),
+        raceEthnicity: z.array(z.string().max(60)).max(12).optional(),
+        maritalStatus: z
+          .enum(["SINGLE", "MARRIED", "PARTNERED", "SEPARATED", "DIVORCED", "WIDOWED", "UNKNOWN"])
+          .optional()
+          .nullable(),
+        employmentStatus: z
+          .enum([
+            "EMPLOYED",
+            "SELF_EMPLOYED",
+            "UNEMPLOYED",
+            "STUDENT",
+            "RETIRED",
+            "UNABLE_TO_WORK",
+            "OTHER",
+            "UNKNOWN",
+          ])
+          .optional()
+          .nullable(),
+        insuranceType: z
+          .enum(["PUBLIC_GROUP_1", "PUBLIC_GROUP_2", "PRIVATE", "EU_EHIC", "SELF_PAY", "UNINSURED", "UNKNOWN"])
+          .optional()
+          .nullable(),
+        insuranceProvider: z.string().max(80).optional().nullable(),
+        insuranceMemberId: z.string().max(60).optional().nullable(),
       })
       .parse(input),
   )
@@ -375,10 +415,90 @@ export const updateMySettings = createServerFn({ method: "POST" })
           gender: data.gender || null,
           postal_code: data.postalCode || null,
           primary_language: data.primaryLanguage || "da",
+          preferred_name: data.preferredName || null,
+          sex: data.sex || null,
+          gender_identity: data.genderIdentity || null,
+          race_ethnicity: data.raceEthnicity ?? [],
+          marital_status: data.maritalStatus || null,
+          employment_status: data.employmentStatus || null,
+          insurance_type: data.insuranceType || null,
+          insurance_provider: data.insuranceProvider || null,
+          insurance_member_id: data.insuranceMemberId || null,
         })
         .eq("id", profile.patient_id);
       if (error) throw new Error(error.message);
     }
 
+    return { ok: true };
+  });
+
+/** Care team registry: practitioners linked to the signed-in patient by specialization. */
+export const getMyCareTeam = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("patient_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!profile?.patient_id) return { careTeam: [], practitioners: [] };
+
+    const { data: careTeam, error } = await supabase
+      .from("patient_care_team")
+      .select(
+        "id, specialization, is_primary, status, assigned_at, practitioner:practitioner(id, full_name, title, role, specialization, organization:organization(name))",
+      )
+      .eq("patient_id", profile.patient_id)
+      .order("is_primary", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    const { data: practitioners } = await supabase
+      .from("practitioner")
+      .select("id, full_name, title, role, specialization")
+      .order("full_name");
+
+    return { careTeam: careTeam ?? [], practitioners: practitioners ?? [] };
+  });
+
+export const addCareTeamMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        practitionerId: z.string().uuid(),
+        specialization: z.string().min(1).max(80),
+        isPrimary: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("patient_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!profile?.patient_id) throw new Error("No patient record linked to this account");
+
+    const { error } = await supabase.from("patient_care_team").insert({
+      patient_id: profile.patient_id,
+      practitioner_id: data.practitionerId,
+      specialization: data.specialization,
+      is_primary: data.isPrimary ?? false,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const removeCareTeamMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("patient_care_team").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });

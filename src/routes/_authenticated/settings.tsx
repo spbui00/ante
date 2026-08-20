@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -8,12 +14,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getMySettings, updateMySettings } from "@/lib/ante.functions";
+import {
+  addCareTeamMember,
+  getMyCareTeam,
+  getMySettings,
+  removeCareTeamMember,
+  updateMySettings,
+} from "@/lib/ante.functions";
 import {
   PRACTITIONER_ROLES,
   SPECIALIZATIONS,
   type PractitionerRoleValue,
 } from "@/lib/practitioner-options";
+import {
+  EMPLOYMENT_STATUS_OPTIONS,
+  GENDER_IDENTITY_OPTIONS,
+  INSURANCE_TYPE_OPTIONS,
+  LANGUAGE_OPTIONS,
+  MARITAL_STATUS_OPTIONS,
+  RACE_ETHNICITY_OPTIONS,
+  SEX_OPTIONS,
+  type EmploymentStatusValue,
+  type GenderIdentityValue,
+  type InsuranceTypeValue,
+  type MaritalStatusValue,
+  type SexValue,
+} from "@/lib/demographics-options";
 import {
   Select,
   SelectContent,
@@ -78,6 +104,25 @@ function SettingsPage() {
   );
   const [specialization, setSpecialization] = useState(data.practitioner?.specialization ?? "");
   const [licenseNumber, setLicenseNumber] = useState(data.practitioner?.license_number ?? "");
+  const [preferredName, setPreferredName] = useState(data.patient?.preferred_name ?? "");
+  const [sex, setSex] = useState<SexValue | "">((data.patient?.sex as SexValue) ?? "");
+  const [genderIdentity, setGenderIdentity] = useState<GenderIdentityValue | "">(
+    (data.patient?.gender_identity as GenderIdentityValue) ?? "",
+  );
+  const [raceEthnicity, setRaceEthnicity] = useState<string[]>(data.patient?.race_ethnicity ?? []);
+  const [maritalStatus, setMaritalStatus] = useState<MaritalStatusValue | "">(
+    (data.patient?.marital_status as MaritalStatusValue) ?? "",
+  );
+  const [employmentStatus, setEmploymentStatus] = useState<EmploymentStatusValue | "">(
+    (data.patient?.employment_status as EmploymentStatusValue) ?? "",
+  );
+  const [insuranceType, setInsuranceType] = useState<InsuranceTypeValue | "">(
+    (data.patient?.insurance_type as InsuranceTypeValue) ?? "",
+  );
+  const [insuranceProvider, setInsuranceProvider] = useState(data.patient?.insurance_provider ?? "");
+  const [insuranceMemberId, setInsuranceMemberId] = useState(
+    data.patient?.insurance_member_id ?? "",
+  );
 
   const save = useMutation({
     mutationFn: () =>
@@ -94,6 +139,15 @@ function SettingsPage() {
           specialization,
           licenseNumber,
           phoneNumber,
+          preferredName,
+          sex: sex || null,
+          genderIdentity: genderIdentity || null,
+          raceEthnicity,
+          maritalStatus: maritalStatus || null,
+          employmentStatus: employmentStatus || null,
+          insuranceType: insuranceType || null,
+          insuranceProvider,
+          insuranceMemberId,
         },
       }),
     onSuccess: async () => {
@@ -220,6 +274,14 @@ function SettingsPage() {
 
             {data.patient ? (
               <>
+                <div className="grid gap-2">
+                  <Label htmlFor="preferredName">Preferred name</Label>
+                  <Input
+                    id="preferredName"
+                    value={preferredName ?? ""}
+                    onChange={(event) => setPreferredName(event.target.value)}
+                  />
+                </div>
                 <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="dob">Date of birth</Label>
@@ -231,11 +293,143 @@ function SettingsPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="gender">Gender</Label>
+                    <Label htmlFor="sex">Sex</Label>
+                    <Select value={sex} onValueChange={(v) => setSex(v as SexValue)}>
+                      <SelectTrigger id="sex">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SEX_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="genderIdentity">Gender identity</Label>
+                    <Select value={genderIdentity} onValueChange={(v) => setGenderIdentity(v as GenderIdentityValue)}>
+                      <SelectTrigger id="genderIdentity">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GENDER_IDENTITY_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="lang">Primary language</Label>
+                    <Select value={primaryLanguage} onValueChange={setPrimaryLanguage}>
+                      <SelectTrigger id="lang">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGE_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Race / ethnicity</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {RACE_ETHNICITY_OPTIONS.map((option) => {
+                      const active = raceEthnicity.includes(option);
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() =>
+                            setRaceEthnicity((current) =>
+                              current.includes(option)
+                                ? current.filter((value) => value !== option)
+                                : [...current, option],
+                            )
+                          }
+                          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                            active
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="marital">Marital status</Label>
+                    <Select value={maritalStatus} onValueChange={(v) => setMaritalStatus(v as MaritalStatusValue)}>
+                      <SelectTrigger id="marital">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MARITAL_STATUS_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="employment">Employment</Label>
+                    <Select value={employmentStatus} onValueChange={(v) => setEmploymentStatus(v as EmploymentStatusValue)}>
+                      <SelectTrigger id="employment">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EMPLOYMENT_STATUS_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3 sm:gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="insuranceType">Insurance</Label>
+                    <Select value={insuranceType} onValueChange={(v) => setInsuranceType(v as InsuranceTypeValue)}>
+                      <SelectTrigger id="insuranceType">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INSURANCE_TYPE_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="insuranceProvider">Insurer</Label>
                     <Input
-                      id="gender"
-                      value={gender ?? ""}
-                      onChange={(event) => setGender(event.target.value)}
+                      id="insuranceProvider"
+                      value={insuranceProvider ?? ""}
+                      onChange={(event) => setInsuranceProvider(event.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="insuranceMemberId">Member ID</Label>
+                    <Input
+                      id="insuranceMemberId"
+                      value={insuranceMemberId ?? ""}
+                      onChange={(event) => setInsuranceMemberId(event.target.value)}
                     />
                   </div>
                 </div>
@@ -249,11 +443,11 @@ function SettingsPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="lang">Preferred language</Label>
+                    <Label htmlFor="gender">Gender (legacy free text)</Label>
                     <Input
-                      id="lang"
-                      value={primaryLanguage ?? ""}
-                      onChange={(event) => setPrimaryLanguage(event.target.value)}
+                      id="gender"
+                      value={gender ?? ""}
+                      onChange={(event) => setGender(event.target.value)}
                     />
                   </div>
                 </div>
@@ -275,6 +469,10 @@ function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {data.patient ? <CareTeamCard /> : null}
+
+
 
         <Card>
           <CardHeader>
@@ -303,5 +501,122 @@ function SettingsPage() {
         </Card>
       </div>
     </AppShell>
+  );
+}
+
+const careTeamQuery = queryOptions({
+  queryKey: ["my-care-team"],
+  queryFn: () => getMyCareTeam(),
+});
+
+function CareTeamCard() {
+  const queryClient = useQueryClient();
+  const { data } = useQuery(careTeamQuery);
+  const [practitionerId, setPractitionerId] = useState("");
+  const [teamSpecialization, setTeamSpecialization] = useState("");
+
+  const add = useMutation({
+    mutationFn: () =>
+      addCareTeamMember({
+        data: { practitionerId, specialization: teamSpecialization },
+      }),
+    onSuccess: async () => {
+      toast.success("Care team updated");
+      setPractitionerId("");
+      setTeamSpecialization("");
+      await queryClient.invalidateQueries({ queryKey: ["my-care-team"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => removeCareTeamMember({ data: { id } }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["my-care-team"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Care team</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        {data?.careTeam?.length ? (
+          <ul className="grid gap-2">
+            {data.careTeam.map((member) => (
+              <li
+                key={member.id}
+                className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+              >
+                <span>
+                  <span className="font-medium">
+                    {member.practitioner?.title ? `${member.practitioner.title} ` : ""}
+                    {member.practitioner?.full_name ?? "Unknown"}
+                  </span>
+                  <span className="text-muted-foreground"> · {member.specialization}</span>
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => remove.mutate(member.id)}
+                  disabled={remove.isPending}
+                >
+                  Remove
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No practitioners linked yet. Add the specialists who look after you.
+          </p>
+        )}
+
+        <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="ctPractitioner">Practitioner</Label>
+            <Select value={practitionerId} onValueChange={setPractitionerId}>
+              <SelectTrigger id="ctPractitioner">
+                <SelectValue placeholder="Select practitioner" />
+              </SelectTrigger>
+              <SelectContent>
+                {(data?.practitioners ?? []).map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.title ? `${p.title} ` : ""}
+                    {p.full_name}
+                    {p.specialization ? ` · ${p.specialization}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="ctSpec">Specialisation</Label>
+            <Select value={teamSpecialization} onValueChange={setTeamSpecialization}>
+              <SelectTrigger id="ctSpec">
+                <SelectValue placeholder="Select specialisation" />
+              </SelectTrigger>
+              <SelectContent>
+                {SPECIALIZATIONS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div>
+          <Button
+            onClick={() => add.mutate()}
+            disabled={!practitionerId || !teamSpecialization || add.isPending}
+          >
+            {add.isPending ? "Adding…" : "Add to care team"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
