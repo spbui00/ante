@@ -118,21 +118,34 @@ export const Route = createFileRoute("/api/intake")({
             recommendation?: string;
           };
 
+          // Code ACTIVE findings only — denied/resolved symptoms must not be coded.
+          const negatives = (gen.pertinentNegatives ?? []).map((n) => n.toLowerCase());
           const codingText = [
             gen.summary ?? "",
             gen.symptomDetail ?? "",
-            gen.pertinentNegatives?.length ? `Denies: ${gen.pertinentNegatives.join(", ")}.` : "",
-            factLines,
+            gen.symptoms?.length ? `Active symptoms: ${gen.symptoms.join(", ")}.` : "",
           ]
             .filter(Boolean)
             .join("\n");
 
-          const codes = await predictCodes(codingText || input, [CORTI_CODING_SYSTEM]).catch(
+          const rawCodes = await predictCodes(codingText || input, [CORTI_CODING_SYSTEM]).catch(
             (err) => {
               console.error("Corti coding failed", err);
               return [];
             },
           );
+
+          // Drop any code whose label maps onto a symptom the patient denied or that resolved.
+          const codes = rawCodes.filter((c) => {
+            const label = (c.display ?? "").toLowerCase();
+            if (!label) return true;
+            return !negatives.some((n) => {
+              const term = n.replace(/^(no|denies|resolved)\s+/, "").trim();
+              if (term.length < 4) return false;
+              return label.includes(term) || term.includes(label);
+            });
+          });
+
 
           return Response.json({
             source: "corti",
