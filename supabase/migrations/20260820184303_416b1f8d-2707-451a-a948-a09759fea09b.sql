@@ -1,0 +1,1 @@
+UPDATE public.visit SET status = 'SCHEDULED', practitioner_id = NULL WHERE id = 'aa556a25-9fee-4eef-9794-7bc8059d69c9';

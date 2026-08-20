@@ -712,6 +712,21 @@ export const removePatientFromRegistry = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!profile?.practitioner_id) throw new Error("No practitioner record linked to this account");
 
+    // Block removal while a visit with this patient is still open in the queue.
+    const { data: openVisits, error: openError } = await supabase
+      .from("visit")
+      .select("id")
+      .eq("patient_id", data.patientId)
+      .eq("practitioner_id", profile.practitioner_id)
+      .in("status", ["SCHEDULED", "IN_PROGRESS"])
+      .limit(1);
+    if (openError) throw new Error(openError.message);
+    if (openVisits && openVisits.length > 0) {
+      throw new Error(
+        "This patient still has an open visit with you. Complete or cancel the visit before removing them from your registry.",
+      );
+    }
+
     // Leave the care team first, while the grant still allows access.
     const { error: teamError } = await supabase
       .from("patient_care_team")
