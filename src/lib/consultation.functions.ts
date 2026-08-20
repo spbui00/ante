@@ -141,8 +141,9 @@ export const signOffConsultation = createServerFn({ method: "POST" })
       .object({
         visitId: z.string().uuid(),
         transcript: z.string().max(40000).default(""),
-        conclusion: z.string().max(6000),
-        recommendation: z.string().max(6000),
+        conclusion: z.string().trim().min(1, "Conclusion is required").max(6000),
+        recommendation: z.string().trim().min(1, "Recommendation is required").max(6000),
+
         urgencyLevel: z.enum(["LOW", "MEDIUM", "HIGH_RED_FLAG"]),
         disposition: z.enum(["HOME_CARE", "PRESCRIPTION", "ER_REFERRAL"]),
         diagnoses: z
