@@ -442,17 +442,15 @@ function Section({
   title,
   canEdit,
   onAdd,
-  empty,
   children,
 }: {
   title: string;
   canEdit: boolean;
   onAdd: () => void;
-  empty: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <div className="flex items-center gap-2">
         <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {title}
@@ -464,80 +462,129 @@ function Section({
           </Button>
         ) : null}
       </div>
-      {empty ? <p className="py-2 text-sm text-muted-foreground">Nothing recorded</p> : null}
       {children}
     </div>
   );
 }
 
+function ItemsTable({
+  headers,
+  canEdit,
+  empty,
+  emptyText,
+  children,
+}: {
+  headers: string[];
+  canEdit: boolean;
+  empty: boolean;
+  emptyText: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-md border border-border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {headers.map((h) => (
+              <TableHead key={h} className="whitespace-nowrap text-xs">
+                {h}
+              </TableHead>
+            ))}
+            {canEdit ? <TableHead className="w-[90px]" /> : null}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {empty ? (
+            <TableRow>
+              <TableCell
+                colSpan={headers.length + (canEdit ? 1 : 0)}
+                className="text-sm text-muted-foreground"
+              >
+                {emptyText}
+              </TableCell>
+            </TableRow>
+          ) : null}
+          {children}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function EditRow({ span, children }: { span: number; children: React.ReactNode }) {
+  return (
+    <TableRow className="bg-muted/40 hover:bg-muted/40">
+      <TableCell colSpan={span} className="space-y-2 py-3">
+        {children}
+      </TableCell>
+    </TableRow>
+  );
+}
+
 function Row({
-  primary,
-  secondary,
-  badge,
+  cells,
   canEdit,
   onEdit,
   onDelete,
 }: {
-  primary: string;
-  secondary?: string;
-  badge?: string;
+  cells: React.ReactNode[];
   canEdit: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   return (
-    <div className="flex items-start gap-2 border-b border-border py-2 last:border-0">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-foreground">{primary}</span>
-          {badge ? (
-            <Badge variant="outline" className="font-normal">
-              {badge.charAt(0) + badge.slice(1).toLowerCase()}
-            </Badge>
-          ) : null}
-        </div>
-        {secondary ? <p className="text-xs text-muted-foreground">{secondary}</p> : null}
-      </div>
+    <TableRow>
+      {cells.map((c, i) => (
+        <TableCell
+          key={i}
+          className={i === 0 ? "font-medium text-foreground" : "text-muted-foreground"}
+        >
+          {c}
+        </TableCell>
+      ))}
       {canEdit ? (
-        confirming ? (
-          <div className="flex shrink-0 gap-1">
-            <Button
-              size="sm"
-              variant="destructive"
-              className="h-7 px-2"
-              onClick={() => {
-                setConfirming(false);
-                onDelete();
-              }}
-            >
-              Delete
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2"
-              onClick={() => setConfirming(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <div className="flex shrink-0 gap-1">
-            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={onEdit}>
-              <Pencil className="size-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setConfirming(true)}
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </div>
-        )
+        <TableCell className="text-right">
+          {confirming ? (
+            <div className="flex justify-end gap-1">
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-7 px-2"
+                onClick={() => {
+                  setConfirming(false);
+                  onDelete();
+                }}
+              >
+                Delete
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2"
+                onClick={() => setConfirming(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <div className="flex justify-end gap-1">
+              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={onEdit}>
+                <Pencil className="size-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setConfirming(true)}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          )}
+        </TableCell>
       ) : null}
-    </div>
+    </TableRow>
   );
 }
+
