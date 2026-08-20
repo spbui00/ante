@@ -384,7 +384,9 @@ export function VoiceIntakeModal({
                     <span className="font-medium text-foreground">Draft pre-intake ready</span>
                     <UrgencyBadge level={result.urgencyLevel} />
                   </div>
-                  <p className="text-muted-foreground">{result.summary}</p>
+                  <p className="text-muted-foreground">
+                    {result.symptomDetail || result.summary}
+                  </p>
                   <p className="mt-2 text-xs text-primary">Tap to review and submit</p>
                 </button>
               ) : null}
