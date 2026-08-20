@@ -120,7 +120,7 @@ function ConsultationPage() {
   return (
     <AppShell
       title={isPending ? "Consultation" : `Consultation · ${patientName}`}
-      subtitle={visit ? formatDateTime(visit.visit_date) : undefined}
+      {...(visit ? { subtitle: formatDateTime(visit.visit_date) } : {})}
     >
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
