@@ -117,10 +117,7 @@ function PatientsPage() {
 
       <div className="mb-4 grid gap-4 lg:grid-cols-2">
         <RegisterIntake />
-        <RegisterVisit />
       </div>
-
-
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <Card className="h-fit">
