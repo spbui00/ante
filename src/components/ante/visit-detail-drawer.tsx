@@ -163,7 +163,7 @@ function DetailSection({ label, value }: { label: string; value: string }) {
   );
 }
 
-function TimelineItem({ label, value }: { label: string; value?: string | null }) {
+function TimelineItem({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
       <dt className="text-xs text-muted-foreground">{label}</dt>
