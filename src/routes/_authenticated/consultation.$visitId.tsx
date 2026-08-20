@@ -175,10 +175,17 @@ function ConsultationPage() {
             Back to console
           </Link>
         </Button>
-        <Button className="ml-auto" onClick={() => setRecorderOpen(true)} disabled={!visit}>
-          <Mic className="size-4" />
-          Start recording
-        </Button>
+        {isCompleted ? (
+          <Badge variant="secondary" className="ml-auto">
+            Completed · read-only
+          </Badge>
+        ) : (
+          <Button className="ml-auto" onClick={() => setRecorderOpen(true)} disabled={!visit}>
+            <Mic className="size-4" />
+            Start recording
+          </Button>
+        )}
+
       </div>
 
       {isPending ? (
