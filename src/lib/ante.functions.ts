@@ -290,7 +290,9 @@ export const getMySettings = createServerFn({ method: "GET" })
     if (profile?.practitioner_id) {
       const { data } = await supabase
         .from("practitioner")
-        .select("id, full_name, role, license_number, organization:organization(name, region)")
+        .select(
+          "id, full_name, first_name, last_name, title, specialization, role, license_number, organization:organization(name, region)",
+        )
         .eq("id", profile.practitioner_id)
         .maybeSingle();
       practitioner = data;
@@ -317,6 +319,11 @@ export const updateMySettings = createServerFn({ method: "POST" })
         gender: z.string().max(30).optional().nullable(),
         postalCode: z.string().max(10).optional().nullable(),
         primaryLanguage: z.string().max(10).optional().nullable(),
+        firstName: z.string().max(60).optional().nullable(),
+        lastName: z.string().max(60).optional().nullable(),
+        practitionerRole: z.enum(["DOCTOR", "NURSE"]).optional(),
+        specialization: z.string().max(80).optional().nullable(),
+        licenseNumber: z.string().max(32).optional().nullable(),
       })
       .parse(input),
   )
@@ -331,9 +338,29 @@ export const updateMySettings = createServerFn({ method: "POST" })
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("patient_id")
+      .select("patient_id, practitioner_id")
       .eq("id", userId)
       .maybeSingle();
+
+    if (profile?.practitioner_id) {
+      const { error } = await supabase
+        .from("practitioner")
+        .update({
+          full_name: data.fullName,
+          first_name: data.firstName || null,
+          last_name: data.lastName || null,
+          ...(data.practitionerRole
+            ? {
+                role: data.practitionerRole,
+                title: data.practitionerRole === "NURSE" ? "Sygeplejerske" : "Læge",
+              }
+            : {}),
+          specialization: data.specialization || null,
+          license_number: data.licenseNumber || null,
+        })
+        .eq("id", profile.practitioner_id);
+      if (error) throw new Error(error.message);
+    }
 
     if (profile?.patient_id) {
       const { error } = await supabase

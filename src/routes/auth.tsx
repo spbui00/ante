@@ -14,6 +14,18 @@ import { lovable } from "@/integrations/lovable/index";
 import { ROLE_HOME, type AnteRole } from "@/hooks/use-session";
 import { completeOnboarding, verifyPractitioner } from "@/lib/onboarding.functions";
 import { AUTH_ID_PATTERN } from "@/lib/license-registry";
+import {
+  PRACTITIONER_ROLES,
+  SPECIALIZATIONS,
+  type PractitionerRoleValue,
+} from "@/lib/practitioner-options";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -45,6 +57,10 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [practitionerRole, setPractitionerRole] = useState<PractitionerRoleValue>("DOCTOR");
+  const [specialization, setSpecialization] = useState<string>("General practice");
   const [authorisationId, setAuthorisationId] = useState("");
   const [role, setRole] = useState<AnteRole | null>(null);
 
@@ -74,6 +90,9 @@ function AuthPage() {
     setBusy(true);
     try {
       if (role === "PRACTITIONER") {
+        if (!firstName.trim() || !lastName.trim()) {
+          throw new Error("Enter your first and last name.");
+        }
         if (!AUTH_ID_PATTERN.test(authorisationId.trim())) {
           throw new Error("AutorisationsID must look like 00000-00000.");
         }
@@ -84,7 +103,7 @@ function AuthPage() {
         password,
         options: {
           emailRedirectTo: window.location.origin,
-          data: { full_name: fullName, role },
+          data: { full_name: signupName(), role },
         },
       });
       if (error) throw new Error(error.message);
@@ -96,7 +115,19 @@ function AuthPage() {
       }
 
       const result = await completeOnboarding({
-        data: { role, fullName, ...(role === "PRACTITIONER" ? { authorisationId } : {}) },
+        data: {
+          role,
+          fullName: signupName(),
+          ...(role === "PRACTITIONER"
+            ? {
+                authorisationId,
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                practitionerRole,
+                specialization,
+              }
+            : {}),
+        },
       });
       toast.success(
         result.title ? `Verified as ${result.title} in Autorisationsregisteret` : "Account created",
@@ -109,10 +140,16 @@ function AuthPage() {
     }
   }
 
+  function signupName() {
+    return role === "PRACTITIONER"
+      ? `${firstName.trim()} ${lastName.trim()}`.trim()
+      : fullName;
+  }
+
   async function handleCheckLicense() {
     setBusy(true);
     try {
-      const result = await verifyPractitioner({ data: { fullName, authorisationId } });
+      const result = await verifyPractitioner({ data: { fullName: signupName(), authorisationId } });
       if (result.valid) toast.success(`${result.title} — ${result.message}`);
       else toast.error(result.message);
     } catch {
@@ -130,7 +167,14 @@ function AuthPage() {
       }
       sessionStorage.setItem(
         PENDING_KEY,
-        JSON.stringify({ role: signUpRole, authorisationId: authorisationId.trim() }),
+        JSON.stringify({
+          role: signUpRole,
+          authorisationId: authorisationId.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          practitionerRole,
+          specialization,
+        }),
       );
     }
     const result = await lovable.auth.signInWithOAuth("google", {
@@ -214,7 +258,61 @@ function AuthPage() {
                     </button>
 
                     <form className="space-y-4" onSubmit={handleSignUp}>
-                      <Field id="name" label="Full name" value={fullName} onChange={setFullName} />
+                      {role === "PRACTITIONER" ? (
+                        <>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <Field
+                              id="firstName"
+                              label="First name"
+                              value={firstName}
+                              onChange={setFirstName}
+                            />
+                            <Field
+                              id="lastName"
+                              label="Last name"
+                              value={lastName}
+                              onChange={setLastName}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="practRole">I am a</Label>
+                            <Select
+                              value={practitionerRole}
+                              onValueChange={(v) => setPractitionerRole(v as PractitionerRoleValue)}
+                            >
+                              <SelectTrigger id="practRole">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {PRACTITIONER_ROLES.map((r) => (
+                                  <SelectItem key={r.value} value={r.value}>
+                                    {r.label} ({r.title})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="spec">Specialisation</Label>
+                            <Select value={specialization} onValueChange={setSpecialization}>
+                              <SelectTrigger id="spec">
+                                <SelectValue placeholder="Select a specialisation" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {SPECIALIZATIONS.map((s) => (
+                                  <SelectItem key={s} value={s}>
+                                    {s}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </>
+                      ) : (
+                        <Field id="name" label="Full name" value={fullName} onChange={setFullName} />
+                      )}
 
                       {role === "PRACTITIONER" ? (
                         <div className="space-y-2">
@@ -319,7 +417,14 @@ async function finishPendingOnboarding() {
   if (!raw) return;
   sessionStorage.removeItem(PENDING_KEY);
   try {
-    const pending = JSON.parse(raw) as { role: AnteRole; authorisationId?: string };
+    const pending = JSON.parse(raw) as {
+      role: AnteRole;
+      authorisationId?: string;
+      firstName?: string;
+      lastName?: string;
+      practitionerRole?: "DOCTOR" | "NURSE";
+      specialization?: string;
+    };
     const { data } = await supabase.auth.getUser();
     const name = (data.user?.user_metadata?.["full_name"] ??
       data.user?.user_metadata?.["name"] ??
@@ -329,6 +434,10 @@ async function finishPendingOnboarding() {
         role: pending.role,
         ...(name ? { fullName: name } : {}),
         ...(pending.authorisationId ? { authorisationId: pending.authorisationId } : {}),
+        ...(pending.firstName ? { firstName: pending.firstName } : {}),
+        ...(pending.lastName ? { lastName: pending.lastName } : {}),
+        ...(pending.practitionerRole ? { practitionerRole: pending.practitionerRole } : {}),
+        ...(pending.specialization ? { specialization: pending.specialization } : {}),
       },
     });
     if (result.title) toast.success(`Verified as ${result.title} in Autorisationsregisteret`);
