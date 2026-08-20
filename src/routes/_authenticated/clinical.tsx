@@ -320,6 +320,8 @@ function ClinicalPage() {
         </div>
       ) : null}
 
+      <RegisterIntake />
+
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <Card className="h-fit">
           <CardHeader className="pb-2">
