@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -8,7 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getMySettings, updateMySettings } from "@/lib/ante.functions";
+import {
+  addCareTeamMember,
+  getMyCareTeam,
+  getMySettings,
+  removeCareTeamMember,
+  updateMySettings,
+} from "@/lib/ante.functions";
 import {
   PRACTITIONER_ROLES,
   SPECIALIZATIONS,
@@ -489,5 +501,122 @@ function SettingsPage() {
         </Card>
       </div>
     </AppShell>
+  );
+}
+
+const careTeamQuery = queryOptions({
+  queryKey: ["my-care-team"],
+  queryFn: () => getMyCareTeam(),
+});
+
+function CareTeamCard() {
+  const queryClient = useQueryClient();
+  const { data } = useQuery(careTeamQuery);
+  const [practitionerId, setPractitionerId] = useState("");
+  const [teamSpecialization, setTeamSpecialization] = useState("");
+
+  const add = useMutation({
+    mutationFn: () =>
+      addCareTeamMember({
+        data: { practitionerId, specialization: teamSpecialization },
+      }),
+    onSuccess: async () => {
+      toast.success("Care team updated");
+      setPractitionerId("");
+      setTeamSpecialization("");
+      await queryClient.invalidateQueries({ queryKey: ["my-care-team"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => removeCareTeamMember({ data: { id } }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["my-care-team"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Care team</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        {data?.careTeam?.length ? (
+          <ul className="grid gap-2">
+            {data.careTeam.map((member) => (
+              <li
+                key={member.id}
+                className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+              >
+                <span>
+                  <span className="font-medium">
+                    {member.practitioner?.title ? `${member.practitioner.title} ` : ""}
+                    {member.practitioner?.full_name ?? "Unknown"}
+                  </span>
+                  <span className="text-muted-foreground"> · {member.specialization}</span>
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => remove.mutate(member.id)}
+                  disabled={remove.isPending}
+                >
+                  Remove
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No practitioners linked yet. Add the specialists who look after you.
+          </p>
+        )}
+
+        <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="ctPractitioner">Practitioner</Label>
+            <Select value={practitionerId} onValueChange={setPractitionerId}>
+              <SelectTrigger id="ctPractitioner">
+                <SelectValue placeholder="Select practitioner" />
+              </SelectTrigger>
+              <SelectContent>
+                {(data?.practitioners ?? []).map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.title ? `${p.title} ` : ""}
+                    {p.full_name}
+                    {p.specialization ? ` · ${p.specialization}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="ctSpec">Specialisation</Label>
+            <Select value={teamSpecialization} onValueChange={setTeamSpecialization}>
+              <SelectTrigger id="ctSpec">
+                <SelectValue placeholder="Select specialisation" />
+              </SelectTrigger>
+              <SelectContent>
+                {SPECIALIZATIONS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div>
+          <Button
+            onClick={() => add.mutate()}
+            disabled={!practitionerId || !teamSpecialization || add.isPending}
+          >
+            {add.isPending ? "Adding…" : "Add to care team"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
