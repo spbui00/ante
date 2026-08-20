@@ -15,7 +15,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { ENCOUNTER_TYPE_LABEL, formatDate } from "@/lib/clinical-utils";
+import { ENCOUNTER_TYPE_LABEL, formatDate, formatDateTime } from "@/lib/clinical-utils";
 
 export const VISIT_STATUS_LABEL: Record<string, string> = {
   SCHEDULED: "Scheduled",
@@ -33,6 +33,9 @@ export type VisitDetail = {
   symptoms?: string | null;
   conclusion?: string | null;
   recommendation?: string | null;
+  arrived_at?: string | null;
+  taken_in_at?: string | null;
+  completed_at?: string | null;
   practitioner?: {
     full_name?: string | null;
     title?: string | null;
@@ -92,6 +95,17 @@ export function VisitDetailDrawer({
                 })()}
               />
 
+              <div className="space-y-1">
+                <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Timeline
+                </h4>
+                <dl className="grid gap-1 text-sm sm:grid-cols-3">
+                  <TimelineItem label="Arrived" value={visit.arrived_at} />
+                  <TimelineItem label="Consultation started" value={visit.taken_in_at} />
+                  <TimelineItem label="Completed" value={visit.completed_at} />
+                </dl>
+              </div>
+
               <DetailSection label="Symptoms" value={visit.symptoms ?? "No symptoms recorded."} />
               <DetailSection
                 label="Conclusion"
@@ -145,6 +159,15 @@ function DetailSection({ label, value }: { label: string; value: string }) {
     <div className="space-y-1">
       <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</h4>
       <RichText text={value} />
+    </div>
+  );
+}
+
+function TimelineItem({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-sm text-foreground">{value ? formatDateTime(value) : "—"}</dd>
     </div>
   );
 }

@@ -14,10 +14,12 @@ import {
   Wand2,
   X,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
 import { CodeChip, DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
+import { RichText, RichTextInline } from "@/components/ante/rich-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -251,14 +253,19 @@ function ClinicalPage() {
     persist(ids, next);
   }
 
-  function dropOn(targetId: string) {
+  /** Live preview while dragging: the hovered row swaps out of the way. */
+  function previewMove(targetId: string) {
     if (!dragId || dragId === targetId) return;
     const ids = currentOrder().filter((id) => id !== dragId);
     const at = ids.indexOf(targetId);
     ids.splice(at < 0 ? ids.length : at, 0, dragId);
     setOrder(ids);
+  }
+
+  function commitOrder() {
+    if (!dragId) return;
     setDragId(null);
-    persist(ids, pinnedIds);
+    persist(currentOrder(), pinnedIds);
   }
 
   const triage = useMutation({
@@ -460,21 +467,23 @@ function ClinicalPage() {
                 ),
               );
               return (
-                <div
+                <motion.div
                   key={v.id}
+                  layout
+                  transition={{ type: "spring", stiffness: 500, damping: 40, mass: 0.6 }}
                   draggable
                   onDragStart={() => setDragId(v.id)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => dropOn(v.id)}
-                  onDragEnd={() => setDragId(null)}
+                  onDragOver={(e: React.DragEvent) => e.preventDefault()}
+                  onDragEnter={() => dragId && dragId !== v.id && previewMove(v.id)}
+                  onDrop={() => commitOrder()}
+                  onDragEnd={() => commitOrder()}
                   className={`flex items-start gap-2 border-b border-border px-3 py-3 transition-colors hover:bg-muted ${
                     selectedId === v.id ? "bg-accent" : ""
-                  } ${dragId === v.id ? "opacity-50" : ""}`}
+                  } ${dragId === v.id ? "opacity-60 ring-1 ring-primary/40" : ""}`}
                 >
-                  <div className="flex flex-col items-center gap-1 pt-0.5 text-muted-foreground">
-                    <GripVertical className="size-4 cursor-grab" />
-                    <span className="text-[10px] font-medium">{index + 1}</span>
-                  </div>
+                  <span className="pt-1 text-[10px] font-medium text-muted-foreground">
+                    {index + 1}
+                  </span>
                   <button
                     type="button"
                     onClick={() => select(v)}
@@ -504,17 +513,20 @@ function ClinicalPage() {
                       </p>
                     ) : null}
                   </button>
-                  <button
-                    type="button"
-                    aria-label={isPinned ? "Unpin from position" : "Pin position"}
-                    onClick={() => togglePin(v.id)}
-                    className={`rounded-md p-1 transition-colors hover:bg-accent ${
-                      isPinned ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {isPinned ? <Pin className="size-4" /> : <PinOff className="size-4" />}
-                  </button>
-                </div>
+                  <div className="flex shrink-0 flex-col items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label={isPinned ? "Unpin from position" : "Pin position"}
+                      onClick={() => togglePin(v.id)}
+                      className={`rounded-md p-1 transition-colors hover:bg-accent ${
+                        isPinned ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {isPinned ? <Pin className="size-4" /> : <PinOff className="size-4" />}
+                    </button>
+                    <GripVertical className="size-4 cursor-grab text-muted-foreground" />
+                  </div>
+                </motion.div>
               );
             })}
             {visits.length === 0 ? (
@@ -542,6 +554,18 @@ function ClinicalPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Block label="Arrived" value={formatDateTime(selected.arrived_at)} />
+                  <Block
+                    label="Consultation started"
+                    value={selected.taken_in_at ? formatDateTime(selected.taken_in_at) : null}
+                  />
+                  <Block
+                    label="Completed"
+                    value={selected.completed_at ? formatDateTime(selected.completed_at) : null}
+                  />
+                </div>
+
                 <Block label="Symptoms" value={selected.symptoms} />
 
                 <div className="space-y-2">
@@ -775,9 +799,10 @@ function RegisterVisit() {
                       <p className="mt-1 text-xs text-muted-foreground">
                         {ENCOUNTER_TYPE_LABEL[v.encounter_type ?? ""] ?? "Visit"}
                       </p>
-                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                        {v.symptoms || v.conclusion || "No pre-intake detail recorded."}
-                      </p>
+                      <RichTextInline
+                        className="mt-1 line-clamp-2 text-sm text-muted-foreground"
+                        text={v.symptoms || v.conclusion || "No pre-intake detail recorded."}
+                      />
                     </button>
                   ))}
                 </div>
@@ -842,7 +867,7 @@ function Block({ label, value }: { label: string; value: string | null | undefin
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm text-foreground">{value || "Not recorded"}</p>
+      <RichText className="mt-1 text-sm text-foreground" text={value || "Not recorded"} />
     </div>
   );
 }
