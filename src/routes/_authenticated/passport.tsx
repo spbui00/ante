@@ -5,8 +5,10 @@ import { Activity, AlertTriangle, CalendarClock, Mic, Pill, Stethoscope } from "
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
+import { CareNavigatorCard } from "@/components/ante/care-navigator-card";
 import { ConsentRequests } from "@/components/ante/consent-requests";
 import { QueueStatusCard } from "@/components/ante/queue-status-card";
+
 import { VisitCard, type VisitCardData } from "@/components/ante/visit-card";
 import {
   VisitDetailDrawer,
@@ -142,9 +144,10 @@ function PassportPage() {
         </Section>
         ) : null}
 
-        {scheduled[0] && !data.queueStatusHidden ? (
+        {scheduled[0] ? (
           <CareNavigatorCard key={scheduled[0].id} visitId={scheduled[0].id} />
         ) : null}
+
 
 
 
