@@ -101,7 +101,7 @@ function VisitsPage() {
   const { data } = useSuspenseQuery(visitsQuery);
   const [filters, setFilters] = useState<Filters>(EMPTY);
   const [open, setOpen] = useState(false);
-  const [selectedVisit, setSelectedVisit] = useState<ReturnType<typeof useSuspenseQuery<typeof visitsQuery>>["data"]["visits"][number] | null>(null);
+  const [selectedVisit, setSelectedVisit] = useState<VisitItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const doctors = useMemo(() => {
