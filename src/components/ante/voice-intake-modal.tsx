@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Mic, Send, Sparkles } from "lucide-react";
+import { AlertTriangle, Loader2, Mic, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { useCortiDictation } from "@/lib/use-corti-dictation";
@@ -155,6 +155,10 @@ export function VoiceIntakeModal({
       if (autoSendTimeoutRef.current) clearTimeout(autoSendTimeoutRef.current);
     };
   }, [recording, connecting, dictation.status, composerValue, thinking, send]);
+
+  const userTurns = messages.filter((m) => m.role === "user").length;
+  const enoughData =
+    finishedRef.current || (userTurns >= 3 && (result?.symptoms.length ?? 0) > 0);
 
   const conversationText = messages
     .map((m) => `${m.role === "user" ? "Patient" : "Assistant"}: ${m.text}`)
