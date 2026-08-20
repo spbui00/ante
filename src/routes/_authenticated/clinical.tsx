@@ -853,7 +853,7 @@ function Block({ label, value }: { label: string; value: string | null | undefin
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm text-foreground">{value || "Not recorded"}</p>
+      <RichText className="mt-1 text-sm text-foreground" text={value || "Not recorded"} />
     </div>
   );
 }
