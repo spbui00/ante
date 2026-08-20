@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -38,32 +39,27 @@ export function useSession() {
   return { session, user: session?.user ?? null, loading };
 }
 
-export function useRoles() {
-  const { user } = useSession();
-  const [roles, setRoles] = useState<AnteRole[]>([]);
-  const [loading, setLoading] = useState(true);
+export const rolesQueryKey = (userId?: string | null) => ["user-roles", userId ?? "anon"] as const;
 
-  useEffect(() => {
-    let active = true;
-    if (!user) {
-      setRoles([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .then(({ data }) => {
-        if (!active) return;
-        setRoles((data ?? []).map((r) => r.role as AnteRole));
-        setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [user]);
+export function useRoles() {
+  const { user, loading: sessionLoading } = useSession();
+
+  const { data, isPending } = useQuery({
+    queryKey: rolesQueryKey(user?.id),
+    enabled: Boolean(user?.id),
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return (data ?? []).map((r) => r.role as AnteRole);
+    },
+  });
+
+  const roles = user ? (data ?? []) : [];
+  const loading = sessionLoading || (Boolean(user) && isPending);
 
   return { roles, loading, hasRole: (role: AnteRole) => roles.includes(role) };
 }
