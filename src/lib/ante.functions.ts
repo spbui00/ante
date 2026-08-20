@@ -76,7 +76,7 @@ export const getPassport = createServerFn({ method: "GET" })
         .limit(25),
       supabase
         .from("visit")
-        .select("*, practitioner:practitioner(full_name)")
+        .select("*, practitioner:practitioner(id, full_name, title, specialization)")
         .eq("patient_id", patientId)
         .order("visit_date", { ascending: false })
         .limit(25),
