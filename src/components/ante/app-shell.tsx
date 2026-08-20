@@ -98,7 +98,7 @@ export function AppShell({
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-6">
+      <div className="mx-auto max-w-[1600px] px-4 py-6 pb-24 md:pb-6">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
           {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
@@ -106,12 +106,12 @@ export function AppShell({
         {children}
       </div>
 
-      <nav className="sticky bottom-0 z-30 flex border-t border-border bg-background md:hidden">
+      <nav className="fixed bottom-4 left-4 right-4 z-30 flex rounded-2xl border border-border bg-background/95 shadow-lg shadow-black/10 backdrop-blur md:hidden">
         {visibleNav.map((item) => (
           <Link
             key={item.to}
             to={item.to}
-            className="flex flex-1 flex-col items-center gap-1 py-2 text-xs text-muted-foreground"
+            className="flex flex-1 flex-col items-center gap-1 py-3 text-xs text-muted-foreground transition-colors first:rounded-l-2xl last:rounded-r-2xl hover:bg-muted hover:text-foreground"
             activeProps={{ className: "text-accent-foreground bg-accent" }}
           >
             {item.icon}
