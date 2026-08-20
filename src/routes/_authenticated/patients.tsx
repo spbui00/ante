@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getMyPatients, getPatientRecord } from "@/lib/ante.functions";
-import { formatDate, formatDateTime, maskCpr } from "@/lib/clinical-utils";
+import { formatDate, formatDateTime, formatCpr } from "@/lib/clinical-utils";
 
 const patientsQuery = queryOptions({
   queryKey: ["my-patients"],
@@ -116,7 +116,7 @@ function PatientsPage() {
                     </span>
                   </div>
                   <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                    {maskCpr(p?.cpr_number)}
+                    {formatCpr(p?.cpr_number)}
                     {p?.date_of_birth ? ` · born ${formatDate(p.date_of_birth)}` : ""}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -187,7 +187,7 @@ function PatientPassportPanel({ patientId }: { patientId: string }) {
           <p className="text-xs text-muted-foreground">
             {data?.patient
               ? [
-                  maskCpr(data.patient.cpr_number),
+                  formatCpr(data.patient.cpr_number),
                   data.patient.date_of_birth ? `born ${formatDate(data.patient.date_of_birth)}` : null,
                   data.patient.postal_code,
                 ]
