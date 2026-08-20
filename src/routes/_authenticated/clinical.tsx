@@ -205,15 +205,128 @@ function ClinicalPage() {
   return (
     <AppShell
       title="Consultation console"
-      subtitle={`${data.visits.length} visits in view · ${data.consents.filter((c) => c.status === "ACTIVE").length} active consents`}
+      subtitle={`${visits.length} of ${data.visits.length} visits · ${data.consents.filter((c) => c.status === "ACTIVE").length} active consents`}
     >
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={filters.q}
+            onChange={(e) => set("q", e.target.value)}
+            placeholder="Search patient, CPR, symptoms…"
+            className="pl-9"
+          />
+        </div>
+
+        <Drawer open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <DrawerTrigger asChild>
+            <Button variant="outline">
+              <Filter className="size-4" />
+              Filters
+              {activeChips.length > 0 ? (
+                <span className="ml-1 rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
+                  {activeChips.length}
+                </span>
+              ) : null}
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent>
+            <div className="mx-auto w-full max-w-2xl">
+              <DrawerHeader>
+                <DrawerTitle>Filter queue</DrawerTitle>
+                <DrawerDescription>Narrow the queue to the consultations you need.</DrawerDescription>
+              </DrawerHeader>
+
+              <div className="grid gap-4 px-4 sm:grid-cols-2">
+                <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2 sm:col-span-2">
+                  <div>
+                    <Label htmlFor="active-only">Active only</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Hide completed consultations.
+                    </p>
+                  </div>
+                  <Switch
+                    id="active-only"
+                    checked={filters.activeOnly}
+                    onCheckedChange={(v) => set("activeOnly", v)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Urgency</Label>
+                  <Picker
+                    value={filters.urgency}
+                    onChange={(v) => set("urgency", v)}
+                    placeholder="Any urgency"
+                    options={Object.entries(URGENCY_LABEL)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Encounter type</Label>
+                  <Picker
+                    value={filters.encounterType}
+                    onChange={(v) => set("encounterType", v)}
+                    placeholder="Any type"
+                    options={Object.entries(ENCOUNTER_TYPE_LABEL)}
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Date range</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="date"
+                      value={filters.from}
+                      onChange={(e) => set("from", e.target.value)}
+                    />
+                    <span className="text-muted-foreground">–</span>
+                    <Input
+                      type="date"
+                      value={filters.to}
+                      onChange={(e) => set("to", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <DrawerFooter className="flex-row justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => setFilters({ ...DEFAULT_FILTERS, q: filters.q })}
+                >
+                  Reset
+                </Button>
+                <DrawerClose asChild>
+                  <Button>Show {visits.length} visits</Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      </div>
+
+      {activeChips.length > 0 ? (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {activeChips.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => clearChip(chip.key)}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-3 py-1 text-xs text-foreground transition-colors hover:bg-accent"
+            >
+              {chip.label}
+              <X className="size-3" />
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <Card className="h-fit">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Patient queue</CardTitle>
           </CardHeader>
           <CardContent className="max-h-[70vh] overflow-y-auto p-0">
-            {data.visits.map((v) => {
+            {visits.map((v) => {
               const patient = v.patient as { full_name?: string; cpr_number?: string } | null;
               return (
                 <button
@@ -241,13 +354,16 @@ function ClinicalPage() {
                 </button>
               );
             })}
-            {data.visits.length === 0 ? (
+            {visits.length === 0 ? (
               <p className="px-4 py-6 text-sm text-muted-foreground">
-                No visits visible. Access requires an active consent grant.
+                {data.visits.length === 0
+                  ? "No visits visible. Access requires an active consent grant."
+                  : "No visits match these filters."}
               </p>
             ) : null}
           </CardContent>
         </Card>
+
 
         {selected ? (
           <div className="space-y-4">
