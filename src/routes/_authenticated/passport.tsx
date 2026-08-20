@@ -60,6 +60,8 @@ function PassportPage() {
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<VisitDetail | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [navigatorVisit, setNavigatorVisit] = useState<VisitDetail | null>(null);
+  const [navigatorOpen, setNavigatorOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<VisitDetail | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -69,6 +71,7 @@ function PassportPage() {
   const active = data.prescriptions.filter((p) => !p.end_date);
   const scheduled = data.visits.filter((v) => v.status === "SCHEDULED");
   const past = data.visits.filter((v) => v.status !== "SCHEDULED");
+
 
   function refresh() {
     void queryClient.invalidateQueries({ queryKey: ["passport"] });
