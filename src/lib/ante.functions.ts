@@ -872,6 +872,7 @@ export const registerVisitArrival = createServerFn({ method: "POST" })
         practitioner_id: profile.practitioner_id,
         visit_date: new Date().toISOString(),
         status: "IN_PROGRESS",
+        arrived_at: new Date().toISOString(),
       })
       .eq("id", data.visitId);
     if (error) throw new Error(error.message);
