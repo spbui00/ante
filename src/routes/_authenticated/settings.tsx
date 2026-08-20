@@ -92,6 +92,25 @@ function SettingsPage() {
   );
   const [specialization, setSpecialization] = useState(data.practitioner?.specialization ?? "");
   const [licenseNumber, setLicenseNumber] = useState(data.practitioner?.license_number ?? "");
+  const [preferredName, setPreferredName] = useState(data.patient?.preferred_name ?? "");
+  const [sex, setSex] = useState<SexValue | "">((data.patient?.sex as SexValue) ?? "");
+  const [genderIdentity, setGenderIdentity] = useState<GenderIdentityValue | "">(
+    (data.patient?.gender_identity as GenderIdentityValue) ?? "",
+  );
+  const [raceEthnicity, setRaceEthnicity] = useState<string[]>(data.patient?.race_ethnicity ?? []);
+  const [maritalStatus, setMaritalStatus] = useState<MaritalStatusValue | "">(
+    (data.patient?.marital_status as MaritalStatusValue) ?? "",
+  );
+  const [employmentStatus, setEmploymentStatus] = useState<EmploymentStatusValue | "">(
+    (data.patient?.employment_status as EmploymentStatusValue) ?? "",
+  );
+  const [insuranceType, setInsuranceType] = useState<InsuranceTypeValue | "">(
+    (data.patient?.insurance_type as InsuranceTypeValue) ?? "",
+  );
+  const [insuranceProvider, setInsuranceProvider] = useState(data.patient?.insurance_provider ?? "");
+  const [insuranceMemberId, setInsuranceMemberId] = useState(
+    data.patient?.insurance_member_id ?? "",
+  );
 
   const save = useMutation({
     mutationFn: () =>
@@ -108,6 +127,15 @@ function SettingsPage() {
           specialization,
           licenseNumber,
           phoneNumber,
+          preferredName,
+          sex: sex || null,
+          genderIdentity: genderIdentity || null,
+          raceEthnicity,
+          maritalStatus: maritalStatus || null,
+          employmentStatus: employmentStatus || null,
+          insuranceType: insuranceType || null,
+          insuranceProvider,
+          insuranceMemberId,
         },
       }),
     onSuccess: async () => {
