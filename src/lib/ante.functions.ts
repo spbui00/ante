@@ -520,7 +520,7 @@ export const getMyVisitHistory = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("visit")
       .select(
-        "id, visit_date, encounter_type, urgency_level, status, disposition, conclusion, recommendation, symptoms, practitioner_id, practitioner:practitioner(id, full_name, title, specialization)",
+        "id, visit_date, encounter_type, urgency_level, status, disposition, conclusion, recommendation, symptoms, symptom_icd_codes, intake_transcript, travel_history, symptom_duration_days, practitioner_id, practitioner:practitioner(id, full_name, title, specialization)",
       )
       .eq("patient_id", profile.patient_id)
       .order("visit_date", { ascending: false });
