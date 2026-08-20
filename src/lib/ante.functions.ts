@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { CONSENT_DURATIONS } from "@/lib/clinical-utils";
 
 /** Identity + role of the signed-in account. */
 export const getMyContext = createServerFn({ method: "GET" })
@@ -527,15 +528,6 @@ export const getMyVisitHistory = createServerFn({ method: "GET" })
     return { visits: data ?? [] };
   });
 
-const DURATIONS = {
-  "1 hour": "1 hour",
-  "1 day": "1 day",
-  "1 week": "7 days",
-  "1 month": "1 month",
-  "1 year": "1 year",
-  "3 years": "3 years",
-} as const;
-
 /** Practitioner requests record access for a patient identified by CPR. */
 export const requestPatientConsent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -550,7 +542,7 @@ export const requestPatientConsent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("request_consent_by_cpr", {
       _cpr: data.cpr,
-      _duration: DURATIONS[data.duration],
+      _duration: CONSENT_DURATIONS[data.duration],
     });
     if (error) throw new Error(error.message);
     return result as {
