@@ -112,6 +112,7 @@ export const getClinicalQueue = createServerFn({ method: "GET" })
       supabase
         .from("visit")
         .select("*, patient:patient(id, full_name, date_of_birth, sex, postal_code, cpr_number)")
+        .eq("practitioner_id", profile.practitioner_id)
         .order("visit_date", { ascending: false })
         .limit(50),
       supabase
@@ -735,4 +736,71 @@ export const getPatientRecord = createServerFn({ method: "GET" })
       observations: observations.data ?? [],
       visits: visits.data ?? [],
     };
+  });
+
+/** Scheduled (pre-intake) visits for a consented patient, looked up by CPR. */
+export const findScheduledVisitsByCpr = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ cpr: z.string().trim().min(6).max(15) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const needle = data.cpr.replace(/\D/g, "");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("practitioner_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!profile?.practitioner_id)
+      return { ok: false as const, reason: "not_practitioner" as const };
+
+    const { data: patients } = await supabase
+      .from("patient")
+      .select("id, full_name, cpr_number, date_of_birth")
+      .not("cpr_number", "is", null)
+      .limit(500);
+
+    const patient = (patients ?? []).find(
+      (p) => (p.cpr_number ?? "").replace(/\D/g, "") === needle,
+    );
+    if (!patient) return { ok: false as const, reason: "not_found" as const };
+
+    const { data: visits, error } = await supabase
+      .from("visit")
+      .select("id, visit_date, encounter_type, urgency_level, status, symptoms, conclusion")
+      .eq("patient_id", patient.id)
+      .eq("status", "SCHEDULED")
+      .order("visit_date", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    return { ok: true as const, patient, visits: visits ?? [] };
+  });
+
+/** Patient has physically arrived: attach the visit to this practitioner's queue. */
+export const registerVisitArrival = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ visitId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("practitioner_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!profile?.practitioner_id) throw new Error("Not a practitioner account");
+
+    const { error } = await supabase
+      .from("visit")
+      .update({
+        practitioner_id: profile.practitioner_id,
+        visit_date: new Date().toISOString(),
+        status: "IN_PROGRESS",
+      })
+      .eq("id", data.visitId);
+    if (error) throw new Error(error.message);
+
+    return { ok: true };
   });
