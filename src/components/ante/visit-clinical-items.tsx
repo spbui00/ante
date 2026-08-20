@@ -14,7 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { formatDate } from "@/lib/clinical-utils";
+
+
 import {
   deleteVisitClinicalItem,
   getVisitClinicalItems,
@@ -170,116 +180,125 @@ export function VisitClinicalItems({ visitId }: { visitId: string }) {
   return (
     <div className="space-y-6">
       {/* Observations */}
-      <Section
-        title="Observations"
-        canEdit={canEdit}
-        onAdd={() => startAdd("observation")}
-        empty={(data?.observations.length ?? 0) === 0 && !isEditing("observation", null)}
-      >
-        {(data?.observations ?? []).map((o) =>
-          isEditing("observation", o.id) ? (
-            <div key={o.id} className="space-y-2 border-b border-border py-3 last:border-0">
+      <Section title="Observations" canEdit={canEdit} onAdd={() => startAdd("observation")}>
+        <ItemsTable
+          headers={["Test", "Value", "LOINC", "Recorded"]}
+          canEdit={canEdit}
+          empty={(data?.observations.length ?? 0) === 0 && !isEditing("observation", null)}
+          emptyText="No observations recorded"
+        >
+          {(data?.observations ?? []).map((o) =>
+            isEditing("observation", o.id) ? (
+              <EditRow key={o.id} span={5}>
+                <ObservationForm field={field} />
+                {formActions("observation", o.id)}
+              </EditRow>
+            ) : (
+              <Row
+                key={o.id}
+                cells={[
+                  o.test_name,
+                  [o.value ?? "—", o.unit].filter(Boolean).join(" "),
+                  o.loinc_code ?? "—",
+                  formatDate(o.recorded_at),
+                ]}
+                canEdit={canEdit}
+                onEdit={() => startEdit("observation", o as unknown as Record<string, unknown>)}
+                onDelete={() => remove.mutate({ kind: "observation", id: o.id })}
+              />
+            ),
+          )}
+          {isEditing("observation", null) ? (
+            <EditRow span={5}>
               <ObservationForm field={field} />
-              {formActions("observation", o.id)}
-            </div>
-          ) : (
-            <Row
-              key={o.id}
-              primary={o.test_name}
-              secondary={[
-                [o.value ?? "—", o.unit].filter(Boolean).join(" "),
-                o.loinc_code ? `LOINC ${o.loinc_code}` : null,
-                formatDate(o.recorded_at),
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-              canEdit={canEdit}
-              onEdit={() => startEdit("observation", o as unknown as Record<string, unknown>)}
-              onDelete={() => remove.mutate({ kind: "observation", id: o.id })}
-            />
-          ),
-        )}
-        {isEditing("observation", null) ? (
-          <div className="space-y-2 py-3">
-            <ObservationForm field={field} />
-            {formActions("observation", null)}
-          </div>
-        ) : null}
+              {formActions("observation", null)}
+            </EditRow>
+          ) : null}
+        </ItemsTable>
       </Section>
 
       {/* Prescriptions */}
-      <Section
-        title="Prescriptions"
-        canEdit={canEdit}
-        onAdd={() => startAdd("prescription")}
-        empty={(data?.prescriptions.length ?? 0) === 0 && !isEditing("prescription", null)}
-      >
-        {(data?.prescriptions ?? []).map((p) =>
-          isEditing("prescription", p.id) ? (
-            <div key={p.id} className="space-y-2 border-b border-border py-3 last:border-0">
+      <Section title="Prescriptions" canEdit={canEdit} onAdd={() => startAdd("prescription")}>
+        <ItemsTable
+          headers={["Drug", "Dosage", "Frequency", "ATC", "Period"]}
+          canEdit={canEdit}
+          empty={(data?.prescriptions.length ?? 0) === 0 && !isEditing("prescription", null)}
+          emptyText="No prescriptions recorded"
+        >
+          {(data?.prescriptions ?? []).map((p) =>
+            isEditing("prescription", p.id) ? (
+              <EditRow key={p.id} span={6}>
+                <PrescriptionForm field={field} />
+                {formActions("prescription", p.id)}
+              </EditRow>
+            ) : (
+              <Row
+                key={p.id}
+                cells={[
+                  p.drug_name,
+                  p.dosage ?? "—",
+                  p.frequency ?? "—",
+                  p.atc_code ?? "—",
+                  [
+                    p.start_date ? formatDate(p.start_date) : null,
+                    p.end_date ? formatDate(p.end_date) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" → ") || "—",
+                ]}
+                canEdit={canEdit}
+                onEdit={() => startEdit("prescription", p as unknown as Record<string, unknown>)}
+                onDelete={() => remove.mutate({ kind: "prescription", id: p.id })}
+              />
+            ),
+          )}
+          {isEditing("prescription", null) ? (
+            <EditRow span={6}>
               <PrescriptionForm field={field} />
-              {formActions("prescription", p.id)}
-            </div>
-          ) : (
-            <Row
-              key={p.id}
-              primary={p.drug_name}
-              secondary={[
-                p.dosage,
-                p.frequency,
-                p.atc_code ? `ATC ${p.atc_code}` : null,
-                p.start_date ? `from ${formatDate(p.start_date)}` : null,
-                p.end_date ? `until ${formatDate(p.end_date)}` : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-              canEdit={canEdit}
-              onEdit={() => startEdit("prescription", p as unknown as Record<string, unknown>)}
-              onDelete={() => remove.mutate({ kind: "prescription", id: p.id })}
-            />
-          ),
-        )}
-        {isEditing("prescription", null) ? (
-          <div className="space-y-2 py-3">
-            <PrescriptionForm field={field} />
-            {formActions("prescription", null)}
-          </div>
-        ) : null}
+              {formActions("prescription", null)}
+            </EditRow>
+          ) : null}
+        </ItemsTable>
       </Section>
 
       {/* Clinical records */}
-      <Section
-        title="Clinical records"
-        canEdit={canEdit}
-        onAdd={() => startAdd("record")}
-        empty={(data?.records.length ?? 0) === 0 && !isEditing("record", null)}
-      >
-        {(data?.records ?? []).map((r) =>
-          isEditing("record", r.id) ? (
-            <div key={r.id} className="space-y-2 border-b border-border py-3 last:border-0">
+      <Section title="Clinical records" canEdit={canEdit} onAdd={() => startAdd("record")}>
+        <ItemsTable
+          headers={["Description", "Category", "Code", "Status"]}
+          canEdit={canEdit}
+          empty={(data?.records.length ?? 0) === 0 && !isEditing("record", null)}
+          emptyText="No clinical records"
+        >
+          {(data?.records ?? []).map((r) =>
+            isEditing("record", r.id) ? (
+              <EditRow key={r.id} span={5}>
+                <RecordForm field={field} draft={draft} setDraft={setDraft} />
+                {formActions("record", r.id)}
+              </EditRow>
+            ) : (
+              <Row
+                key={r.id}
+                cells={[
+                  r.description,
+                  <Badge key="c" variant="outline" className="font-normal">
+                    {r.category.charAt(0) + r.category.slice(1).toLowerCase()}
+                  </Badge>,
+                  r.code ? `${r.code_system} ${r.code}` : r.code_system,
+                  r.status.charAt(0) + r.status.slice(1).toLowerCase(),
+                ]}
+                canEdit={canEdit}
+                onEdit={() => startEdit("record", r as unknown as Record<string, unknown>)}
+                onDelete={() => remove.mutate({ kind: "record", id: r.id })}
+              />
+            ),
+          )}
+          {isEditing("record", null) ? (
+            <EditRow span={5}>
               <RecordForm field={field} draft={draft} setDraft={setDraft} />
-              {formActions("record", r.id)}
-            </div>
-          ) : (
-            <Row
-              key={r.id}
-              primary={r.description}
-              badge={r.category}
-              secondary={[r.code ? `${r.code_system} ${r.code}` : r.code_system, r.status]
-                .filter(Boolean)
-                .join(" · ")}
-              canEdit={canEdit}
-              onEdit={() => startEdit("record", r as unknown as Record<string, unknown>)}
-              onDelete={() => remove.mutate({ kind: "record", id: r.id })}
-            />
-          ),
-        )}
-        {isEditing("record", null) ? (
-          <div className="space-y-2 py-3">
-            <RecordForm field={field} draft={draft} setDraft={setDraft} />
-            {formActions("record", null)}
-          </div>
-        ) : null}
+              {formActions("record", null)}
+            </EditRow>
+          ) : null}
+        </ItemsTable>
       </Section>
 
       {!canEdit ? (
@@ -290,6 +309,7 @@ export function VisitClinicalItems({ visitId }: { visitId: string }) {
     </div>
   );
 }
+
 
 type FieldFn = (key: string) => {
   value: string;
@@ -432,17 +452,15 @@ function Section({
   title,
   canEdit,
   onAdd,
-  empty,
   children,
 }: {
   title: string;
   canEdit: boolean;
   onAdd: () => void;
-  empty: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <div className="flex items-center gap-2">
         <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {title}
@@ -454,80 +472,129 @@ function Section({
           </Button>
         ) : null}
       </div>
-      {empty ? <p className="py-2 text-sm text-muted-foreground">Nothing recorded</p> : null}
       {children}
     </div>
   );
 }
 
+function ItemsTable({
+  headers,
+  canEdit,
+  empty,
+  emptyText,
+  children,
+}: {
+  headers: string[];
+  canEdit: boolean;
+  empty: boolean;
+  emptyText: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-md border border-border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {headers.map((h) => (
+              <TableHead key={h} className="whitespace-nowrap text-xs">
+                {h}
+              </TableHead>
+            ))}
+            {canEdit ? <TableHead className="w-[90px]" /> : null}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {empty ? (
+            <TableRow>
+              <TableCell
+                colSpan={headers.length + (canEdit ? 1 : 0)}
+                className="text-sm text-muted-foreground"
+              >
+                {emptyText}
+              </TableCell>
+            </TableRow>
+          ) : null}
+          {children}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function EditRow({ span, children }: { span: number; children: React.ReactNode }) {
+  return (
+    <TableRow className="bg-muted/40 hover:bg-muted/40">
+      <TableCell colSpan={span} className="space-y-2 py-3">
+        {children}
+      </TableCell>
+    </TableRow>
+  );
+}
+
 function Row({
-  primary,
-  secondary,
-  badge,
+  cells,
   canEdit,
   onEdit,
   onDelete,
 }: {
-  primary: string;
-  secondary?: string;
-  badge?: string;
+  cells: React.ReactNode[];
   canEdit: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   return (
-    <div className="flex items-start gap-2 border-b border-border py-2 last:border-0">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-foreground">{primary}</span>
-          {badge ? (
-            <Badge variant="outline" className="font-normal">
-              {badge.charAt(0) + badge.slice(1).toLowerCase()}
-            </Badge>
-          ) : null}
-        </div>
-        {secondary ? <p className="text-xs text-muted-foreground">{secondary}</p> : null}
-      </div>
+    <TableRow>
+      {cells.map((c, i) => (
+        <TableCell
+          key={i}
+          className={i === 0 ? "font-medium text-foreground" : "text-muted-foreground"}
+        >
+          {c}
+        </TableCell>
+      ))}
       {canEdit ? (
-        confirming ? (
-          <div className="flex shrink-0 gap-1">
-            <Button
-              size="sm"
-              variant="destructive"
-              className="h-7 px-2"
-              onClick={() => {
-                setConfirming(false);
-                onDelete();
-              }}
-            >
-              Delete
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2"
-              onClick={() => setConfirming(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <div className="flex shrink-0 gap-1">
-            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={onEdit}>
-              <Pencil className="size-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setConfirming(true)}
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </div>
-        )
+        <TableCell className="text-right">
+          {confirming ? (
+            <div className="flex justify-end gap-1">
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-7 px-2"
+                onClick={() => {
+                  setConfirming(false);
+                  onDelete();
+                }}
+              >
+                Delete
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2"
+                onClick={() => setConfirming(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <div className="flex justify-end gap-1">
+              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={onEdit}>
+                <Pencil className="size-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setConfirming(true)}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          )}
+        </TableCell>
       ) : null}
-    </div>
+    </TableRow>
   );
 }
+

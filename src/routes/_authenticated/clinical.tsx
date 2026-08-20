@@ -46,6 +46,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
+
 import {
   finaliseVisit,
   findScheduledVisitsByCpr,
@@ -617,6 +619,15 @@ function ClinicalPage() {
 
             <Card>
               <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Clinical items</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VisitClinicalItems visitId={selected.id} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-sm">Coding</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap items-center gap-2">
@@ -632,6 +643,7 @@ function ClinicalPage() {
                 <DispositionBadge value={selected.disposition} />
               </CardContent>
             </Card>
+
           </div>
         ) : (
           <Card>
