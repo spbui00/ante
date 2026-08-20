@@ -491,7 +491,8 @@ export function VoiceIntakeModal({
           </div>
         </DrawerContent>
       </Drawer>
-    </Drawer>
+    </>
+
   );
 }
 
