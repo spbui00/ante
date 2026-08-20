@@ -7,7 +7,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { IdCard, Search, Trash2, Users } from "lucide-react";
+import { IdCard, Search, ShieldAlert, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Drawer,
   DrawerClose,
@@ -37,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { UrgencyBadge } from "@/components/ante/badges";
 import {
+  forceRequestPatientConsent,
   getMyPatients,
   getPatientRecord,
   removePatientFromRegistry,
