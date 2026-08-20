@@ -106,9 +106,9 @@ export const getClinicalQueue = createServerFn({ method: "GET" })
       .eq("id", userId)
       .maybeSingle();
 
-    if (!profile?.practitioner_id) return { visits: [], consents: [] };
+    if (!profile?.practitioner_id) return { visits: [], consents: [], queue: [] };
 
-    const [visits, consents] = await Promise.all([
+    const [visits, consents, queue] = await Promise.all([
       supabase
         .from("visit")
         .select("*, patient:patient(id, full_name, date_of_birth, sex, postal_code, cpr_number)")
@@ -120,9 +120,28 @@ export const getClinicalQueue = createServerFn({ method: "GET" })
         .select("*, patient:patient(id, full_name)")
         .eq("practitioner_id", profile.practitioner_id)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("queue_priority")
+        .select("visit_id, position, pinned, rationale")
+        .eq("practitioner_id", profile.practitioner_id)
+        .order("position", { ascending: true }),
     ]);
 
-    return { visits: visits.data ?? [], consents: consents.data ?? [] };
+    return { visits: visits.data ?? [], consents: consents.data ?? [], queue: queue.data ?? [] };
+  });
+
+/** Marks the moment the clinician actually takes the patient in. */
+export const markVisitTakenIn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ visitId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("visit")
+      .update({ taken_in_at: new Date().toISOString() })
+      .eq("id", data.visitId)
+      .is("taken_in_at", null);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 /** Full consultation view for one visit. */
@@ -179,6 +198,7 @@ export const finaliseVisit = createServerFn({ method: "POST" })
         disposition: data.disposition,
         urgency_level: data.urgencyLevel,
         status: "COMPLETED",
+        completed_at: new Date().toISOString(),
       })
       .eq("id", data.visitId);
 
@@ -852,6 +872,7 @@ export const registerVisitArrival = createServerFn({ method: "POST" })
         practitioner_id: profile.practitioner_id,
         visit_date: new Date().toISOString(),
         status: "IN_PROGRESS",
+        arrived_at: new Date().toISOString(),
       })
       .eq("id", data.visitId);
     if (error) throw new Error(error.message);

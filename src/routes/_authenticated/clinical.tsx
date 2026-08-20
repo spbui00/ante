@@ -1,8 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarPlus, Filter, Search, ShieldAlert, Sparkles, X } from "lucide-react";
+import {
+  CalendarPlus,
+  Filter,
+  GripVertical,
+  Pin,
+  PinOff,
+  Search,
+  ShieldAlert,
+  Sparkles,
+  Wand2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -30,7 +41,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { breakGlass, finaliseVisit, findScheduledVisitsByCpr, getClinicalQueue, registerVisitArrival } from "@/lib/ante.functions";
+import {
+  breakGlass,
+  finaliseVisit,
+  findScheduledVisitsByCpr,
+  getClinicalQueue,
+  markVisitTakenIn,
+  registerVisitArrival,
+} from "@/lib/ante.functions";
+import { prioritizeQueue, saveQueueOrder } from "@/lib/queue.functions";
 import {
   ENCOUNTER_TYPE_LABEL,
   URGENCY_LABEL,
@@ -105,7 +124,23 @@ function ClinicalPage() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const visits = useMemo(() => {
+  const [order, setOrder] = useState<string[]>([]);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [dragId, setDragId] = useState<string | null>(null);
+
+  // Sync local queue state whenever the server queue changes.
+  useEffect(() => {
+    setOrder(data.queue.map((q) => q.visit_id));
+    setPinnedIds(data.queue.filter((q) => q.pinned).map((q) => q.visit_id));
+  }, [data.queue]);
+
+  const rationaleById = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const q of data.queue) if (q.rationale) map[q.visit_id] = q.rationale;
+    return map;
+  }, [data.queue]);
+
+  const filtered = useMemo(() => {
     const q = filters.q.trim().toLowerCase();
     return data.visits.filter((v) => {
       if (filters.activeOnly && v.status === "COMPLETED") return false;
@@ -124,6 +159,19 @@ function ClinicalPage() {
       return true;
     });
   }, [data.visits, filters]);
+
+  const visits = useMemo(() => {
+    const rank = new Map(order.map((id, index) => [id, index]));
+    return [...filtered].sort((a, b) => {
+      const ra = rank.get(a.id);
+      const rb = rank.get(b.id);
+      if (ra !== undefined && rb !== undefined) return ra - rb;
+      if (ra !== undefined) return -1;
+      if (rb !== undefined) return 1;
+      return new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime();
+    });
+  }, [filtered, order]);
+
 
   const activeChips = useMemo(() => {
     const chips: { key: keyof Filters; label: string }[] = [];
@@ -166,7 +214,66 @@ function ClinicalPage() {
     setRecommendation(v.recommendation ?? "");
     setDisposition(v.disposition ?? "HOME_CARE");
     setUrgency(v.urgency_level ?? "LOW");
+    if (v.status === "IN_PROGRESS" && !v.taken_in_at) {
+      takeIn({ data: { visitId: v.id } }).catch(() => undefined);
+    }
   }
+
+  const takeIn = useServerFn(markVisitTakenIn);
+  const persistOrder = useServerFn(saveQueueOrder);
+  const runTriage = useServerFn(prioritizeQueue);
+
+  function persist(nextOrder: string[], nextPinned: string[]) {
+    persistOrder({
+      data: {
+        items: nextOrder.map((visitId, index) => ({
+          visitId,
+          position: index,
+          pinned: nextPinned.includes(visitId),
+        })),
+      },
+    }).catch(() => toast.error("Could not save the queue order"));
+  }
+
+  function currentOrder() {
+    const ids = visits.map((v) => v.id);
+    for (const id of order) if (!ids.includes(id)) ids.push(id);
+    return ids;
+  }
+
+  function togglePin(visitId: string) {
+    const next = pinnedIds.includes(visitId)
+      ? pinnedIds.filter((id) => id !== visitId)
+      : [...pinnedIds, visitId];
+    setPinnedIds(next);
+    const ids = currentOrder();
+    setOrder(ids);
+    persist(ids, next);
+  }
+
+  function dropOn(targetId: string) {
+    if (!dragId || dragId === targetId) return;
+    const ids = currentOrder().filter((id) => id !== dragId);
+    const at = ids.indexOf(targetId);
+    ids.splice(at < 0 ? ids.length : at, 0, dragId);
+    setOrder(ids);
+    setDragId(null);
+    persist(ids, pinnedIds);
+  }
+
+  const triage = useMutation({
+    mutationFn: async () => runTriage({ data: undefined }),
+    onSuccess: (res) => {
+      toast.success(
+        res?.source === "agent"
+          ? "Queue prioritised by the triage agent"
+          : "Queue prioritised by urgency and waiting time",
+      );
+      queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
+    },
+    onError: () => toast.error("Could not prioritise the queue"),
+  });
+
 
   const signOff = useMutation({
     mutationFn: async () => {
@@ -324,36 +431,90 @@ function ClinicalPage() {
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <Card className="h-fit">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Patient queue</CardTitle>
+          <CardHeader className="gap-2 pb-2">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm">Patient queue</CardTitle>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="ml-auto h-7 gap-1 text-xs"
+                disabled={triage.isPending || visits.length < 2}
+                onClick={() => triage.mutate()}
+              >
+                <Wand2 className="size-3.5" />
+                {triage.isPending ? "Prioritising…" : "Prioritise"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Drag to reorder · pin to lock a position
+            </p>
           </CardHeader>
           <CardContent className="max-h-[70vh] overflow-y-auto p-0">
-            {visits.map((v) => {
+            {visits.map((v, index) => {
               const patient = v.patient as { full_name?: string; cpr_number?: string } | null;
+              const isPinned = pinnedIds.includes(v.id);
+              const waited = Math.max(
+                0,
+                Math.round(
+                  (Date.now() - new Date(v.arrived_at ?? v.visit_date).getTime()) / 60000,
+                ),
+              );
               return (
-                <button
+                <div
                   key={v.id}
-                  type="button"
-                  onClick={() => select(v)}
-                  className={`block w-full border-b border-border px-4 py-3 text-left transition-colors hover:bg-muted ${
+                  draggable
+                  onDragStart={() => setDragId(v.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => dropOn(v.id)}
+                  onDragEnd={() => setDragId(null)}
+                  className={`flex items-start gap-2 border-b border-border px-3 py-3 transition-colors hover:bg-muted ${
                     selectedId === v.id ? "bg-accent" : ""
-                  }`}
+                  } ${dragId === v.id ? "opacity-50" : ""}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">
-                      {patient?.full_name ?? "Unknown patient"}
-                    </span>
-                    <span className="ml-auto">
-                      <UrgencyBadge level={v.urgency_level} />
-                    </span>
+                  <div className="flex flex-col items-center gap-1 pt-0.5 text-muted-foreground">
+                    <GripVertical className="size-4 cursor-grab" />
+                    <span className="text-[10px] font-medium">{index + 1}</span>
                   </div>
-                  <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                    {formatCpr(patient?.cpr_number)}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {formatDateTime(v.visit_date)} · {ENCOUNTER_TYPE_LABEL[v.encounter_type ?? ""] ?? "Visit"}
-                  </p>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => select(v)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {patient?.full_name ?? "Unknown patient"}
+                      </span>
+                      <span className="ml-auto shrink-0">
+                        <UrgencyBadge level={v.urgency_level} />
+                      </span>
+                    </div>
+                    <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                      {formatCpr(patient?.cpr_number)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatDateTime(v.visit_date)} ·{" "}
+                      {ENCOUNTER_TYPE_LABEL[v.encounter_type ?? ""] ?? "Visit"}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Waiting {waited < 60 ? `${waited} min` : `${Math.floor(waited / 60)} h ${waited % 60} min`}
+                    </p>
+                    {rationaleById[v.id] && !isPinned ? (
+                      <p className="mt-1 text-xs italic text-muted-foreground">
+                        {rationaleById[v.id]}
+                      </p>
+                    ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={isPinned ? "Unpin from position" : "Pin position"}
+                    onClick={() => togglePin(v.id)}
+                    className={`rounded-md p-1 transition-colors hover:bg-accent ${
+                      isPinned ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    {isPinned ? <Pin className="size-4" /> : <PinOff className="size-4" />}
+                  </button>
+                </div>
               );
             })}
             {visits.length === 0 ? (
