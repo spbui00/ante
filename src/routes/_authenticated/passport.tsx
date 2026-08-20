@@ -37,6 +37,7 @@ export const Route = createFileRoute("/_authenticated/passport")({
 
 function PassportPage() {
   const { data } = useSuspenseQuery(passportQuery);
+  const navigate = useNavigate();
   const [intakeOpen, setIntakeOpen] = useState(false);
 
   const conditions = data.records.filter((r) => r.category === "CONDITION");
