@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/ante/app-shell";
 import { ConsultationRecorder } from "@/components/ante/consultation-recorder";
 import { PatientPassportPanel } from "@/components/ante/patient-passport-panel";
-import { RichText } from "@/components/ante/rich-text";
+
 import { UrgencyBadge } from "@/components/ante/badges";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
 import { VisitTranscript } from "@/components/ante/visit-transcript";
@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { finaliseVisit, getVisitDetail } from "@/lib/ante.functions";
+import { finaliseVisit, getVisitDetail, updateVisitSymptoms } from "@/lib/ante.functions";
 import { getVisitClinicalItems } from "@/lib/visit-clinical.functions";
 
 import { ENCOUNTER_TYPE_LABEL, formatDateTime } from "@/lib/clinical-utils";
@@ -97,6 +97,7 @@ function ConsultationPage() {
 
   const [conclusion, setConclusion] = useState("");
   const [recommendation, setRecommendation] = useState("");
+  const [symptoms, setSymptoms] = useState("");
   const [urgency, setUrgency] = useState("LOW");
   const [disposition, setDisposition] = useState("HOME_CARE");
 
@@ -104,9 +105,24 @@ function ConsultationPage() {
     if (!visit) return;
     setConclusion(visit.conclusion ?? "");
     setRecommendation(visit.recommendation ?? "");
+    setSymptoms(visit.symptoms ?? "");
     setUrgency(visit.urgency_level ?? "LOW");
     setDisposition(visit.disposition ?? "HOME_CARE");
   }, [visit?.id]);
+
+  const saveSymptoms = useMutation({
+    mutationFn: () => updateVisitSymptoms({ data: { visitId, symptoms } }),
+    onSuccess: () => {
+      toast.success("Symptoms updated");
+      void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
+      void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error && error.message ? error.message : "Could not save symptoms",
+      ),
+  });
+
 
   const signOff = useMutation({
     mutationFn: () =>
@@ -115,6 +131,8 @@ function ConsultationPage() {
           visitId,
           conclusion,
           recommendation,
+          symptoms,
+
           urgencyLevel: urgency as "LOW" | "MEDIUM" | "HIGH_RED_FLAG",
           disposition: disposition as "HOME_CARE" | "PRESCRIPTION" | "ER_REFERRAL",
         },
@@ -188,15 +206,29 @@ function ConsultationPage() {
                   <Field label="Completed" value={visit.completed_at} />
                 </div>
 
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Symptoms
-                  </p>
-                  <RichText
-                    className="mt-1 text-sm text-foreground"
-                    text={visit.symptoms || "Not recorded"}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="symptoms">Symptoms</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => saveSymptoms.mutate()}
+                      disabled={
+                        saveSymptoms.isPending || symptoms === (visit.symptoms ?? "")
+                      }
+                    >
+                      {saveSymptoms.isPending ? "Saving…" : "Save symptoms"}
+                    </Button>
+                  </div>
+                  <Textarea
+                    id="symptoms"
+                    rows={4}
+                    value={symptoms}
+                    onChange={(e) => setSymptoms(e.target.value)}
+                    placeholder="Reported symptoms…"
                   />
                 </div>
+
 
                 <div className="space-y-2">
                   <Label htmlFor="conclusion">Conclusion</Label>

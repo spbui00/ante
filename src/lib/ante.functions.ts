@@ -175,6 +175,26 @@ export const getVisitDetail = createServerFn({ method: "GET" })
     };
   });
 
+/** Practitioner edits the recorded symptoms of a visit. */
+export const updateVisitSymptoms = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        visitId: z.string().uuid(),
+        symptoms: z.string().trim().max(4000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("visit")
+      .update({ symptoms: data.symptoms })
+      .eq("id", data.visitId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** Practitioner signs off an AI-drafted visit. */
 export const finaliseVisit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -184,8 +204,10 @@ export const finaliseVisit = createServerFn({ method: "POST" })
         visitId: z.string().uuid(),
         conclusion: z.string().trim().min(1, "Conclusion is required").max(4000),
         recommendation: z.string().trim().min(1, "Recommendation is required").max(4000),
+        symptoms: z.string().trim().max(4000).optional(),
         disposition: z.enum(["HOME_CARE", "PRESCRIPTION", "ER_REFERRAL"]),
         urgencyLevel: z.enum(["LOW", "MEDIUM", "HIGH_RED_FLAG"]),
+
       })
       .parse(input),
   )
@@ -205,6 +227,8 @@ export const finaliseVisit = createServerFn({ method: "POST" })
       .update({
         conclusion: data.conclusion,
         recommendation: data.recommendation,
+        ...(data.symptoms !== undefined ? { symptoms: data.symptoms } : {}),
+
         disposition: data.disposition,
         urgency_level: data.urgencyLevel,
         status: "COMPLETED",
