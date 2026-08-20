@@ -41,7 +41,14 @@ const CODE_SYSTEMS = ["ICD10", "SKS", "ICPC2", "SNOMED", "LOINC", "ATC"] as cons
 
 type Draft = Record<string, string>;
 
-export function VisitClinicalItems({ visitId }: { visitId: string }) {
+export function VisitClinicalItems({
+  visitId,
+  sections = ["observation", "prescription", "record"],
+}: {
+  visitId: string;
+  sections?: Kind[];
+}) {
+  const show = (k: Kind) => sections.includes(k);
   const queryClient = useQueryClient();
   const queryKey = ["visit-clinical-items", visitId];
   const { data, isPending } = useQuery({
@@ -179,7 +186,7 @@ export function VisitClinicalItems({ visitId }: { visitId: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Observations */}
+      {show("observation") ? (
       <Section title="Observations" canEdit={canEdit} onAdd={() => startAdd("observation")}>
         <ItemsTable
           headers={["Test", "Value", "LOINC", "Recorded"]}
@@ -216,8 +223,9 @@ export function VisitClinicalItems({ visitId }: { visitId: string }) {
           ) : null}
         </ItemsTable>
       </Section>
+      ) : null}
 
-      {/* Prescriptions */}
+      {show("prescription") ? (
       <Section title="Prescriptions" canEdit={canEdit} onAdd={() => startAdd("prescription")}>
         <ItemsTable
           headers={["Drug", "Dosage", "Frequency", "ATC", "Period"]}
@@ -260,8 +268,9 @@ export function VisitClinicalItems({ visitId }: { visitId: string }) {
           ) : null}
         </ItemsTable>
       </Section>
+      ) : null}
 
-      {/* Clinical records */}
+      {show("record") ? (
       <Section title="Clinical records" canEdit={canEdit} onAdd={() => startAdd("record")}>
         <ItemsTable
           headers={["Description", "Category", "Code", "Status"]}
@@ -300,6 +309,8 @@ export function VisitClinicalItems({ visitId }: { visitId: string }) {
           ) : null}
         </ItemsTable>
       </Section>
+      ) : null}
+
 
       {!canEdit ? (
         <p className="text-xs text-muted-foreground">

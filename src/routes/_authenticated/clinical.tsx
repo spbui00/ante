@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -11,7 +11,7 @@ import {
   Pin,
   PinOff,
   Search,
-  Sparkles,
+  Stethoscope,
   Wand2,
   X,
 } from "lucide-react";
@@ -19,9 +19,8 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
-import { ConsultationRecorder } from "@/components/ante/consultation-recorder";
 
-import { CodeChip, DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
+import { UrgencyBadge } from "@/components/ante/badges";
 import { RichText, RichTextInline } from "@/components/ante/rich-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,11 +44,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
 
 import {
-  finaliseVisit,
   findScheduledVisitsByCpr,
   getClinicalQueue,
   markVisitTakenIn,
@@ -121,10 +118,8 @@ type QueueVisit = Awaited<ReturnType<typeof getClinicalQueue>>["visits"][number]
 function ClinicalPage() {
   const { data } = useSuspenseQuery(queueQuery);
   const queryClient = useQueryClient();
-  const finalise = useServerFn(finaliseVisit);
 
   const [selectedId, setSelectedId] = useState<string | null>(data.visits[0]?.id ?? null);
-  const [recorderOpen, setRecorderOpen] = useState(false);
 
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -208,17 +203,8 @@ function ClinicalPage() {
   );
 
 
-  const [conclusion, setConclusion] = useState("");
-  const [recommendation, setRecommendation] = useState("");
-  const [disposition, setDisposition] = useState("HOME_CARE");
-  const [urgency, setUrgency] = useState("LOW");
-
   function select(v: QueueVisit) {
     setSelectedId(v.id);
-    setConclusion(v.conclusion ?? "");
-    setRecommendation(v.recommendation ?? "");
-    setDisposition(v.disposition ?? "HOME_CARE");
-    setUrgency(v.urgency_level ?? "LOW");
     if (v.status === "IN_PROGRESS" && !v.taken_in_at) {
       takeIn({ data: { visitId: v.id } }).catch(() => undefined);
     }
@@ -284,26 +270,6 @@ function ClinicalPage() {
     onError: () => toast.error("Could not prioritise the queue"),
   });
 
-
-  const signOff = useMutation({
-    mutationFn: async () => {
-      if (!selected) return;
-      await finalise({
-        data: {
-          visitId: selected.id,
-          conclusion,
-          recommendation,
-          disposition: disposition as "HOME_CARE" | "PRESCRIPTION" | "ER_REFERRAL",
-          urgencyLevel: urgency as "LOW" | "MEDIUM" | "HIGH_RED_FLAG",
-        },
-      });
-    },
-    onSuccess: () => {
-      toast.success("Consultation signed off");
-      queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
-    },
-    onError: () => toast.error("Could not save the consultation"),
-  });
 
   return (
     <AppShell
@@ -534,18 +500,27 @@ function ClinicalPage() {
             <Card>
               <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <Sparkles className="size-4" />
-                  AI visit summary
+                  <Stethoscope className="size-4" />
+                  Active intake
                 </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" onClick={() => setRecorderOpen(true)}>
+                <Button size="sm" asChild>
+                  <Link
+                    to="/consultation/$visitId"
+                    params={{ visitId: selected.id }}
+                  >
                     <Mic className="size-4" />
-                    Start recording
-                  </Button>
-                </div>
-
+                    Start consultation
+                  </Link>
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <UrgencyBadge level={selected.urgency_level} />
+                  <span className="text-xs text-muted-foreground">
+                    {ENCOUNTER_TYPE_LABEL[selected.encounter_type ?? ""] ?? "Visit"}
+                  </span>
+                </div>
+
                 <div className="grid gap-3 sm:grid-cols-3">
                   <Block label="Arrived" value={formatDateTime(selected.arrived_at)} />
                   <Block
@@ -559,110 +534,28 @@ function ClinicalPage() {
                 </div>
 
                 <Block label="Symptoms" value={selected.symptoms} />
-
-                <div className="space-y-2">
-                  <Label htmlFor="conclusion">Conclusion</Label>
-                  <Textarea
-                    id="conclusion"
-                    rows={3}
-                    value={conclusion}
-                    onChange={(e) => setConclusion(e.target.value)}
-                    placeholder="Clinical conclusion…"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="recommendation">Recommendation</Label>
-                  <Textarea
-                    id="recommendation"
-                    rows={3}
-                    value={recommendation}
-                    onChange={(e) => setRecommendation(e.target.value)}
-                    placeholder="Plan and follow-up…"
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Urgency</Label>
-                    <Select value={urgency} onValueChange={setUrgency}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="LOW">Low</SelectItem>
-                        <SelectItem value="MEDIUM">Medium</SelectItem>
-                        <SelectItem value="HIGH_RED_FLAG">Red flag</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Disposition</Label>
-                    <Select value={disposition} onValueChange={setDisposition}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="HOME_CARE">Home care</SelectItem>
-                        <SelectItem value="PRESCRIPTION">Prescription</SelectItem>
-                        <SelectItem value="ER_REFERRAL">ER referral</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <Button onClick={() => signOff.mutate()} disabled={signOff.isPending}>
-                  Sign off consultation
-                </Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Clinical items</CardTitle>
+                <CardTitle className="text-sm">Observations</CardTitle>
               </CardHeader>
               <CardContent>
-                <VisitClinicalItems visitId={selected.id} />
+                <VisitClinicalItems visitId={selected.id} sections={["observation"]} />
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Coding</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap items-center gap-2">
-                {codesOf(selected.symptom_icd_codes).length ? (
-                  codesOf(selected.symptom_icd_codes).map((c) => (
-                    <CodeChip key={c} code={c} system="ICD-10" />
-                  ))
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    No codes extracted yet — coding runs on transcript processing.
-                  </span>
-                )}
-                <DispositionBadge value={selected.disposition} />
-              </CardContent>
-            </Card>
-
           </div>
         ) : (
           <Card>
             <CardContent className="py-10 text-sm text-muted-foreground">
-              Select a patient from the queue to open their consultation.
+              Select a patient from the queue to open their intake.
             </CardContent>
           </Card>
         )}
       </div>
 
-      {selected ? (
-        <ConsultationRecorder
-          visitId={selected.id}
-          patientName={(selected.patient as { full_name?: string } | null)?.full_name ?? "Patient"}
-          open={recorderOpen}
-          onOpenChange={setRecorderOpen}
-          onSigned={() => void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] })}
-        />
-      ) : null}
+
 
     </AppShell>
   );
@@ -838,9 +731,6 @@ function Picker({
   );
 }
 
-function codesOf(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
-}
 
 function Block({ label, value }: { label: string; value: string | null | undefined }) {
   return (
