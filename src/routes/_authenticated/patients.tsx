@@ -5,6 +5,9 @@ import { Search, Users } from "lucide-react";
 
 import { AppShell } from "@/components/ante/app-shell";
 import { RichTextInline } from "@/components/ante/rich-text";
+import { VisitCard } from "@/components/ante/visit-card";
+import { VisitDetailDrawer, type VisitDetail } from "@/components/ante/visit-detail-drawer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
