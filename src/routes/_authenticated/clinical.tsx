@@ -787,9 +787,11 @@ function RegisterVisit() {
                       <p className="mt-1 text-xs text-muted-foreground">
                         {ENCOUNTER_TYPE_LABEL[v.encounter_type ?? ""] ?? "Visit"}
                       </p>
-                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                        {v.symptoms || v.conclusion || "No pre-intake detail recorded."}
-                      </p>
+                      <RichTextInline
+                        className="mt-1 line-clamp-2 text-sm text-muted-foreground"
+                        text={v.symptoms || v.conclusion || "No pre-intake detail recorded."}
+                      />
+                    </div>
                     </button>
                   ))}
                 </div>
