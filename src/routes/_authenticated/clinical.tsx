@@ -11,7 +11,6 @@ import {
   Pin,
   PinOff,
   Search,
-  ShieldAlert,
   Sparkles,
   Wand2,
   X,
@@ -48,7 +47,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  breakGlass,
   finaliseVisit,
   findScheduledVisitsByCpr,
   getClinicalQueue,
@@ -122,13 +120,10 @@ function ClinicalPage() {
   const { data } = useSuspenseQuery(queueQuery);
   const queryClient = useQueryClient();
   const finalise = useServerFn(finaliseVisit);
-  const glass = useServerFn(breakGlass);
 
   const [selectedId, setSelectedId] = useState<string | null>(data.visits[0]?.id ?? null);
-  const [glassOpen, setGlassOpen] = useState(false);
   const [recorderOpen, setRecorderOpen] = useState(false);
 
-  const [justification, setJustification] = useState("");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -306,20 +301,6 @@ function ClinicalPage() {
       queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
     },
     onError: () => toast.error("Could not save the consultation"),
-  });
-
-  const emergency = useMutation({
-    mutationFn: async () => {
-      if (!selected?.patient_id) return;
-      await glass({ data: { patientId: selected.patient_id, justification } });
-    },
-    onSuccess: () => {
-      toast.success("Emergency access granted and logged");
-      setGlassOpen(false);
-      setJustification("");
-      queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
-    },
-    onError: () => toast.error("Justification must be at least 20 characters"),
   });
 
   return (
@@ -559,10 +540,6 @@ function ClinicalPage() {
                     <Mic className="size-4" />
                     Start recording
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setGlassOpen(true)}>
-                    <ShieldAlert className="size-4" />
-                    Break glass
-                  </Button>
                 </div>
 
               </CardHeader>
@@ -675,40 +652,6 @@ function ClinicalPage() {
         />
       ) : null}
 
-      <Drawer open={glassOpen} onOpenChange={setGlassOpen}>
-
-        <DrawerContent>
-          <div className="mx-auto w-full max-w-lg">
-            <DrawerHeader>
-              <DrawerTitle>Emergency access</DrawerTitle>
-              <DrawerDescription>
-                Break-glass access is logged against your licence and expires after 24 hours. A
-                justification of at least 20 characters is mandatory.
-              </DrawerDescription>
-            </DrawerHeader>
-            <div className="px-4">
-              <Textarea
-                rows={4}
-                value={justification}
-                onChange={(e) => setJustification(e.target.value)}
-                placeholder="Clinical reason for overriding consent…"
-              />
-            </div>
-            <DrawerFooter className="flex-row justify-end gap-2">
-              <DrawerClose asChild>
-                <Button variant="ghost">Cancel</Button>
-              </DrawerClose>
-              <Button
-                variant="destructive"
-                onClick={() => emergency.mutate()}
-                disabled={emergency.isPending}
-              >
-                Confirm emergency access
-              </Button>
-            </DrawerFooter>
-          </div>
-        </DrawerContent>
-      </Drawer>
     </AppShell>
   );
 }

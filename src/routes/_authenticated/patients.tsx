@@ -7,7 +7,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { IdCard, Search, Trash2, Users } from "lucide-react";
+import { IdCard, Search, ShieldAlert, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Drawer,
   DrawerClose,
@@ -37,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { UrgencyBadge } from "@/components/ante/badges";
 import {
+  forceRequestPatientConsent,
   getMyPatients,
   getPatientRecord,
   removePatientFromRegistry,
@@ -427,71 +429,137 @@ function RegisterIntake() {
   const queryClient = useQueryClient();
   const [cpr, setCpr] = useState("");
   const [duration, setDuration] = useState<ConsentDuration>("1 year");
+  const [forceOpen, setForceOpen] = useState(false);
+  const [justification, setJustification] = useState("");
+
+  const handleResult = (result: { ok: boolean; reason?: string; patient_name?: string }, okMsg: string) => {
+    if (result.ok) {
+      toast.success(okMsg.replace("{name}", result.patient_name ?? "the patient"));
+      setCpr("");
+      void queryClient.invalidateQueries({ queryKey: ["my-patients"] });
+      return true;
+    }
+    if (result.reason === "not_found") toast.error("No patient found with that CPR number");
+    else if (result.reason === "pending") toast.info("A request is already pending for this patient");
+    else if (result.reason === "active") toast.info("You already have active access to this patient");
+    else if (result.reason === "justification_too_short")
+      toast.error("Justification must be at least 20 characters");
+    else toast.error("This account is not a practitioner account");
+    return false;
+  };
 
   const request = useMutation({
     mutationFn: () => requestPatientConsent({ data: { cpr, duration } }),
-    onSuccess: (result) => {
-      if (result.ok) {
-        toast.success(`Consent request sent to ${result.patient_name ?? "the patient"}`);
-        setCpr("");
-        void queryClient.invalidateQueries({ queryKey: ["my-patients"] });
-        return;
-      }
-      if (result.reason === "not_found") toast.error("No patient found with that CPR number");
-      else if (result.reason === "pending") toast.info("A request is already pending for this patient");
-      else if (result.reason === "active") toast.info("You already have active access to this patient");
-      else toast.error("This account is not a practitioner account");
-    },
+    onSuccess: (result) => handleResult(result, "Consent request sent to {name}"),
     onError: () => toast.error("Could not send the consent request"),
   });
 
+  const force = useMutation({
+    mutationFn: () =>
+      forceRequestPatientConsent({ data: { cpr, duration, justification } }),
+    onSuccess: (result) => {
+      if (handleResult(result, "Emergency access granted for {name} and logged")) {
+        setForceOpen(false);
+        setJustification("");
+      }
+    },
+    onError: () => toast.error("Could not force access"),
+  });
+
   return (
-    <Card className="border-primary/30 bg-primary/[0.04]">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <IdCard className="size-4" />
-          Register an intake
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-wrap items-end gap-3">
-        <div className="min-w-[180px] flex-1 space-y-2">
-          <Label htmlFor="cpr">Patient CPR number</Label>
-          <Input
-            id="cpr"
-            value={cpr}
-            onChange={(e) => setCpr(e.target.value)}
-            placeholder="DDMMYY-XXXX"
-            maxLength={15}
-            className="font-mono"
-          />
-        </div>
-        <div className="w-36 space-y-2">
-          <Label>Access duration</Label>
-          <Select value={duration} onValueChange={(v) => setDuration(v as ConsentDuration)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CONSENT_DURATION_OPTIONS.map((opt) => (
-                <SelectItem key={opt} value={opt}>
-                  {opt}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button
-          disabled={cpr.trim().length < 6 || request.isPending}
-          onClick={() => request.mutate()}
-        >
-          {request.isPending ? "Requesting…" : "Request data"}
-        </Button>
-        <p className="w-full text-xs text-muted-foreground">
-          The patient approves the request with Face ID in their Ante app before their passport
-          becomes visible to you.
-        </p>
-      </CardContent>
-    </Card>
+    <>
+      <Card className="border-primary/30 bg-primary/[0.04]">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <IdCard className="size-4" />
+            Register an intake
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[180px] flex-1 space-y-2">
+            <Label htmlFor="cpr">Patient CPR number</Label>
+            <Input
+              id="cpr"
+              value={cpr}
+              onChange={(e) => setCpr(e.target.value)}
+              placeholder="DDMMYY-XXXX"
+              maxLength={15}
+              className="font-mono"
+            />
+          </div>
+          <div className="w-36 space-y-2">
+            <Label>Access duration</Label>
+            <Select value={duration} onValueChange={(v) => setDuration(v as ConsentDuration)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CONSENT_DURATION_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            disabled={cpr.trim().length < 6 || request.isPending}
+            onClick={() => request.mutate()}
+          >
+            {request.isPending ? "Requesting…" : "Request data"}
+          </Button>
+          <Button
+            variant="outline"
+            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            disabled={cpr.trim().length < 6}
+            onClick={() => setForceOpen(true)}
+          >
+            <ShieldAlert className="size-4" />
+            Force request
+          </Button>
+          <p className="w-full text-xs text-muted-foreground">
+            The patient approves the request with Face ID in their Ante app before their passport
+            becomes visible to you. Force request is emergency break-glass access — it is granted
+            immediately and logged against your licence.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Drawer open={forceOpen} onOpenChange={setForceOpen}>
+        <DrawerContent>
+          <div className="mx-auto w-full max-w-lg">
+            <DrawerHeader>
+              <DrawerTitle>Force access (break glass)</DrawerTitle>
+              <DrawerDescription>
+                Emergency access to {formatCpr(cpr)} is granted immediately for {duration} without
+                patient approval. It is logged against your licence and a justification of at least
+                20 characters is mandatory.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4">
+              <Textarea
+                rows={4}
+                value={justification}
+                onChange={(e) => setJustification(e.target.value)}
+                placeholder="Clinical reason for overriding consent…"
+              />
+            </div>
+            <DrawerFooter className="flex-row justify-end gap-2">
+              <DrawerClose asChild>
+                <Button variant="ghost">Cancel</Button>
+              </DrawerClose>
+              <Button
+                variant="destructive"
+                disabled={justification.trim().length < 20 || force.isPending}
+                onClick={() => force.mutate()}
+              >
+                {force.isPending ? "Granting…" : "Confirm emergency access"}
+              </Button>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }
 
