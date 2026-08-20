@@ -165,8 +165,8 @@ function PatientDrawer({ patientId, onClose }: { patientId: string | null; onClo
 
   return (
     <Drawer open={Boolean(patientId)} onOpenChange={(o) => !o && onClose()}>
-      <DrawerContent>
-        <div className="mx-auto w-full max-w-3xl overflow-y-auto px-4 pb-8">
+      <DrawerContent className="max-h-[92vh] overflow-hidden">
+        <div className="mx-auto w-full max-w-3xl overflow-y-auto px-4 pb-8 pt-4">
           <DrawerHeader className="px-0">
             <DrawerTitle>{data?.patient?.full_name ?? "Patient passport"}</DrawerTitle>
             <DrawerDescription>
@@ -181,6 +181,7 @@ function PatientDrawer({ patientId, onClose }: { patientId: string | null; onClo
                 : "Loading consented record…"}
             </DrawerDescription>
           </DrawerHeader>
+
 
           {isPending ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
