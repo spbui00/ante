@@ -69,7 +69,7 @@ This is NOT a fresh intake. The patient already completed a pre-intake interview
 export const AGENTS = {
   intake: {
     key: "intake",
-    name: "ante-intake-agent-v2",
+    name: "ante-intake-agent-v3",
     description: "Conducts a pre-visit HPI interview with the patient.",
     systemPrompt: INTAKE_SYSTEM_PROMPT,
     connectors: [{ type: "registry", name: "memory" }],
@@ -77,7 +77,7 @@ export const AGENTS = {
   },
   "intake-edit": {
     key: "intake-edit",
-    name: "ante-intake-edit-agent-v1",
+    name: "ante-intake-edit-agent-v2",
     description: "Helps a patient revise an existing pre-intake draft.",
     systemPrompt: INTAKE_EDIT_SYSTEM_PROMPT,
     connectors: [{ type: "registry", name: "memory" }],
