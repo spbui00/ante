@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Activity, LogOut, ShieldCheck, Stethoscope, User } from "lucide-react";
+import { Activity, LogOut, Settings, ShieldCheck, Stethoscope, User } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,12 @@ const NAV: NavItem[] = [
     label: "Surveillance",
     icon: <Activity className="size-4" />,
     roles: ["ANALYST"],
+  },
+  {
+    to: "/settings",
+    label: "Settings",
+    icon: <Settings className="size-4" />,
+    roles: ["PATIENT", "PRACTITIONER", "ANALYST"],
   },
 ];
 

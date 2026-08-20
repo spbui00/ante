@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedClinicalRouteImport } from './routes/_authenticated/clinical'
 import { Route as AuthenticatedPassportRouteImport } from './routes/_authenticated/passport'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSurveillanceRouteImport } from './routes/_authenticated/surveillance'
 import { Route as ApiIntakeRouteImport } from './routes/api/intake'
 import { Route as ApiProcessVisitRouteImport } from './routes/api/process-visit'
@@ -42,6 +43,11 @@ const AuthenticatedPassportRoute = AuthenticatedPassportRouteImport.update({
   path: '/passport',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSurveillanceRoute =
   AuthenticatedSurveillanceRouteImport.update({
     id: '/surveillance',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/clinical': typeof AuthenticatedClinicalRoute
   '/passport': typeof AuthenticatedPassportRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/surveillance': typeof AuthenticatedSurveillanceRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/clinical': typeof AuthenticatedClinicalRoute
   '/passport': typeof AuthenticatedPassportRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/surveillance': typeof AuthenticatedSurveillanceRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/clinical': typeof AuthenticatedClinicalRoute
   '/_authenticated/passport': typeof AuthenticatedPassportRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/surveillance': typeof AuthenticatedSurveillanceRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/clinical'
     | '/passport'
+    | '/settings'
     | '/surveillance'
     | '/api/intake'
     | '/api/process-visit'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/clinical'
     | '/passport'
+    | '/settings'
     | '/surveillance'
     | '/api/intake'
     | '/api/process-visit'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/clinical'
     | '/_authenticated/passport'
+    | '/_authenticated/settings'
     | '/_authenticated/surveillance'
     | '/api/intake'
     | '/api/process-visit'
@@ -164,6 +176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPassportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/surveillance': {
       id: '/_authenticated/surveillance'
       path: '/surveillance'
@@ -191,12 +210,14 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedClinicalRoute: typeof AuthenticatedClinicalRoute
   AuthenticatedPassportRoute: typeof AuthenticatedPassportRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSurveillanceRoute: typeof AuthenticatedSurveillanceRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClinicalRoute: AuthenticatedClinicalRoute,
   AuthenticatedPassportRoute: AuthenticatedPassportRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSurveillanceRoute: AuthenticatedSurveillanceRoute,
 }
 
