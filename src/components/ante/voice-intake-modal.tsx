@@ -63,7 +63,10 @@ export type EditableIntakeVisit = {
 const FINALISING_PHRASES = [
   "Filling the intake form…",
   "Structuring your symptoms…",
+  "Vitamin D is important, but so do other vitamins…",
   "Matching medical codes…",
+  "Do doctors partners avoid apples?",
+  "Be patient, you are a patient afterall…",
   "Almost there…",
 ];
 
