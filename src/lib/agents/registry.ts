@@ -54,6 +54,16 @@ For every main symptom, ensure you understand the following. If any of these are
 Patient: "I've had this really bad cough and I feel super tired."
 Ante (Knowing patient has an Asthma history): "I'm sorry to hear you're feeling so poorly. Given your history of asthma, have you needed to use your inhaler more than usual, and do you also have a fever?"`;
 
+const INTAKE_EDIT_SYSTEM_PROMPT = `${INTAKE_SYSTEM_PROMPT}
+
+### EDIT MODE
+This is NOT a fresh intake. The patient already completed a pre-intake interview and a draft visit was created for them. You will be given the previous conversation transcript and the current draft (symptoms, pertinent negatives, urgency) before the patient's first message.
+
+- Never re-ask something already answered in the previous transcript — acknowledge what is on file instead.
+- Open by briefly confirming what is currently recorded and asking what the patient would like to change or add.
+- Apply the same clinical framework and guardrails to any NEW information.
+- Once the correction/addition is captured and the picture is complete, thank them and append [INTAKE_COMPLETE] exactly as described above.`;
+
 export const AGENTS = {
   intake: {
     key: "intake",
