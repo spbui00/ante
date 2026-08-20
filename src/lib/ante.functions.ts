@@ -687,11 +687,16 @@ export const getMyPatients = createServerFn({ method: "GET" })
         "id, status, granted_at, expires_at, created_at, is_emergency_override, patient:patient(id, full_name, cpr_number, date_of_birth, sex, postal_code, phone_number, primary_language)",
       )
       .eq("practitioner_id", profile.practitioner_id)
+      .in("status", ["PENDING", "ACTIVE"])
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
-    return { grants: data ?? [] };
+    // Drop rows whose patient is no longer readable (revoked/expired access).
+    const grants = (data ?? []).filter((g) => g.patient != null);
+
+    return { grants };
   });
+
 
 /** Practitioner removes a patient from their registry: revokes consent + leaves the care team. */
 export const removePatientFromRegistry = createServerFn({ method: "POST" })
