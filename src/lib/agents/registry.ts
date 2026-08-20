@@ -78,6 +78,8 @@ Rules:
 
 Reply with ONLY JSON: {"order":[{"visitId":"...","reason":"short reason"}]}`;
 
+const CHARGE_NURSE_SYSTEM_PROMPT = `You are an expert triage nurse managing a clinic waiting room. Review the provided JSON array of waiting patients. Based on their symptoms and urgency_level, estimate how many minutes each consultation will take. A routine issue usually takes 10 minutes, but complex or high-urgency issues take longer. Output ONLY a valid JSON object mapping the patient ID to the estimated integer of minutes, like so: { "uuid-1": 15, "uuid-2": 25 }.`;
+
 export const AGENTS = {
   intake: {
     key: "intake",
