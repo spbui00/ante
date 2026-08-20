@@ -88,6 +88,8 @@ export function VoiceIntakeModal({
   const [result, setResult] = useState<IntakeResult | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const finishedRef = useRef(false);
+  const userTurnsRef = useRef(0);
+
   const contextId = useRef<string | null>(null);
   const autoSendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasDictatingRef = useRef(false);
