@@ -251,14 +251,19 @@ function ClinicalPage() {
     persist(ids, next);
   }
 
-  function dropOn(targetId: string) {
+  /** Live preview while dragging: the hovered row swaps out of the way. */
+  function previewMove(targetId: string) {
     if (!dragId || dragId === targetId) return;
     const ids = currentOrder().filter((id) => id !== dragId);
     const at = ids.indexOf(targetId);
     ids.splice(at < 0 ? ids.length : at, 0, dragId);
     setOrder(ids);
+  }
+
+  function commitOrder() {
+    if (!dragId) return;
     setDragId(null);
-    persist(ids, pinnedIds);
+    persist(currentOrder(), pinnedIds);
   }
 
   const triage = useMutation({
