@@ -29,6 +29,16 @@ const FALLBACK_RULES: { match: RegExp; code: string; label: string; urgent?: boo
   { match: /dizz|svimmel/i, code: "R42", label: "Dizziness" },
 ];
 
+function patientOnly(transcript: string) {
+  const lines = transcript
+    .split("\n")
+    .filter((l) => /^patient:/i.test(l.trim()))
+    .map((l) => l.replace(/^\s*patient:\s*/i, "").trim())
+    .filter(Boolean);
+  const text = (lines.length ? lines.join(" ") : transcript).trim();
+  return text.length > 1200 ? `${text.slice(0, 1200)}…` : text;
+}
+
 function fallback(transcript: string) {
   const hits = FALLBACK_RULES.filter((r) => r.match.test(transcript));
   const urgent = hits.some((h) => h.urgent);
@@ -38,7 +48,7 @@ function fallback(transcript: string) {
       ? `Reported ${hits.map((h) => h.label.toLowerCase()).join(", ")}.`
       : "Symptoms recorded; no red-flag keywords detected in the description.",
     symptoms: hits.map((h) => h.label),
-    symptomDetail: transcript.slice(0, 4000),
+    symptomDetail: patientOnly(transcript),
     pertinentNegatives: [] as string[],
     symptomDurationDays: null as number | null,
     travelHistory: [] as string[],
