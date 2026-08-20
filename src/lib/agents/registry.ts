@@ -73,6 +73,14 @@ export const AGENTS = {
     connectors: [{ type: "registry", name: "memory" }],
     includePatientContext: true,
   },
+  "intake-edit": {
+    key: "intake-edit",
+    name: "ante-intake-edit-agent-v1",
+    description: "Helps a patient revise an existing pre-intake draft.",
+    systemPrompt: INTAKE_EDIT_SYSTEM_PROMPT,
+    connectors: [{ type: "registry", name: "memory" }],
+    includePatientContext: true,
+  },
 } satisfies Record<string, AgentDefinition>;
 
 export type AgentKey = keyof typeof AGENTS;
