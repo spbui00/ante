@@ -5,15 +5,11 @@ import { Search, Users } from "lucide-react";
 
 import { AppShell } from "@/components/ante/app-shell";
 import { RichTextInline } from "@/components/ante/rich-text";
+import { VisitCard } from "@/components/ante/visit-card";
+import { VisitDetailDrawer, type VisitDetail } from "@/components/ante/visit-detail-drawer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { getMyPatients, getPatientRecord } from "@/lib/ante.functions";
 import { formatDate, formatDateTime, maskCpr } from "@/lib/clinical-utils";
@@ -84,60 +80,71 @@ function PatientsPage() {
         />
       </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <Users className="size-4" />
-            My patients
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {grants.map((g) => {
-            const p = g.patient as {
-              id?: string;
-              full_name?: string;
-              cpr_number?: string;
-              date_of_birth?: string | null;
-            } | null;
-            const usable = g.status === "ACTIVE";
-            return (
-              <div
-                key={g.id}
-                className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 last:border-0"
-              >
-                <div className="min-w-[180px] flex-1">
-                  <p className="text-sm font-medium text-foreground">{p?.full_name ?? "Unknown"}</p>
-                  <p className="font-mono text-xs text-muted-foreground">
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <Card className="h-fit">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Users className="size-4" />
+              My patients
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="max-h-[70vh] overflow-y-auto p-0">
+            {grants.map((g) => {
+              const p = g.patient as {
+                id?: string;
+                full_name?: string;
+                cpr_number?: string;
+                date_of_birth?: string | null;
+              } | null;
+              const usable = g.status === "ACTIVE" && Boolean(p?.id);
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  disabled={!usable}
+                  onClick={() => setOpenId(p!.id!)}
+                  className={`block w-full border-b border-border px-4 py-3 text-left transition-colors last:border-0 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60 ${
+                    openId && openId === p?.id ? "bg-accent" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">
+                      {p?.full_name ?? "Unknown"}
+                    </span>
+                    <span className="ml-auto">
+                      <StatusPill status={g.status} emergency={g.is_emergency_override} />
+                    </span>
+                  </div>
+                  <p className="mt-0.5 font-mono text-xs text-muted-foreground">
                     {maskCpr(p?.cpr_number)}
                     {p?.date_of_birth ? ` · born ${formatDate(p.date_of_birth)}` : ""}
                   </p>
-                </div>
-                <StatusPill status={g.status} emergency={g.is_emergency_override} />
-                <p className="text-xs text-muted-foreground">
-                  {g.expires_at ? `Until ${formatDateTime(g.expires_at)}` : "No expiry"}
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!usable || !p?.id}
-                  onClick={() => setOpenId(p!.id!)}
-                >
-                  Open passport
-                </Button>
-              </div>
-            );
-          })}
-          {grants.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-muted-foreground">
-              {data.grants.length === 0
-                ? "No patients yet. Request access with a CPR number from the consultation console."
-                : "No patients match this search."}
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {g.expires_at ? `Until ${formatDateTime(g.expires_at)}` : "No expiry"}
+                  </p>
+                </button>
+              );
+            })}
+            {grants.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted-foreground">
+                {data.grants.length === 0
+                  ? "No patients yet. Request access with a CPR number from the consultation console."
+                  : "No patients match this search."}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
 
-      <PatientDrawer patientId={openId} onClose={() => setOpenId(null)} />
+        {openId ? (
+          <PatientPassportPanel patientId={openId} />
+        ) : (
+          <Card className="h-fit">
+            <CardContent className="py-16 text-center text-sm text-muted-foreground">
+              Select a patient to open their clinical passport.
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </AppShell>
   );
 }
@@ -157,85 +164,127 @@ function StatusPill({ status, emergency }: { status: string; emergency?: boolean
   );
 }
 
-function PatientDrawer({ patientId, onClose }: { patientId: string | null; onClose: () => void }) {
+function PatientPassportPanel({ patientId }: { patientId: string }) {
   const { data, isPending } = useQuery({
     queryKey: ["patient-record", patientId],
-    enabled: Boolean(patientId),
-    queryFn: () => getPatientRecord({ data: { patientId: patientId! } }),
+    queryFn: () => getPatientRecord({ data: { patientId } }),
   });
 
+  const [scope, setScope] = useState<"mine" | "all">("mine");
+  const [openVisit, setOpenVisit] = useState<VisitDetail | null>(null);
+
+  const allVisits = (data?.visits ?? []) as (VisitDetail & { practitioner_id?: string | null })[];
+  const mine = data?.viewerPractitionerId
+    ? allVisits.filter((v) => v.practitioner_id === data.viewerPractitionerId)
+    : [];
+  const visits = scope === "mine" ? mine : allVisits;
+
   return (
-    <Drawer open={Boolean(patientId)} onOpenChange={(o) => !o && onClose()}>
-      <DrawerContent className="max-h-[92vh] overflow-hidden">
-        <div className="mx-auto w-full max-w-3xl overflow-y-auto px-4 pb-8 pt-4">
-          <DrawerHeader className="px-0">
-            <DrawerTitle>{data?.patient?.full_name ?? "Patient passport"}</DrawerTitle>
-            <DrawerDescription>
-              {data?.patient
-                ? [
-                    maskCpr(data.patient.cpr_number),
-                    data.patient.date_of_birth ? `born ${formatDate(data.patient.date_of_birth)}` : null,
-                    data.patient.postal_code,
-                  ]
-                    .filter((x) => x && x !== "—")
-                    .join(" · ")
-                : "Loading consented record…"}
-            </DrawerDescription>
-          </DrawerHeader>
-
-
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{data?.patient?.full_name ?? "Patient passport"}</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            {data?.patient
+              ? [
+                  maskCpr(data.patient.cpr_number),
+                  data.patient.date_of_birth ? `born ${formatDate(data.patient.date_of_birth)}` : null,
+                  data.patient.postal_code,
+                ]
+                  .filter((x) => x && x !== "—")
+                  .join(" · ")
+              : "Loading consented record…"}
+          </p>
+        </CardHeader>
+        <CardContent>
           {isPending ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Group title="Conditions">
-                {(data?.records ?? [])
-                  .filter((r) => r.category === "CONDITION")
-                  .map((r) => (
-                    <Line key={r.id} primary={r.description} secondary={r.code ?? undefined} />
-                  ))}
-              </Group>
-              <Group title="Allergies">
-                {(data?.records ?? [])
-                  .filter((r) => r.category === "ALLERGY")
-                  .map((r) => (
-                    <Line key={r.id} primary={r.description} secondary={r.status} />
-                  ))}
-              </Group>
-              <Group title="Active medications">
-                {(data?.prescriptions ?? [])
-                  .filter((p) => !p.end_date)
-                  .map((p) => (
-                    <Line
-                      key={p.id}
-                      primary={p.drug_name}
-                      secondary={[p.dosage, p.frequency].filter(Boolean).join(" · ")}
-                    />
-                  ))}
-              </Group>
-              <Group title="Recent observations">
-                {(data?.observations ?? []).slice(0, 8).map((o) => (
-                  <Line
-                    key={o.id}
-                    primary={o.test_name}
-                    secondary={`${o.value ?? "—"} ${o.unit ?? ""} · ${formatDate(o.recorded_at)}`}
-                  />
+            <Tabs defaultValue="medical">
+              <TabsList>
+                <TabsTrigger value="medical">Medical info</TabsTrigger>
+                <TabsTrigger value="visits">Visits</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="medical" className="mt-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Group title="Conditions">
+                    {(data?.records ?? [])
+                      .filter((r) => r.category === "CONDITION")
+                      .map((r) => (
+                        <Line key={r.id} primary={r.description} secondary={r.code ?? undefined} />
+                      ))}
+                  </Group>
+                  <Group title="Allergies">
+                    {(data?.records ?? [])
+                      .filter((r) => r.category === "ALLERGY")
+                      .map((r) => (
+                        <Line key={r.id} primary={r.description} secondary={r.status} />
+                      ))}
+                  </Group>
+                  <Group title="Active medications">
+                    {(data?.prescriptions ?? [])
+                      .filter((p) => !p.end_date)
+                      .map((p) => (
+                        <Line
+                          key={p.id}
+                          primary={p.drug_name}
+                          secondary={[p.dosage, p.frequency].filter(Boolean).join(" · ")}
+                        />
+                      ))}
+                  </Group>
+                  <Group title="Recent observations">
+                    {(data?.observations ?? []).slice(0, 8).map((o) => (
+                      <Line
+                        key={o.id}
+                        primary={o.test_name}
+                        secondary={`${o.value ?? "—"} ${o.unit ?? ""} · ${formatDate(o.recorded_at)}`}
+                      />
+                    ))}
+                  </Group>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="visits" className="mt-4 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={scope === "mine" ? "default" : "outline"}
+                    onClick={() => setScope("mine")}
+                  >
+                    My visits ({mine.length})
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={scope === "all" ? "default" : "outline"}
+                    onClick={() => setScope("all")}
+                  >
+                    All practitioners ({allVisits.length})
+                  </Button>
+                </div>
+
+                {visits.map((v) => (
+                  <VisitCard key={v.id} visit={v} onClick={() => setOpenVisit(v)} />
                 ))}
-              </Group>
-              <Group title="Visit history" className="sm:col-span-2">
-                {(data?.visits ?? []).map((v) => (
-                  <Line
-                    key={v.id}
-                    primary={`${formatDate(v.visit_date)} · ${v.status.toLowerCase()}`}
-                    secondary={v.conclusion ?? undefined}
-                  />
-                ))}
-              </Group>
-            </div>
+                {visits.length === 0 ? (
+                  <p className="py-6 text-sm text-muted-foreground">
+                    {scope === "mine"
+                      ? "No visits with you yet. Switch to all practitioners to see the full history."
+                      : "No visits recorded."}
+                  </p>
+                ) : null}
+              </TabsContent>
+            </Tabs>
           )}
-        </div>
-      </DrawerContent>
-    </Drawer>
+        </CardContent>
+      </Card>
+
+      <VisitDetailDrawer
+        visit={openVisit}
+        open={Boolean(openVisit)}
+        onOpenChange={(o) => !o && setOpenVisit(null)}
+      />
+    </div>
   );
 }
 
