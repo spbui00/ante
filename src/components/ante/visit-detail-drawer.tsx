@@ -33,6 +33,9 @@ export type VisitDetail = {
   symptoms?: string | null;
   conclusion?: string | null;
   recommendation?: string | null;
+  arrived_at?: string | null;
+  taken_in_at?: string | null;
+  completed_at?: string | null;
   practitioner?: {
     full_name?: string | null;
     title?: string | null;
