@@ -8,10 +8,12 @@ import { cn } from "@/lib/utils";
 /** Read-only view of a visit's intake + consultation transcript. */
 export function VisitTranscript({
   transcript,
+  label = "Transcript",
   defaultOpen = false,
   className,
 }: {
   transcript?: string | null | undefined;
+  label?: string;
   defaultOpen?: boolean;
   className?: string;
 }) {
