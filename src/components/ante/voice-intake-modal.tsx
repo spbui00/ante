@@ -52,6 +52,13 @@ type IntakeResult = {
 
 type ChatMessage = { id: string; role: "user" | "assistant"; text: string };
 
+const FINALISING_PHRASES = [
+  "Filling the intake form…",
+  "Structuring your symptoms…",
+  "Matching medical codes…",
+  "Almost there…",
+];
+
 export function VoiceIntakeModal({
   open,
   onOpenChange,
