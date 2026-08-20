@@ -5,6 +5,7 @@ import { Activity, AlertTriangle, CalendarClock, Mic, Pill, Stethoscope } from "
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
+import { ConsentRequests } from "@/components/ante/consent-requests";
 import { VisitCard, type VisitCardData } from "@/components/ante/visit-card";
 import {
   VisitDetailDrawer,
@@ -109,6 +110,8 @@ function PassportPage() {
       }
     >
       <div className="grid gap-4 lg:grid-cols-3">
+        <ConsentRequests />
+
         <Section
           title="Scheduled visits"
           icon={<CalendarClock className="size-4" />}
