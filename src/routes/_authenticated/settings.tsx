@@ -458,6 +458,10 @@ function SettingsPage() {
           </CardContent>
         </Card>
 
+        {data.patient ? <CareTeamCard /> : null}
+
+
+
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Account</CardTitle>
