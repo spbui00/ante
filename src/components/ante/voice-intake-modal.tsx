@@ -87,7 +87,7 @@ export function VoiceIntakeModal({
     contextId.current = null;
   }
 
-  async function send(text: string) {
+  const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || thinking) return;
 
@@ -111,7 +111,38 @@ export function VoiceIntakeModal({
     } finally {
       setThinking(false);
     }
-  }
+  }, [thinking, askAgent]);
+
+  useEffect(() => {
+    const isDictating = recording || connecting || dictation.status === "stopping";
+
+    if (isDictating || thinking) {
+      if (autoSendTimeoutRef.current) {
+        clearTimeout(autoSendTimeoutRef.current);
+        autoSendTimeoutRef.current = null;
+      }
+      if (isDictating) wasDictatingRef.current = true;
+      return;
+    }
+
+    if (wasDictatingRef.current && composerValue.trim()) {
+      if (autoSendTimeoutRef.current) clearTimeout(autoSendTimeoutRef.current);
+      autoSendTimeoutRef.current = setTimeout(() => {
+        autoSendTimeoutRef.current = null;
+        wasDictatingRef.current = false;
+        if (composerValue.trim() && !thinking) {
+          void send(composerValue);
+        }
+      }, 1500);
+    } else if (!composerValue.trim() && autoSendTimeoutRef.current) {
+      clearTimeout(autoSendTimeoutRef.current);
+      autoSendTimeoutRef.current = null;
+    }
+
+    return () => {
+      if (autoSendTimeoutRef.current) clearTimeout(autoSendTimeoutRef.current);
+    };
+  }, [recording, connecting, dictation.status, composerValue, thinking, send]);
 
   const conversationText = messages
     .map((m) => `${m.role === "user" ? "Patient" : "Assistant"}: ${m.text}`)
