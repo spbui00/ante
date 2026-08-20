@@ -184,8 +184,10 @@ export const finaliseVisit = createServerFn({ method: "POST" })
         visitId: z.string().uuid(),
         conclusion: z.string().trim().min(1, "Conclusion is required").max(4000),
         recommendation: z.string().trim().min(1, "Recommendation is required").max(4000),
+        symptoms: z.string().trim().max(4000).optional(),
         disposition: z.enum(["HOME_CARE", "PRESCRIPTION", "ER_REFERRAL"]),
         urgencyLevel: z.enum(["LOW", "MEDIUM", "HIGH_RED_FLAG"]),
+
       })
       .parse(input),
   )
