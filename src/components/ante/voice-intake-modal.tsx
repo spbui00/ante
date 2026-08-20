@@ -267,7 +267,7 @@ export function VoiceIntakeModal({
       }}
     >
 
-      <DrawerContent className="relative max-h-[88dvh]">
+      <DrawerContent className="max-h-[88dvh]">
         <div
           aria-hidden={analysing}
           className={`mx-auto flex h-full max-h-[84dvh] w-full max-w-md flex-col px-4 pb-6 ${
