@@ -1,14 +1,28 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Activity, AlertTriangle, Mic, Pill, Stethoscope } from "lucide-react";
+import { Activity, AlertTriangle, CalendarClock, Mic, Pill, Stethoscope } from "lucide-react";
+import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
 import { VisitCard, type VisitCardData } from "@/components/ante/visit-card";
+import {
+  VisitDetailDrawer,
+  type VisitDetail,
+} from "@/components/ante/visit-detail-drawer";
 import { VoiceIntakeModal } from "@/components/ante/voice-intake-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { getPassport } from "@/lib/ante.functions";
+import { deleteScheduledVisit } from "@/lib/intake.functions";
 import { formatDate, maskCpr } from "@/lib/clinical-utils";
 
 const passportQuery = queryOptions({
@@ -37,12 +51,41 @@ export const Route = createFileRoute("/_authenticated/passport")({
 
 function PassportPage() {
   const { data } = useSuspenseQuery(passportQuery);
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [intakeOpen, setIntakeOpen] = useState(false);
+  const [selectedVisit, setSelectedVisit] = useState<VisitDetail | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<VisitDetail | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const conditions = data.records.filter((r) => r.category === "CONDITION");
   const allergies = data.records.filter((r) => r.category === "ALLERGY");
   const active = data.prescriptions.filter((p) => !p.end_date);
+  const scheduled = data.visits.filter((v) => v.status === "SCHEDULED");
+  const past = data.visits.filter((v) => v.status !== "SCHEDULED");
+
+  function refresh() {
+    void queryClient.invalidateQueries({ queryKey: ["passport"] });
+    void queryClient.invalidateQueries({ queryKey: ["my-visit-history"] });
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await deleteScheduledVisit({ data: { visitId: pendingDelete.id } });
+      toast.success("Scheduled visit deleted");
+      setPendingDelete(null);
+      setDetailOpen(false);
+      refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete this visit");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
 
   return (
     <AppShell
@@ -96,21 +139,93 @@ function PassportPage() {
           ))}
         </Section>
 
-        <Section title="Visit history" icon={<Stethoscope className="size-4" />} className="lg:col-span-2">
-          {data.visits.length === 0 ? <Empty /> : null}
+        <Section
+          title="Scheduled visits"
+          icon={<CalendarClock className="size-4" />}
+          className="lg:col-span-2"
+        >
+          {scheduled.length === 0 ? <Empty label="No upcoming visits" /> : null}
           <div className="space-y-3">
-            {data.visits.map((v) => (
+            {scheduled.map((v) => (
               <VisitCard
                 key={v.id}
                 visit={v as VisitCardData}
-                onClick={() => navigate({ to: "/visits" })}
+                onClick={() => {
+                  setSelectedVisit(v as VisitDetail);
+                  setDetailOpen(true);
+                }}
+                onEdit={() => {
+                  setSelectedVisit(v as VisitDetail);
+                  setEditOpen(true);
+                }}
+                onDelete={() => setPendingDelete(v as VisitDetail)}
+              />
+            ))}
+          </div>
+        </Section>
+
+        <Section title="Visit history" icon={<Stethoscope className="size-4" />} className="lg:col-span-2">
+          {past.length === 0 ? <Empty /> : null}
+          <div className="space-y-3">
+            {past.map((v) => (
+              <VisitCard
+                key={v.id}
+                visit={v as VisitCardData}
+                onClick={() => {
+                  setSelectedVisit(v as VisitDetail);
+                  setDetailOpen(true);
+                }}
               />
             ))}
           </div>
         </Section>
       </div>
 
-      <VoiceIntakeModal open={intakeOpen} onOpenChange={setIntakeOpen} />
+      <VisitDetailDrawer
+        visit={selectedVisit}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onEdit={() => {
+          setDetailOpen(false);
+          setEditOpen(true);
+        }}
+        onDelete={() => selectedVisit && setPendingDelete(selectedVisit)}
+      />
+
+      {selectedVisit && selectedVisit.status === "SCHEDULED" ? (
+        <VoiceIntakeModal
+          key={selectedVisit.id}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          visit={selectedVisit as never}
+          onSaved={refresh}
+        />
+      ) : null}
+
+      <Drawer open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <DrawerContent>
+          <div className="mx-auto w-full max-w-md">
+            <DrawerHeader>
+              <DrawerTitle>Delete this scheduled visit?</DrawerTitle>
+              <DrawerDescription>
+                Your pre-intake answers for{" "}
+                {pendingDelete ? formatDate(pendingDelete.visit_date) : ""} will be permanently
+                removed. This cannot be undone.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="flex-row justify-end gap-2">
+              <Button variant="outline" disabled={deleting} onClick={() => setPendingDelete(null)}>
+                Keep it
+              </Button>
+              <Button variant="destructive" disabled={deleting} onClick={() => void confirmDelete()}>
+                {deleting ? "Deleting…" : "Delete"}
+              </Button>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      <VoiceIntakeModal open={intakeOpen} onOpenChange={setIntakeOpen} onSaved={refresh} />
     </AppShell>
   );
 }
