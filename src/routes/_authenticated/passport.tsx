@@ -212,6 +212,19 @@ function PassportPage() {
         onDelete={() => selectedVisit && setPendingDelete(selectedVisit)}
       />
 
+      <CareNavigatorDrawer
+        visitId={navigatorVisit?.id ?? null}
+        open={navigatorOpen}
+        onOpenChange={setNavigatorOpen}
+        onViewDetails={() => {
+          if (navigatorVisit) {
+            setSelectedVisit(navigatorVisit);
+            setNavigatorOpen(false);
+            setDetailOpen(true);
+          }
+        }}
+      />
+
       {selectedVisit && selectedVisit.status === "SCHEDULED" ? (
         <VoiceIntakeModal
           key={selectedVisit.id}
