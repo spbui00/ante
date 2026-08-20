@@ -460,21 +460,23 @@ function ClinicalPage() {
                 ),
               );
               return (
-                <div
+                <motion.div
                   key={v.id}
+                  layout
+                  transition={{ type: "spring", stiffness: 500, damping: 40, mass: 0.6 }}
                   draggable
                   onDragStart={() => setDragId(v.id)}
                   onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => dropOn(v.id)}
-                  onDragEnd={() => setDragId(null)}
+                  onDragEnter={() => dragId && dragId !== v.id && previewMove(v.id)}
+                  onDrop={() => commitOrder()}
+                  onDragEnd={() => commitOrder()}
                   className={`flex items-start gap-2 border-b border-border px-3 py-3 transition-colors hover:bg-muted ${
                     selectedId === v.id ? "bg-accent" : ""
-                  } ${dragId === v.id ? "opacity-50" : ""}`}
+                  } ${dragId === v.id ? "opacity-60 ring-1 ring-primary/40" : ""}`}
                 >
-                  <div className="flex flex-col items-center gap-1 pt-0.5 text-muted-foreground">
-                    <GripVertical className="size-4 cursor-grab" />
-                    <span className="text-[10px] font-medium">{index + 1}</span>
-                  </div>
+                  <span className="pt-1 text-[10px] font-medium text-muted-foreground">
+                    {index + 1}
+                  </span>
                   <button
                     type="button"
                     onClick={() => select(v)}
@@ -504,17 +506,20 @@ function ClinicalPage() {
                       </p>
                     ) : null}
                   </button>
-                  <button
-                    type="button"
-                    aria-label={isPinned ? "Unpin from position" : "Pin position"}
-                    onClick={() => togglePin(v.id)}
-                    className={`rounded-md p-1 transition-colors hover:bg-accent ${
-                      isPinned ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {isPinned ? <Pin className="size-4" /> : <PinOff className="size-4" />}
-                  </button>
-                </div>
+                  <div className="flex shrink-0 flex-col items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label={isPinned ? "Unpin from position" : "Pin position"}
+                      onClick={() => togglePin(v.id)}
+                      className={`rounded-md p-1 transition-colors hover:bg-accent ${
+                        isPinned ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {isPinned ? <Pin className="size-4" /> : <PinOff className="size-4" />}
+                    </button>
+                    <GripVertical className="size-4 cursor-grab text-muted-foreground" />
+                  </div>
+                </motion.div>
               );
             })}
             {visits.length === 0 ? (
