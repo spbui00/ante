@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ShieldAlert, Sparkles } from "lucide-react";
+import { Filter, Search, ShieldAlert, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -10,13 +10,18 @@ import { CodeChip, DispositionBadge, UrgencyBadge } from "@/components/ante/badg
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -26,12 +31,38 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { breakGlass, finaliseVisit, getClinicalQueue } from "@/lib/ante.functions";
-import { ENCOUNTER_TYPE_LABEL, formatDateTime, maskCpr } from "@/lib/clinical-utils";
+import {
+  ENCOUNTER_TYPE_LABEL,
+  URGENCY_LABEL,
+  formatDateTime,
+  maskCpr,
+} from "@/lib/clinical-utils";
 
 const queueQuery = queryOptions({
   queryKey: ["clinical-queue"],
   queryFn: () => getClinicalQueue(),
 });
+
+const ANY = "__any__";
+
+type Filters = {
+  q: string;
+  activeOnly: boolean;
+  urgency: string;
+  encounterType: string;
+  from: string;
+  to: string;
+};
+
+const DEFAULT_FILTERS: Filters = {
+  q: "",
+  activeOnly: true,
+  urgency: ANY,
+  encounterType: ANY,
+  from: "",
+  to: "",
+};
+
 
 export const Route = createFileRoute("/_authenticated/clinical")({
   head: () => ({
