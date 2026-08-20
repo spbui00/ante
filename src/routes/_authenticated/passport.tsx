@@ -5,7 +5,7 @@ import { Activity, AlertTriangle, CalendarClock, Mic, Pill, Stethoscope } from "
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
-import { CareNavigatorCard } from "@/components/ante/care-navigator-card";
+import { CareNavigatorDrawer } from "@/components/ante/care-navigator-drawer";
 import { ConsentRequests } from "@/components/ante/consent-requests";
 import { QueueStatusCard } from "@/components/ante/queue-status-card";
 
@@ -33,6 +33,7 @@ const passportQuery = queryOptions({
   queryKey: ["passport"],
   queryFn: () => getPassport(),
 });
+
 
 export const Route = createFileRoute("/_authenticated/passport")({
   head: () => ({
