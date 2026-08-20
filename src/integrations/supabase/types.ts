@@ -21,21 +21,36 @@ export type Database = {
           clinical_history_icd_codes: Json
           day_of_week: string | null
           disposition: Database["public"]["Enums"]["disposition_enum"] | null
+          employment_status:
+            | Database["public"]["Enums"]["employment_status_enum"]
+            | null
           encounter_date: string
           encounter_type:
             | Database["public"]["Enums"]["encounter_type_enum"]
             | null
           gender: string | null
+          gender_identity:
+            | Database["public"]["Enums"]["gender_identity_enum"]
+            | null
           hour_of_day: number | null
           id: string
           industry: string | null
+          insurance_type:
+            | Database["public"]["Enums"]["insurance_type_enum"]
+            | null
           is_pregnant: boolean
+          marital_status:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
           month: number | null
           observations_loinc: Json
           postal_code: string | null
           prescription_atc_codes: Json
           primary_icd_10: string | null
+          primary_language: string | null
+          race_ethnicity: string[]
           secondary_icd_10_codes: Json
+          sex: Database["public"]["Enums"]["sex_enum"] | null
           symptom_duration_category: string | null
           symptom_icd_codes: Json
           travel_history: Json
@@ -49,21 +64,36 @@ export type Database = {
           clinical_history_icd_codes?: Json
           day_of_week?: string | null
           disposition?: Database["public"]["Enums"]["disposition_enum"] | null
+          employment_status?:
+            | Database["public"]["Enums"]["employment_status_enum"]
+            | null
           encounter_date?: string
           encounter_type?:
             | Database["public"]["Enums"]["encounter_type_enum"]
             | null
           gender?: string | null
+          gender_identity?:
+            | Database["public"]["Enums"]["gender_identity_enum"]
+            | null
           hour_of_day?: number | null
           id?: string
           industry?: string | null
+          insurance_type?:
+            | Database["public"]["Enums"]["insurance_type_enum"]
+            | null
           is_pregnant?: boolean
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
           month?: number | null
           observations_loinc?: Json
           postal_code?: string | null
           prescription_atc_codes?: Json
           primary_icd_10?: string | null
+          primary_language?: string | null
+          race_ethnicity?: string[]
           secondary_icd_10_codes?: Json
+          sex?: Database["public"]["Enums"]["sex_enum"] | null
           symptom_duration_category?: string | null
           symptom_icd_codes?: Json
           travel_history?: Json
@@ -77,21 +107,36 @@ export type Database = {
           clinical_history_icd_codes?: Json
           day_of_week?: string | null
           disposition?: Database["public"]["Enums"]["disposition_enum"] | null
+          employment_status?:
+            | Database["public"]["Enums"]["employment_status_enum"]
+            | null
           encounter_date?: string
           encounter_type?:
             | Database["public"]["Enums"]["encounter_type_enum"]
             | null
           gender?: string | null
+          gender_identity?:
+            | Database["public"]["Enums"]["gender_identity_enum"]
+            | null
           hour_of_day?: number | null
           id?: string
           industry?: string | null
+          insurance_type?:
+            | Database["public"]["Enums"]["insurance_type_enum"]
+            | null
           is_pregnant?: boolean
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
           month?: number | null
           observations_loinc?: Json
           postal_code?: string | null
           prescription_atc_codes?: Json
           primary_icd_10?: string | null
+          primary_language?: string | null
+          race_ethnicity?: string[]
           secondary_icd_10_codes?: Json
+          sex?: Database["public"]["Enums"]["sex_enum"] | null
           symptom_duration_category?: string | null
           symptom_icd_codes?: Json
           travel_history?: Json
@@ -367,46 +412,97 @@ export type Database = {
           cpr_number: string | null
           created_at: string
           date_of_birth: string | null
+          employment_status:
+            | Database["public"]["Enums"]["employment_status_enum"]
+            | null
           family_medical_history_icd_codes: Json
           first_name: string | null
           full_name: string
           gender: string | null
+          gender_identity:
+            | Database["public"]["Enums"]["gender_identity_enum"]
+            | null
           id: string
           industry: string | null
+          insurance_member_id: string | null
+          insurance_provider: string | null
+          insurance_type:
+            | Database["public"]["Enums"]["insurance_type_enum"]
+            | null
           last_name: string | null
+          marital_status:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
           phone_number: string | null
           postal_code: string | null
+          preferred_name: string | null
           primary_language: string
+          race_ethnicity: string[]
+          sex: Database["public"]["Enums"]["sex_enum"] | null
         }
         Insert: {
           cpr_number?: string | null
           created_at?: string
           date_of_birth?: string | null
+          employment_status?:
+            | Database["public"]["Enums"]["employment_status_enum"]
+            | null
           family_medical_history_icd_codes?: Json
           first_name?: string | null
           full_name: string
           gender?: string | null
+          gender_identity?:
+            | Database["public"]["Enums"]["gender_identity_enum"]
+            | null
           id?: string
           industry?: string | null
+          insurance_member_id?: string | null
+          insurance_provider?: string | null
+          insurance_type?:
+            | Database["public"]["Enums"]["insurance_type_enum"]
+            | null
           last_name?: string | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
           phone_number?: string | null
           postal_code?: string | null
+          preferred_name?: string | null
           primary_language?: string
+          race_ethnicity?: string[]
+          sex?: Database["public"]["Enums"]["sex_enum"] | null
         }
         Update: {
           cpr_number?: string | null
           created_at?: string
           date_of_birth?: string | null
+          employment_status?:
+            | Database["public"]["Enums"]["employment_status_enum"]
+            | null
           family_medical_history_icd_codes?: Json
           first_name?: string | null
           full_name?: string
           gender?: string | null
+          gender_identity?:
+            | Database["public"]["Enums"]["gender_identity_enum"]
+            | null
           id?: string
           industry?: string | null
+          insurance_member_id?: string | null
+          insurance_provider?: string | null
+          insurance_type?:
+            | Database["public"]["Enums"]["insurance_type_enum"]
+            | null
           last_name?: string | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
           phone_number?: string | null
           postal_code?: string | null
+          preferred_name?: string | null
           primary_language?: string
+          race_ethnicity?: string[]
+          sex?: Database["public"]["Enums"]["sex_enum"] | null
         }
         Relationships: [
           {
@@ -415,6 +511,60 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "industry_lookup"
             referencedColumns: ["industry_name"]
+          },
+        ]
+      }
+      patient_care_team: {
+        Row: {
+          assigned_at: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          is_primary: boolean
+          notes: string | null
+          patient_id: string
+          practitioner_id: string
+          specialization: string
+          status: Database["public"]["Enums"]["care_team_status_enum"]
+        }
+        Insert: {
+          assigned_at?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          patient_id: string
+          practitioner_id: string
+          specialization: string
+          status?: Database["public"]["Enums"]["care_team_status_enum"]
+        }
+        Update: {
+          assigned_at?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          patient_id?: string
+          practitioner_id?: string
+          specialization?: string
+          status?: Database["public"]["Enums"]["care_team_status_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_care_team_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_care_team_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -744,10 +894,44 @@ export type Database = {
     }
     Enums: {
       app_role: "PATIENT" | "PRACTITIONER" | "ANALYST"
+      care_team_status_enum: "ACTIVE" | "INACTIVE"
       code_system_enum: "SKS" | "ICD10" | "ICPC2" | "SNOMED" | "LOINC" | "ATC"
       consent_status_enum: "PENDING" | "ACTIVE" | "REVOKED" | "EXPIRED"
       disposition_enum: "HOME_CARE" | "PRESCRIPTION" | "ER_REFERRAL"
+      employment_status_enum:
+        | "EMPLOYED"
+        | "SELF_EMPLOYED"
+        | "UNEMPLOYED"
+        | "STUDENT"
+        | "RETIRED"
+        | "UNABLE_TO_WORK"
+        | "OTHER"
+        | "UNKNOWN"
       encounter_type_enum: "NEW_ISSUE" | "FOLLOW_UP" | "CHRONIC_FLARE_UP"
+      gender_identity_enum:
+        | "MAN"
+        | "WOMAN"
+        | "NON_BINARY"
+        | "TRANSGENDER_MAN"
+        | "TRANSGENDER_WOMAN"
+        | "OTHER"
+        | "PREFER_NOT_TO_SAY"
+      insurance_type_enum:
+        | "PUBLIC_GROUP_1"
+        | "PUBLIC_GROUP_2"
+        | "PRIVATE"
+        | "EU_EHIC"
+        | "SELF_PAY"
+        | "UNINSURED"
+        | "UNKNOWN"
+      marital_status_enum:
+        | "SINGLE"
+        | "MARRIED"
+        | "PARTNERED"
+        | "SEPARATED"
+        | "DIVORCED"
+        | "WIDOWED"
+        | "UNKNOWN"
       organization_type_enum: "HOSPITAL" | "GP_CLINIC" | "SPECIALIST"
       practitioner_role_enum: "DOCTOR" | "NURSE" | "ADMIN"
       proxy_relationship_enum: "PARENT" | "GUARDIAN" | "SPOUSE" | "POA"
@@ -755,6 +939,7 @@ export type Database = {
       record_category_enum: "CONDITION" | "PROCEDURE" | "ALLERGY" | "REFERRAL"
       record_status_enum: "ACTIVE" | "RESOLVED" | "SUSPECTED"
       role_in_visit_enum: "REASON_FOR_VISIT" | "DIAGNOSED" | "FOLLOW_UP"
+      sex_enum: "MALE" | "FEMALE" | "INTERSEX" | "UNKNOWN"
       urgency_enum: "LOW" | "MEDIUM" | "HIGH_RED_FLAG"
       visit_status_enum: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED"
     }
@@ -885,10 +1070,48 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["PATIENT", "PRACTITIONER", "ANALYST"],
+      care_team_status_enum: ["ACTIVE", "INACTIVE"],
       code_system_enum: ["SKS", "ICD10", "ICPC2", "SNOMED", "LOINC", "ATC"],
       consent_status_enum: ["PENDING", "ACTIVE", "REVOKED", "EXPIRED"],
       disposition_enum: ["HOME_CARE", "PRESCRIPTION", "ER_REFERRAL"],
+      employment_status_enum: [
+        "EMPLOYED",
+        "SELF_EMPLOYED",
+        "UNEMPLOYED",
+        "STUDENT",
+        "RETIRED",
+        "UNABLE_TO_WORK",
+        "OTHER",
+        "UNKNOWN",
+      ],
       encounter_type_enum: ["NEW_ISSUE", "FOLLOW_UP", "CHRONIC_FLARE_UP"],
+      gender_identity_enum: [
+        "MAN",
+        "WOMAN",
+        "NON_BINARY",
+        "TRANSGENDER_MAN",
+        "TRANSGENDER_WOMAN",
+        "OTHER",
+        "PREFER_NOT_TO_SAY",
+      ],
+      insurance_type_enum: [
+        "PUBLIC_GROUP_1",
+        "PUBLIC_GROUP_2",
+        "PRIVATE",
+        "EU_EHIC",
+        "SELF_PAY",
+        "UNINSURED",
+        "UNKNOWN",
+      ],
+      marital_status_enum: [
+        "SINGLE",
+        "MARRIED",
+        "PARTNERED",
+        "SEPARATED",
+        "DIVORCED",
+        "WIDOWED",
+        "UNKNOWN",
+      ],
       organization_type_enum: ["HOSPITAL", "GP_CLINIC", "SPECIALIST"],
       practitioner_role_enum: ["DOCTOR", "NURSE", "ADMIN"],
       proxy_relationship_enum: ["PARENT", "GUARDIAN", "SPOUSE", "POA"],
@@ -896,6 +1119,7 @@ export const Constants = {
       record_category_enum: ["CONDITION", "PROCEDURE", "ALLERGY", "REFERRAL"],
       record_status_enum: ["ACTIVE", "RESOLVED", "SUSPECTED"],
       role_in_visit_enum: ["REASON_FOR_VISIT", "DIAGNOSED", "FOLLOW_UP"],
+      sex_enum: ["MALE", "FEMALE", "INTERSEX", "UNKNOWN"],
       urgency_enum: ["LOW", "MEDIUM", "HIGH_RED_FLAG"],
       visit_status_enum: ["SCHEDULED", "IN_PROGRESS", "COMPLETED"],
     },
