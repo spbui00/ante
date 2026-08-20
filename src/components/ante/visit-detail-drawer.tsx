@@ -118,9 +118,12 @@ export function VisitDetailDrawer({
                 value={visit.recommendation ?? "No recommendation recorded."}
               />
 
+              <VisitTranscript transcript={visit.intake_transcript} />
+
               <div className="border-t border-border pt-4">
                 <VisitClinicalItems visitId={visit.id} />
               </div>
+
             </div>
           ) : (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
