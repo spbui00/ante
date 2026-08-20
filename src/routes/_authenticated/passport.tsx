@@ -51,12 +51,41 @@ export const Route = createFileRoute("/_authenticated/passport")({
 
 function PassportPage() {
   const { data } = useSuspenseQuery(passportQuery);
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [intakeOpen, setIntakeOpen] = useState(false);
+  const [selectedVisit, setSelectedVisit] = useState<VisitDetail | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<VisitDetail | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const conditions = data.records.filter((r) => r.category === "CONDITION");
   const allergies = data.records.filter((r) => r.category === "ALLERGY");
   const active = data.prescriptions.filter((p) => !p.end_date);
+  const scheduled = data.visits.filter((v) => v.status === "SCHEDULED");
+  const past = data.visits.filter((v) => v.status !== "SCHEDULED");
+
+  function refresh() {
+    void queryClient.invalidateQueries({ queryKey: ["passport"] });
+    void queryClient.invalidateQueries({ queryKey: ["my-visit-history"] });
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await deleteScheduledVisit({ data: { visitId: pendingDelete.id } });
+      toast.success("Scheduled visit deleted");
+      setPendingDelete(null);
+      setDetailOpen(false);
+      refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete this visit");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
 
   return (
     <AppShell
