@@ -82,7 +82,9 @@ export const Route = createFileRoute("/api/intake")({
         const input = answered ? `${parsed.transcript}\n\n${answered}` : parsed.transcript;
 
         try {
-          const { extractFacts, cortiChat, predictCodes } = await import("@/lib/corti.server");
+          const { extractFacts, cortiChat, predictCodes, CORTI_CODING_SYSTEM } = await import(
+            "@/lib/corti.server"
+          );
 
           const facts = await extractFacts(input, parsed.language ?? "en").catch(() => []);
           const factLines = facts.map((f) => `- [${f.group}] ${f.text}`).join("\n");
@@ -105,10 +107,21 @@ export const Route = createFileRoute("/api/intake")({
             recommendation?: string;
           };
 
-          const codes = await predictCodes(
-            `${gen.summary ?? input}\n${factLines}`,
-            ["icd-10-dk"],
-          ).catch(() => []);
+          const codingText = [
+            gen.summary ?? "",
+            gen.symptomDetail ?? "",
+            gen.pertinentNegatives?.length ? `Denies: ${gen.pertinentNegatives.join(", ")}.` : "",
+            factLines,
+          ]
+            .filter(Boolean)
+            .join("\n");
+
+          const codes = await predictCodes(codingText || input, [CORTI_CODING_SYSTEM]).catch(
+            (err) => {
+              console.error("Corti coding failed", err);
+              return [];
+            },
+          );
 
           return Response.json({
             source: "corti",
