@@ -431,3 +431,74 @@ export const updateMySettings = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+/** Care team registry: practitioners linked to the signed-in patient by specialization. */
+export const getMyCareTeam = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("patient_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!profile?.patient_id) return { careTeam: [], practitioners: [] };
+
+    const { data: careTeam, error } = await supabase
+      .from("patient_care_team")
+      .select(
+        "id, specialization, is_primary, status, assigned_at, practitioner:practitioner(id, full_name, title, role, specialization, organization:organization(name))",
+      )
+      .eq("patient_id", profile.patient_id)
+      .order("is_primary", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    const { data: practitioners } = await supabase
+      .from("practitioner")
+      .select("id, full_name, title, role, specialization")
+      .order("full_name");
+
+    return { careTeam: careTeam ?? [], practitioners: practitioners ?? [] };
+  });
+
+export const addCareTeamMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        practitionerId: z.string().uuid(),
+        specialization: z.string().min(1).max(80),
+        isPrimary: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("patient_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!profile?.patient_id) throw new Error("No patient record linked to this account");
+
+    const { error } = await supabase.from("patient_care_team").insert({
+      patient_id: profile.patient_id,
+      practitioner_id: data.practitionerId,
+      specialization: data.specialization,
+      is_primary: data.isPrimary ?? false,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const removeCareTeamMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("patient_care_team").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
