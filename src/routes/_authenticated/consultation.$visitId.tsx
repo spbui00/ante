@@ -188,15 +188,29 @@ function ConsultationPage() {
                   <Field label="Completed" value={visit.completed_at} />
                 </div>
 
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Symptoms
-                  </p>
-                  <RichText
-                    className="mt-1 text-sm text-foreground"
-                    text={visit.symptoms || "Not recorded"}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="symptoms">Symptoms</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => saveSymptoms.mutate()}
+                      disabled={
+                        saveSymptoms.isPending || symptoms === (visit.symptoms ?? "")
+                      }
+                    >
+                      {saveSymptoms.isPending ? "Saving…" : "Save symptoms"}
+                    </Button>
+                  </div>
+                  <Textarea
+                    id="symptoms"
+                    rows={4}
+                    value={symptoms}
+                    onChange={(e) => setSymptoms(e.target.value)}
+                    placeholder="Reported symptoms…"
                   />
                 </div>
+
 
                 <div className="space-y-2">
                   <Label htmlFor="conclusion">Conclusion</Label>
