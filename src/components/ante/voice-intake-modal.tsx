@@ -96,6 +96,20 @@ export function VoiceIntakeModal({
   }
 
   const finishRef = useRef<(() => Promise<void>) | null>(null);
+  const cancelledRef = useRef(false);
+  const [phraseIndex, setPhraseIndex] = useState(0);
+
+  useEffect(() => {
+    if (!analysing) {
+      setPhraseIndex(0);
+      return;
+    }
+    const id = setInterval(
+      () => setPhraseIndex((i) => (i + 1) % FINALISING_PHRASES.length),
+      2200,
+    );
+    return () => clearInterval(id);
+  }, [analysing]);
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
