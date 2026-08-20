@@ -7,12 +7,22 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
-type NavItem = { to: string; label: string; icon: ReactNode };
+type NavItem = { to: string; label: string; icon: ReactNode; roles: AnteRole[] };
 
 const NAV: NavItem[] = [
-  { to: "/passport", label: "Passport", icon: <User className="size-4" /> },
-  { to: "/clinical", label: "Clinical", icon: <Stethoscope className="size-4" /> },
-  { to: "/surveillance", label: "Surveillance", icon: <Activity className="size-4" /> },
+  { to: "/passport", label: "Passport", icon: <User className="size-4" />, roles: ["PATIENT"] },
+  {
+    to: "/clinical",
+    label: "Clinical",
+    icon: <Stethoscope className="size-4" />,
+    roles: ["PRACTITIONER"],
+  },
+  {
+    to: "/surveillance",
+    label: "Surveillance",
+    icon: <Activity className="size-4" />,
+    roles: ["ANALYST"],
+  },
 ];
 
 export function AnteMark({ className }: { className?: string }) {
