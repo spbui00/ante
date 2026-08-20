@@ -132,7 +132,7 @@ export function VoiceIntakeModal({
     }
     const id = setInterval(
       () => setPhraseIndex((i) => (i + 1) % FINALISING_PHRASES.length),
-      2200,
+      4200,
     );
     return () => clearInterval(id);
   }, [analysing]);
