@@ -88,6 +88,8 @@ export function VoiceIntakeModal({
   const [result, setResult] = useState<IntakeResult | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const finishedRef = useRef(false);
+  const userTurnsRef = useRef(0);
+
   const contextId = useRef<string | null>(null);
   const autoSendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasDictatingRef = useRef(false);
@@ -114,6 +116,8 @@ export function VoiceIntakeModal({
     setResult(null);
     setConfirmOpen(false);
     finishedRef.current = false;
+    userTurnsRef.current = 0;
+
     contextId.current = null;
   }
 
@@ -169,7 +173,12 @@ export function VoiceIntakeModal({
         },
       });
       contextId.current = res.contextId ?? contextId.current;
-      const done = res.reply.includes("[INTAKE_COMPLETE]");
+      userTurnsRef.current += 1;
+      // In edit mode the model sees a complete transcript and tends to finish
+      // immediately — require at least two patient turns before honouring it.
+      const minTurns = editing ? 2 : 1;
+      const done =
+        res.reply.includes("[INTAKE_COMPLETE]") && userTurnsRef.current >= minTurns;
       const cleaned = res.reply.replace(/\[INTAKE_COMPLETE\]/g, "").trim();
       setMessages((m) => [
         ...m,
@@ -179,6 +188,7 @@ export function VoiceIntakeModal({
         finishedRef.current = true;
         setTimeout(() => void finishRef.current?.(), 400);
       }
+
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The assistant is unavailable");
     } finally {
