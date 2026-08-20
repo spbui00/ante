@@ -7,7 +7,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { IdCard, Search, Users } from "lucide-react";
+import { IdCard, Search, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -39,6 +39,7 @@ import { UrgencyBadge } from "@/components/ante/badges";
 import {
   getMyPatients,
   getPatientRecord,
+  removePatientFromRegistry,
   requestPatientConsent,
 } from "@/lib/ante.functions";
 import {
@@ -88,6 +89,19 @@ function PatientsPage() {
   const { data } = useSuspenseQuery(patientsQuery);
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
+  const queryClient = useQueryClient();
+
+  const removeMutation = useMutation({
+    mutationFn: (patientId: string) => removePatientFromRegistry({ data: { patientId } }),
+    onSuccess: (_r, patientId) => {
+      toast.success("Patient removed from your registry");
+      if (openId === patientId) setOpenId(null);
+      setRemoveTarget(null);
+      void queryClient.invalidateQueries({ queryKey: ["my-patients"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const grants = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -203,6 +217,35 @@ function PatientsPage() {
           </Card>
         )}
       </div>
+
+      <Drawer
+        open={removeTarget !== null}
+        onOpenChange={(o) => {
+          if (!o) setRemoveTarget(null);
+        }}
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Remove patient?</DrawerTitle>
+            <DrawerDescription>
+              This revokes your consent grant for {removeTarget?.name} and removes you from their
+              care team. You will lose access to their passport.
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter>
+            <Button
+              variant="destructive"
+              disabled={removeMutation.isPending}
+              onClick={() => removeTarget && removeMutation.mutate(removeTarget.id)}
+            >
+              {removeMutation.isPending ? "Removing…" : "Remove patient"}
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </AppShell>
   );
 }
