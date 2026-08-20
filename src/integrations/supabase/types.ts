@@ -368,10 +368,13 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           family_medical_history_icd_codes: Json
+          first_name: string | null
           full_name: string
           gender: string | null
           id: string
           industry: string | null
+          last_name: string | null
+          phone_number: string | null
           postal_code: string | null
           primary_language: string
         }
@@ -380,10 +383,13 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           family_medical_history_icd_codes?: Json
+          first_name?: string | null
           full_name: string
           gender?: string | null
           id?: string
           industry?: string | null
+          last_name?: string | null
+          phone_number?: string | null
           postal_code?: string | null
           primary_language?: string
         }
@@ -392,10 +398,13 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           family_medical_history_icd_codes?: Json
+          first_name?: string | null
           full_name?: string
           gender?: string | null
           id?: string
           industry?: string | null
+          last_name?: string | null
+          phone_number?: string | null
           postal_code?: string | null
           primary_language?: string
         }
@@ -697,6 +706,21 @@ export type Database = {
               _full_name?: string
               _last_name?: string
               _license?: string
+              _practitioner_role?: Database["public"]["Enums"]["practitioner_role_enum"]
+              _role: Database["public"]["Enums"]["app_role"]
+              _specialization?: string
+              _title?: string
+              _verified?: boolean
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _first_name?: string
+              _full_name?: string
+              _last_name?: string
+              _license?: string
+              _phone?: string
               _practitioner_role?: Database["public"]["Enums"]["practitioner_role_enum"]
               _role: Database["public"]["Enums"]["app_role"]
               _specialization?: string
