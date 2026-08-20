@@ -7,7 +7,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { CalendarPlus, IdCard, Search, Users } from "lucide-react";
+import { IdCard, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -37,16 +37,13 @@ import {
 } from "@/components/ui/select";
 import { UrgencyBadge } from "@/components/ante/badges";
 import {
-  findScheduledVisitsByCpr,
   getMyPatients,
   getPatientRecord,
-  registerVisitArrival,
   requestPatientConsent,
 } from "@/lib/ante.functions";
 import {
   CONSENT_DURATION_OPTIONS,
   type ConsentDuration,
-  ENCOUNTER_TYPE_LABEL,
   formatDate,
   formatDateTime,
   formatCpr,
