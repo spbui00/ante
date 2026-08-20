@@ -499,11 +499,96 @@ const careTeamQuery = queryOptions({
   queryFn: () => getMyCareTeam(),
 });
 
+type CareTeamData = Awaited<ReturnType<typeof getMyCareTeam>>;
+type CareTeamMember = CareTeamData["careTeam"][number];
+type ConsentRow = CareTeamData["consents"][number];
+
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function CareTeamMemberDrawer({
+  member,
+  consent,
+  open,
+  onOpenChange,
+}: {
+  member: CareTeamMember | null;
+  consent?: ConsentRow;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const p = member?.practitioner;
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[90vh]">
+        <DrawerHeader className="text-left">
+          <DrawerTitle>
+            {p?.title ? `${p.title} ` : ""}
+            {p?.full_name ?? "Practitioner"}
+          </DrawerTitle>
+          <DrawerDescription>
+            {member?.specialization}
+            {member?.is_primary ? " · Primary" : ""}
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="grid gap-4 overflow-y-auto px-4 pb-8 text-sm">
+          <div className="grid gap-2 rounded-lg border border-border p-3">
+            <p className="text-xs font-medium uppercase text-muted-foreground">Practitioner</p>
+            <Row label="Role" value={p?.role ?? "—"} />
+            <Row label="Specialisation" value={p?.specialization ?? member?.specialization ?? "—"} />
+            <Row label="License" value={p?.license_number ?? "—"} />
+            <Row label="Organisation" value={p?.organization?.name ?? "—"} />
+            <Row label="Region" value={p?.organization?.region ?? "—"} />
+            <Row label="Care team status" value={member?.status ?? "—"} />
+            <Row label="Added" value={formatDate(member?.assigned_at)} />
+          </div>
+
+          <div className="grid gap-2 rounded-lg border border-border p-3">
+            <p className="text-xs font-medium uppercase text-muted-foreground">Record access</p>
+            {consent ? (
+              <>
+                <Row label="Status" value={consent.status} />
+                <Row label="Granted" value={formatDate(consent.granted_at)} />
+                <Row
+                  label="Expires"
+                  value={consent.expires_at ? formatDate(consent.expires_at) : "No expiry"}
+                />
+                {consent.is_emergency_override ? (
+                  <Row label="Type" value="Emergency override" />
+                ) : null}
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                This practitioner has no consent grant for your records.
+              </p>
+            )}
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium">{value}</span>
+    </div>
+  );
+}
+
 function CareTeamCard() {
   const queryClient = useQueryClient();
   const { data } = useQuery(careTeamQuery);
   const [practitionerId, setPractitionerId] = useState("");
   const [teamSpecialization, setTeamSpecialization] = useState("");
+  const [selected, setSelected] = useState<CareTeamMember | null>(null);
 
   const add = useMutation({
     mutationFn: () =>
@@ -527,6 +612,12 @@ function CareTeamCard() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const consentFor = (practitionerId?: string | null) =>
+    (data?.consents ?? []).find(
+      (c) => c.practitioner_id === practitionerId && c.status === "ACTIVE",
+    ) ??
+    (data?.consents ?? []).find((c) => c.practitioner_id === practitionerId);
+
   return (
     <Card>
       <CardHeader>
@@ -538,15 +629,19 @@ function CareTeamCard() {
             {data.careTeam.map((member) => (
               <li
                 key={member.id}
-                className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm"
               >
-                <span>
+                <button
+                  type="button"
+                  className="flex-1 text-left transition-colors hover:text-primary"
+                  onClick={() => setSelected(member)}
+                >
                   <span className="font-medium">
                     {member.practitioner?.title ? `${member.practitioner.title} ` : ""}
                     {member.practitioner?.full_name ?? "Unknown"}
                   </span>
                   <span className="text-muted-foreground"> · {member.specialization}</span>
-                </span>
+                </button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -563,6 +658,14 @@ function CareTeamCard() {
             No practitioners linked yet. Add the specialists who look after you.
           </p>
         )}
+
+        <CareTeamMemberDrawer
+          member={selected}
+          consent={consentFor(selected?.practitioner?.id)}
+          open={Boolean(selected)}
+          onOpenChange={(open) => !open && setSelected(null)}
+        />
+
 
         <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
           <div className="grid gap-2">
