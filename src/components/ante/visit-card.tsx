@@ -1,8 +1,9 @@
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Pencil } from "lucide-react";
 
 import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
 import { RichTextInline } from "@/components/ante/rich-text";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ENCOUNTER_TYPE_LABEL, formatDate } from "@/lib/clinical-utils";
 import { cn } from "@/lib/utils";
@@ -32,10 +33,13 @@ export type VisitCardData = {
 export function VisitCard({
   visit,
   onClick,
+  onEdit,
   className,
 }: {
   visit: VisitCardData;
   onClick?: () => void;
+  /** Shown as an "Edit intake" action (used for SCHEDULED drafts). */
+  onEdit?: () => void;
   className?: string;
 }) {
   const practitioner = visit.practitioner;
@@ -77,6 +81,19 @@ export function VisitCard({
           className="line-clamp-2 text-sm text-muted-foreground"
           text={visit.conclusion || visit.symptoms || "No conclusion recorded."}
         />
+        {onEdit ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+          >
+            <Pencil className="size-4" />
+            Edit intake
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );

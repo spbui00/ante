@@ -313,6 +313,14 @@ function VisitsPage() {
               setSelectedVisit(v as VisitItem);
               setDetailOpen(true);
             }}
+            {...(v.status === "SCHEDULED"
+              ? {
+                  onEdit: () => {
+                    setSelectedVisit(v as VisitItem);
+                    setEditOpen(true);
+                  },
+                }
+              : {})}
           />
         ))}
       </div>
