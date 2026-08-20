@@ -257,6 +257,7 @@ export function VoiceIntakeModal({
   }
 
   return (
+    <>
     <Drawer
       open={open}
       dismissible={!analysing}
@@ -265,6 +266,7 @@ export function VoiceIntakeModal({
         onOpenChange(v);
       }}
     >
+
       <DrawerContent className="relative max-h-[88dvh]">
         <div
           aria-hidden={analysing}
