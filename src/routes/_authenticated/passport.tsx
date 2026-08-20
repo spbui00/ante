@@ -1,14 +1,28 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Activity, AlertTriangle, Mic, Pill, Stethoscope } from "lucide-react";
+import { Activity, AlertTriangle, CalendarClock, Mic, Pill, Stethoscope } from "lucide-react";
+import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
 import { VisitCard, type VisitCardData } from "@/components/ante/visit-card";
+import {
+  VisitDetailDrawer,
+  type VisitDetail,
+} from "@/components/ante/visit-detail-drawer";
 import { VoiceIntakeModal } from "@/components/ante/voice-intake-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { getPassport } from "@/lib/ante.functions";
+import { deleteScheduledVisit } from "@/lib/intake.functions";
 import { formatDate, maskCpr } from "@/lib/clinical-utils";
 
 const passportQuery = queryOptions({
