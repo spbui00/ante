@@ -280,7 +280,9 @@ export const getMySettings = createServerFn({ method: "GET" })
     if (profile?.patient_id) {
       const { data } = await supabase
         .from("patient")
-        .select("id, full_name, first_name, last_name, phone_number, date_of_birth, gender, postal_code, industry, primary_language")
+        .select(
+          "id, full_name, first_name, last_name, preferred_name, phone_number, date_of_birth, gender, sex, gender_identity, race_ethnicity, marital_status, employment_status, insurance_type, insurance_provider, insurance_member_id, postal_code, industry, primary_language",
+        )
         .eq("id", profile.patient_id)
         .maybeSingle();
       patient = data;
