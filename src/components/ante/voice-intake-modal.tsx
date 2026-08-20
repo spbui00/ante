@@ -321,7 +321,7 @@ export function VoiceIntakeModal({
                   type="button"
                   size="sm"
                   variant="secondary"
-                  onClick={analyse}
+                  onClick={() => void finish()}
                   disabled={analysing || thinking}
                 >
                   {analysing ? (
@@ -329,7 +329,7 @@ export function VoiceIntakeModal({
                   ) : (
                     <Sparkles className="size-4" />
                   )}
-                  Summarise
+                  Finish
                 </Button>
               </PromptInputTools>
               <PromptInputSubmit
@@ -340,6 +340,67 @@ export function VoiceIntakeModal({
           </PromptInput>
         </div>
       </DrawerContent>
+
+      <Drawer open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DrawerContent className="max-h-[85dvh]">
+          <div className="mx-auto w-full max-w-md overflow-y-auto px-4 pb-6">
+            <DrawerHeader className="px-0 text-left">
+              <DrawerTitle className="text-xl">Submit your pre-intake?</DrawerTitle>
+              <DrawerDescription>
+                Your clinician will see this at check-in. No treatment advice is recorded —
+                that comes from your doctor at the visit.
+              </DrawerDescription>
+            </DrawerHeader>
+
+            {enoughData ? null : (
+              <div className="mb-3 flex gap-2 rounded-2xl border border-border bg-secondary/50 p-3 text-sm">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                <p className="text-muted-foreground">
+                  We may not have enough detail yet. Answering a few more questions helps your
+                  doctor — but you can still submit now.
+                </p>
+              </div>
+            )}
+
+            {result ? (
+              <div className="rounded-2xl border border-border bg-card p-4 text-sm">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-medium text-foreground">Symptom summary</span>
+                  <UrgencyBadge level={result.urgencyLevel} />
+                </div>
+                <p className="text-muted-foreground">{result.summary}</p>
+                {result.symptoms.length ? (
+                  <p className="mt-3 text-foreground">{result.symptoms.join(", ")}</p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {result.symptomCodes.map((c) => (
+                    <CodeChip key={c.code} code={c.code} system="ICD-10" />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-4 flex gap-2">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setConfirmOpen(false)}
+              >
+                Keep talking
+              </Button>
+              <Button className="flex-1" onClick={sendToClinic} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Send className="size-4" />
+                )}
+                Submit
+              </Button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </Drawer>
   );
 }
+
