@@ -54,6 +54,10 @@ export function VoiceIntakeModal({
   const recording = dictation.status === "listening";
   const connecting = dictation.status === "connecting";
 
+  const displayValue = transcript + (dictation.interim
+    ? (transcript ? " " : "") + dictation.interim
+    : "");
+
   async function submit() {
     if (!transcript.trim()) {
       toast.error("Add a short description first");
@@ -175,12 +179,20 @@ export function VoiceIntakeModal({
             <Textarea
               rows={4}
               placeholder="e.g. Dry cough for four days, fever last night, chest feels tight."
-              value={transcript}
-              onChange={(e) => setTranscript(e.target.value)}
+              value={displayValue}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (!dictation.interim) {
+                  setTranscript(raw);
+                  return;
+                }
+                const suffix = (transcript ? " " : "") + dictation.interim;
+                setTranscript(raw.endsWith(suffix) ? raw.slice(0, -suffix.length) : raw);
+              }}
             />
             {dictation.interim ? (
-              <p className="mt-1 px-1 text-sm italic text-muted-foreground">
-                {dictation.interim}
+              <p className="mt-1 px-1 text-xs text-muted-foreground">
+                Listening…
               </p>
             ) : null}
           </div>
