@@ -112,6 +112,7 @@ export const getClinicalQueue = createServerFn({ method: "GET" })
       supabase
         .from("visit")
         .select("*, patient:patient(id, full_name, date_of_birth, sex, postal_code, cpr_number)")
+        .eq("practitioner_id", profile.practitioner_id)
         .order("visit_date", { ascending: false })
         .limit(50),
       supabase
