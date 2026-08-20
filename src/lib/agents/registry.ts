@@ -97,6 +97,13 @@ export const AGENTS = {
     connectors: [{ type: "registry", name: "memory" }],
     includePatientContext: true,
   },
+  "charge-nurse": {
+    key: "charge-nurse",
+    name: "ante-charge-nurse-agent-v1",
+    description: "Estimates consultation duration for each waiting patient.",
+    systemPrompt: CHARGE_NURSE_SYSTEM_PROMPT,
+    includePatientContext: false,
+  },
   "queue-triage": {
     key: "queue-triage",
     name: "ante-queue-triage-agent-v1",
