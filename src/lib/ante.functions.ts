@@ -175,6 +175,26 @@ export const getVisitDetail = createServerFn({ method: "GET" })
     };
   });
 
+/** Practitioner edits the recorded symptoms of a visit. */
+export const updateVisitSymptoms = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        visitId: z.string().uuid(),
+        symptoms: z.string().trim().max(4000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("visit")
+      .update({ symptoms: data.symptoms })
+      .eq("id", data.visitId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** Practitioner signs off an AI-drafted visit. */
 export const finaliseVisit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
