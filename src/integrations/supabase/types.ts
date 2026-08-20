@@ -888,6 +888,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      request_consent_by_cpr: {
+        Args: { _cpr: string; _duration: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "PATIENT" | "PRACTITIONER" | "ANALYST"

@@ -63,3 +63,16 @@ export function formatDateTime(value: string | null | undefined): string {
     minute: "2-digit",
   });
 }
+
+export const CONSENT_DURATIONS = {
+  "1 hour": "1 hour",
+  "1 day": "1 day",
+  "1 week": "7 days",
+  "1 month": "1 month",
+  "1 year": "1 year",
+  "3 years": "3 years",
+} as const;
+
+export type ConsentDuration = keyof typeof CONSENT_DURATIONS;
+
+export const CONSENT_DURATION_OPTIONS = Object.keys(CONSENT_DURATIONS) as ConsentDuration[];

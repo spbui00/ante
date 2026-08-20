@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Filter, Search, ShieldAlert, Sparkles, X } from "lucide-react";
+import { Filter, IdCard, Search, ShieldAlert, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -30,8 +30,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { breakGlass, finaliseVisit, getClinicalQueue } from "@/lib/ante.functions";
+import { breakGlass, finaliseVisit, getClinicalQueue, requestPatientConsent } from "@/lib/ante.functions";
 import {
+  CONSENT_DURATION_OPTIONS,
+  type ConsentDuration,
   ENCOUNTER_TYPE_LABEL,
   URGENCY_LABEL,
   formatDateTime,
@@ -320,6 +322,8 @@ function ClinicalPage() {
         </div>
       ) : null}
 
+      <RegisterIntake />
+
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <Card className="h-fit">
           <CardHeader className="pb-2">
@@ -543,3 +547,75 @@ function Block({ label, value }: { label: string; value: string | null | undefin
   );
 }
 
+
+function RegisterIntake() {
+  const queryClient = useQueryClient();
+  const [cpr, setCpr] = useState("");
+  const [duration, setDuration] = useState<ConsentDuration>("1 year");
+
+  const request = useMutation({
+    mutationFn: () => requestPatientConsent({ data: { cpr, duration } }),
+    onSuccess: (result) => {
+      if (result.ok) {
+        toast.success(`Consent request sent to ${result.patient_name ?? "the patient"}`);
+        setCpr("");
+        void queryClient.invalidateQueries({ queryKey: ["my-patients"] });
+        return;
+      }
+      if (result.reason === "not_found") toast.error("No patient found with that CPR number");
+      else if (result.reason === "pending") toast.info("A request is already pending for this patient");
+      else if (result.reason === "active") toast.info("You already have active access to this patient");
+      else toast.error("This account is not a practitioner account");
+    },
+    onError: () => toast.error("Could not send the consent request"),
+  });
+
+  return (
+    <Card className="mb-4 border-primary/30 bg-primary/[0.04]">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <IdCard className="size-4" />
+          Register an intake
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-wrap items-end gap-3">
+        <div className="min-w-[220px] flex-1 space-y-2">
+          <Label htmlFor="cpr">Patient CPR number</Label>
+          <Input
+            id="cpr"
+            value={cpr}
+            onChange={(e) => setCpr(e.target.value)}
+            placeholder="DDMMYY-XXXX"
+            maxLength={15}
+            className="font-mono"
+          />
+        </div>
+        <div className="w-40 space-y-2">
+          <Label>Access duration</Label>
+          <Select value={duration} onValueChange={(v) => setDuration(v as ConsentDuration)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CONSENT_DURATION_OPTIONS.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button
+          disabled={cpr.trim().length < 6 || request.isPending}
+          onClick={() => request.mutate()}
+        >
+          {request.isPending ? "Requesting…" : "Request data"}
+        </Button>
+        <p className="w-full text-xs text-muted-foreground">
+          The patient approves the request with Face ID in their Ante app before their passport
+          becomes visible to you.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
