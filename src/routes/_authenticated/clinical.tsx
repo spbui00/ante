@@ -663,7 +663,18 @@ function ClinicalPage() {
         )}
       </div>
 
+      {selected ? (
+        <ConsultationRecorder
+          visitId={selected.id}
+          patientName={(selected.patient as { full_name?: string } | null)?.full_name ?? "Patient"}
+          open={recorderOpen}
+          onOpenChange={setRecorderOpen}
+          onSigned={() => void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] })}
+        />
+      ) : null}
+
       <Drawer open={glassOpen} onOpenChange={setGlassOpen}>
+
         <DrawerContent>
           <div className="mx-auto w-full max-w-lg">
             <DrawerHeader>
