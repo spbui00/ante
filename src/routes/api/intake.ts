@@ -67,12 +67,13 @@ From the patient's own words and the extracted clinical facts, respond with STRI
 {"summary": string, "symptoms": string[], "symptomDetail": string, "pertinentNegatives": string[], "symptomDurationDays": number|null, "travelHistory": string[], "followUpQuestions": string[], "urgencyLevel": "LOW"|"MEDIUM"|"HIGH_RED_FLAG", "recommendation": string}
 summary: 1-3 neutral clinical sentences written for the reviewing clinician.
 symptoms: short symptom labels for every symptom the patient reported (present symptoms only).
-symptomDetail: one compact clinical narrative of the presenting complaint covering every symptom, onset/duration, severity, progression, aggravating/relieving factors, exposures, and explicitly denied symptoms. Include everything the patient said — do not drop details.
-pertinentNegatives: symptoms the patient explicitly denied (e.g. "no fever").
+symptomDetail: one compact clinical narrative (max ~120 words) of the presenting complaint covering onset/duration, severity, progression, aggravating/relieving factors, exposures, and explicitly denied symptoms. Write it in your own clinical wording — NEVER copy or paste the raw conversation, and never include "Patient:" / "Assistant:" lines.
+pertinentNegatives: symptoms the patient explicitly denied OR that they said have resolved (e.g. "no fever", "chest pain resolved").
 symptomDurationDays: duration in days if stated, else null.
 travelHistory: recent travel or exposure mentions, empty array if none/denied.
 followUpQuestions: up to 4 targeted questions about missing clinical features (onset, duration, travel, red flags). Empty if nothing material is missing.
-urgencyLevel: HIGH_RED_FLAG only for potential emergencies (chest pain, breathing difficulty, neurological deficit, sepsis signs).
+LATEST INFORMATION WINS: if the patient later corrects or retracts something (e.g. a symptom has resolved or was mistaken), the correction overrides the earlier statement — exclude it from symptoms and reflect it in pertinentNegatives.
+urgencyLevel: judge CURRENT status only. HIGH_RED_FLAG only for potential emergencies that are still active (chest pain, breathing difficulty, neurological deficit, sepsis signs). A red-flag symptom that the patient reports as resolved or retracted must NOT keep the urgency high — downgrade to MEDIUM or LOW accordingly.
 Never diagnose or prescribe.`;
 
 export const Route = createFileRoute("/api/intake")({
