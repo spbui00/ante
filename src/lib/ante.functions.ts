@@ -198,6 +198,7 @@ export const finaliseVisit = createServerFn({ method: "POST" })
         disposition: data.disposition,
         urgency_level: data.urgencyLevel,
         status: "COMPLETED",
+        completed_at: new Date().toISOString(),
       })
       .eq("id", data.visitId);
 
