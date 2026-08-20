@@ -327,6 +327,44 @@ export const updateMySettings = createServerFn({ method: "POST" })
         specialization: z.string().max(80).optional().nullable(),
         licenseNumber: z.string().max(32).optional().nullable(),
         phoneNumber: z.string().max(30).optional().nullable(),
+        preferredName: z.string().max(80).optional().nullable(),
+        sex: z.enum(["MALE", "FEMALE", "INTERSEX", "UNKNOWN"]).optional().nullable(),
+        genderIdentity: z
+          .enum([
+            "MAN",
+            "WOMAN",
+            "NON_BINARY",
+            "TRANSGENDER_MAN",
+            "TRANSGENDER_WOMAN",
+            "OTHER",
+            "PREFER_NOT_TO_SAY",
+          ])
+          .optional()
+          .nullable(),
+        raceEthnicity: z.array(z.string().max(60)).max(12).optional(),
+        maritalStatus: z
+          .enum(["SINGLE", "MARRIED", "PARTNERED", "SEPARATED", "DIVORCED", "WIDOWED", "UNKNOWN"])
+          .optional()
+          .nullable(),
+        employmentStatus: z
+          .enum([
+            "EMPLOYED",
+            "SELF_EMPLOYED",
+            "UNEMPLOYED",
+            "STUDENT",
+            "RETIRED",
+            "UNABLE_TO_WORK",
+            "OTHER",
+            "UNKNOWN",
+          ])
+          .optional()
+          .nullable(),
+        insuranceType: z
+          .enum(["PUBLIC_GROUP_1", "PUBLIC_GROUP_2", "PRIVATE", "EU_EHIC", "SELF_PAY", "UNINSURED", "UNKNOWN"])
+          .optional()
+          .nullable(),
+        insuranceProvider: z.string().max(80).optional().nullable(),
+        insuranceMemberId: z.string().max(60).optional().nullable(),
       })
       .parse(input),
   )
