@@ -124,7 +124,15 @@ export const AGENTS = {
     systemPrompt: QUEUE_TRIAGE_SYSTEM_PROMPT,
     includePatientContext: false,
   },
+  "care-navigator": {
+    key: "care-navigator",
+    name: "ante-care-navigator-agent-v1",
+    description: "Recommends which practitioner a patient should see for a new intake.",
+    systemPrompt: CARE_NAVIGATOR_SYSTEM_PROMPT,
+    includePatientContext: false,
+  },
 } satisfies Record<string, AgentDefinition>;
+
 
 export type AgentKey = keyof typeof AGENTS;
 
