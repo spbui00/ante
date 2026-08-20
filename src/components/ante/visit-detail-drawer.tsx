@@ -1,0 +1,143 @@
+import { Pencil, Trash2 } from "lucide-react";
+
+import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
+import { RichText } from "@/components/ante/rich-text";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { ENCOUNTER_TYPE_LABEL, formatDate } from "@/lib/clinical-utils";
+
+export const VISIT_STATUS_LABEL: Record<string, string> = {
+  SCHEDULED: "Scheduled",
+  IN_PROGRESS: "In progress",
+  COMPLETED: "Completed",
+};
+
+export type VisitDetail = {
+  id: string;
+  visit_date: string;
+  status?: string | null;
+  encounter_type?: string | null;
+  urgency_level?: string | null;
+  disposition?: string | null;
+  symptoms?: string | null;
+  conclusion?: string | null;
+  recommendation?: string | null;
+  practitioner?: {
+    full_name?: string | null;
+    title?: string | null;
+    specialization?: string | null;
+  } | null;
+};
+
+export function VisitDetailDrawer({
+  visit,
+  open,
+  onOpenChange,
+  onEdit,
+  onDelete,
+}: {
+  visit: VisitDetail | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+}) {
+  const canEdit = visit?.status === "SCHEDULED";
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[85vh]">
+        <div className="mx-auto w-full max-w-2xl">
+          <DrawerHeader>
+            <DrawerTitle>Visit details</DrawerTitle>
+            <DrawerDescription>{visit ? formatDate(visit.visit_date) : "—"}</DrawerDescription>
+          </DrawerHeader>
+
+          {visit ? (
+            <div className="space-y-6 overflow-y-auto px-4 pb-6">
+              <div className="flex flex-wrap items-center gap-2">
+                {visit.encounter_type ? (
+                  <Badge variant="outline">
+                    {ENCOUNTER_TYPE_LABEL[visit.encounter_type] ?? visit.encounter_type}
+                  </Badge>
+                ) : null}
+                <UrgencyBadge level={visit.urgency_level} />
+                {visit.status ? (
+                  <Badge variant="secondary">
+                    {VISIT_STATUS_LABEL[visit.status] ?? visit.status}
+                  </Badge>
+                ) : null}
+                <DispositionBadge value={visit.disposition} />
+              </div>
+
+              <DetailSection
+                label="Clinician"
+                value={(() => {
+                  const p = visit.practitioner;
+                  if (!p?.full_name) return "—";
+                  return [[p.title, p.full_name].filter(Boolean).join(" "), p.specialization]
+                    .filter(Boolean)
+                    .join(" · ");
+                })()}
+              />
+
+              <DetailSection label="Symptoms" value={visit.symptoms ?? "No symptoms recorded."} />
+              <DetailSection
+                label="Conclusion"
+                value={visit.conclusion ?? "No conclusion recorded."}
+              />
+              <DetailSection
+                label="Recommendation"
+                value={visit.recommendation ?? "No recommendation recorded."}
+              />
+            </div>
+          ) : (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+              Select a visit to view details.
+            </div>
+          )}
+
+          <DrawerFooter className="flex-row justify-end">
+            {canEdit && onDelete ? (
+              <Button
+                variant="ghost"
+                className="mr-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={onDelete}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            ) : null}
+            {canEdit && onEdit ? (
+              <Button onClick={onEdit}>
+                <Pencil className="size-4" />
+                Edit intake
+              </Button>
+            ) : null}
+            <DrawerClose asChild>
+              <Button variant="outline">Close</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+function DetailSection({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</h4>
+      <RichText text={value} />
+    </div>
+  );
+}
