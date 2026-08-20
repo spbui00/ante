@@ -22,6 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate } from "@/lib/clinical-utils";
+
 
 import {
   deleteVisitClinicalItem,
