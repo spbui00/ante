@@ -940,6 +940,10 @@ export type Database = {
             }
             Returns: undefined
           }
+      break_glass_by_cpr: {
+        Args: { _cpr: string; _duration: string; _justification: string }
+        Returns: Json
+      }
       can_read_patient: { Args: { _patient_id: string }; Returns: boolean }
       claim_demo_identity: { Args: never; Returns: undefined }
       current_patient_id: { Args: never; Returns: string }
