@@ -70,7 +70,7 @@ export function AppShell({
             <AnteMark />
           </Link>
           <nav className="ml-2 hidden items-center gap-1 md:flex">
-            {NAV.map((item) => (
+            {visibleNav.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -101,7 +101,7 @@ export function AppShell({
       </div>
 
       <nav className="sticky bottom-0 z-30 flex border-t border-border bg-background md:hidden">
-        {NAV.map((item) => (
+        {visibleNav.map((item) => (
           <Link
             key={item.to}
             to={item.to}
