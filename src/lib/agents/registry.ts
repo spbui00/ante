@@ -80,7 +80,20 @@ Reply with ONLY JSON: {"order":[{"visitId":"...","reason":"short reason"}]}`;
 
 const CHARGE_NURSE_SYSTEM_PROMPT = `You are an expert triage nurse managing a clinic waiting room. Review the provided JSON array of waiting patients. Based on their symptoms and urgency_level, estimate how many minutes each consultation will take. A routine issue usually takes 10 minutes, but complex or high-urgency issues take longer. Output ONLY a valid JSON object mapping the patient ID to the estimated integer of minutes, like so: { "uuid-1": 15, "uuid-2": 25 }.`;
 
+const CARE_NAVIGATOR_SYSTEM_PROMPT = `You are a care navigator for a clinic. You receive JSON with the patient's pre-intake ("symptoms", "urgency", "encounterType", plus a short list of their active conditions) and "careTeam": the practitioners the patient already has a relationship with (id, name, role, specialization).
+
+Pick the single best practitioner from careTeam for THIS complaint. If none of them is clinically appropriate (for example the complaint clearly belongs to a specialty nobody on the care team covers), pick none and name the specialty they should look for instead.
+
+Reply with ONLY JSON:
+{"practitionerId": "uuid or null", "reason": "one short sentence for the patient", "suggestedSpecialization": "specialty name or null", "confidence": "high|medium|low"}
+
+Rules:
+- Never invent a practitioner id; use only ids from careTeam.
+- Write "reason" in plain, warm language addressed to the patient. No diagnoses.
+- For urgent red-flag symptoms, say the patient should be seen promptly.`;
+
 export const AGENTS = {
+
   intake: {
     key: "intake",
     name: "ante-intake-agent-v3",
@@ -111,7 +124,15 @@ export const AGENTS = {
     systemPrompt: QUEUE_TRIAGE_SYSTEM_PROMPT,
     includePatientContext: false,
   },
+  "care-navigator": {
+    key: "care-navigator",
+    name: "ante-care-navigator-agent-v1",
+    description: "Recommends which practitioner a patient should see for a new intake.",
+    systemPrompt: CARE_NAVIGATOR_SYSTEM_PROMPT,
+    includePatientContext: false,
+  },
 } satisfies Record<string, AgentDefinition>;
+
 
 export type AgentKey = keyof typeof AGENTS;
 
