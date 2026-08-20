@@ -39,13 +39,17 @@ export const completeOnboarding = createServerFn({ method: "POST" })
       title = lookup.title;
     }
 
-    const { error } = await supabase.rpc("apply_onboarding", {
-      _role: data.role,
-      _full_name: data.fullName ?? undefined,
-      _license: data.role === "PRACTITIONER" ? data.authorisationId : undefined,
-      _practitioner_role: practitionerRole,
-      _verified: verified,
-    });
+    const args: {
+      _role: "PATIENT" | "PRACTITIONER" | "ANALYST";
+      _practitioner_role: "DOCTOR" | "NURSE";
+      _verified: boolean;
+      _full_name?: string;
+      _license?: string;
+    } = { _role: data.role, _practitioner_role: practitionerRole, _verified: verified };
+    if (data.fullName) args._full_name = data.fullName;
+    if (data.role === "PRACTITIONER" && data.authorisationId) args._license = data.authorisationId;
+
+    const { error } = await supabase.rpc("apply_onboarding", args);
     if (error) throw new Error(error.message);
 
     return { ok: true, role: data.role, title, verified };
