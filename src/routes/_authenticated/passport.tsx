@@ -103,6 +103,32 @@ function PassportPage() {
       }
     >
       <div className="grid gap-4 lg:grid-cols-3">
+        <Section
+          title="Scheduled visits"
+          icon={<CalendarClock className="size-4" />}
+          className="lg:col-span-3 border-primary/30 bg-primary/[0.04]"
+        >
+          {scheduled.length === 0 ? <Empty label="No upcoming visits" /> : null}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {scheduled.map((v) => (
+              <VisitCard
+                key={v.id}
+                visit={v as VisitCardData}
+                className="bg-card/60"
+                onClick={() => {
+                  setSelectedVisit(v as VisitDetail);
+                  setDetailOpen(true);
+                }}
+                onEdit={() => {
+                  setSelectedVisit(v as VisitDetail);
+                  setEditOpen(true);
+                }}
+                onDelete={() => setPendingDelete(v as VisitDetail)}
+              />
+            ))}
+          </div>
+        </Section>
+
         <Section title="Conditions" icon={<Stethoscope className="size-4" />}>
           {conditions.length === 0 ? <Empty /> : null}
           {conditions.map((c) => (
@@ -137,31 +163,6 @@ function PassportPage() {
               secondary={`${o.value ?? "—"} ${o.unit ?? ""} · ${formatDate(o.recorded_at)}`}
             />
           ))}
-        </Section>
-
-        <Section
-          title="Scheduled visits"
-          icon={<CalendarClock className="size-4" />}
-          className="lg:col-span-2"
-        >
-          {scheduled.length === 0 ? <Empty label="No upcoming visits" /> : null}
-          <div className="space-y-3">
-            {scheduled.map((v) => (
-              <VisitCard
-                key={v.id}
-                visit={v as VisitCardData}
-                onClick={() => {
-                  setSelectedVisit(v as VisitDetail);
-                  setDetailOpen(true);
-                }}
-                onEdit={() => {
-                  setSelectedVisit(v as VisitDetail);
-                  setEditOpen(true);
-                }}
-                onDelete={() => setPendingDelete(v as VisitDetail)}
-              />
-            ))}
-          </div>
         </Section>
 
         <Section title="Visit history" icon={<Stethoscope className="size-4" />} className="lg:col-span-2">
