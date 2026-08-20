@@ -627,8 +627,9 @@ export const getPatientRecord = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ patientId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const [patient, records, prescriptions, observations, visits] = await Promise.all([
+    const { supabase, userId } = context;
+    const [profile, patient, records, prescriptions, observations, visits] = await Promise.all([
+      supabase.from("profiles").select("practitioner_id").eq("id", userId).maybeSingle(),
       supabase.from("patient").select("*").eq("id", data.patientId).maybeSingle(),
       supabase
         .from("clinical_record")
@@ -648,13 +649,16 @@ export const getPatientRecord = createServerFn({ method: "GET" })
         .limit(20),
       supabase
         .from("visit")
-        .select("id, visit_date, encounter_type, urgency_level, status, conclusion")
+        .select(
+          "id, visit_date, encounter_type, urgency_level, status, disposition, symptoms, conclusion, recommendation, practitioner_id, practitioner:practitioner(full_name, title, specialization)",
+        )
         .eq("patient_id", data.patientId)
         .order("visit_date", { ascending: false })
-        .limit(20),
+        .limit(50),
     ]);
 
     return {
+      viewerPractitionerId: profile.data?.practitioner_id ?? null,
       patient: patient.data,
       records: records.data ?? [],
       prescriptions: prescriptions.data ?? [],
