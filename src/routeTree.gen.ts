@@ -18,6 +18,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSurveillanceRouteImport } from './routes/_authenticated/surveillance'
 import { Route as ApiIntakeRouteImport } from './routes/api/intake'
 import { Route as ApiProcessVisitRouteImport } from './routes/api/process-visit'
+import { Route as ApiVerifyDoctorRouteImport } from './routes/api/verify-doctor'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const ApiProcessVisitRoute = ApiProcessVisitRouteImport.update({
   path: '/api/process-visit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVerifyDoctorRoute = ApiVerifyDoctorRouteImport.update({
+  id: '/api/verify-doctor',
+  path: '/api/verify-doctor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/surveillance': typeof AuthenticatedSurveillanceRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
+  '/api/verify-doctor': typeof ApiVerifyDoctorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/surveillance': typeof AuthenticatedSurveillanceRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
+  '/api/verify-doctor': typeof ApiVerifyDoctorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/_authenticated/surveillance': typeof AuthenticatedSurveillanceRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
+  '/api/verify-doctor': typeof ApiVerifyDoctorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/surveillance'
     | '/api/intake'
     | '/api/process-visit'
+    | '/api/verify-doctor'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/surveillance'
     | '/api/intake'
     | '/api/process-visit'
+    | '/api/verify-doctor'
   id:
     | '__root__'
     | '/'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/_authenticated/surveillance'
     | '/api/intake'
     | '/api/process-visit'
+    | '/api/verify-doctor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -137,6 +149,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiIntakeRoute: typeof ApiIntakeRoute
   ApiProcessVisitRoute: typeof ApiProcessVisitRoute
+  ApiVerifyDoctorRoute: typeof ApiVerifyDoctorRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProcessVisitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/verify-doctor': {
+      id: '/api/verify-doctor'
+      path: '/api/verify-doctor'
+      fullPath: '/api/verify-doctor'
+      preLoaderRoute: typeof ApiVerifyDoctorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -230,6 +250,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiIntakeRoute: ApiIntakeRoute,
   ApiProcessVisitRoute: ApiProcessVisitRoute,
+  ApiVerifyDoctorRoute: ApiVerifyDoctorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

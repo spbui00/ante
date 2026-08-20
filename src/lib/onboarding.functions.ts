@@ -1,0 +1,56 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { lookupAuthorisation } from "@/lib/license-registry";
+
+/** Mocked Autorisationsregisteret verification for a practitioner sign-up. */
+export const verifyPractitioner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ fullName: z.string().max(120).default(""), authorisationId: z.string().max(32) }).parse(input),
+  )
+  .handler(async ({ data }) => lookupAuthorisation(data.authorisationId, data.fullName));
+
+/** Applies the chosen role (and practitioner authorisation) to the signed-in account. */
+export const completeOnboarding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        role: z.enum(["PATIENT", "PRACTITIONER", "ANALYST"]),
+        fullName: z.string().max(120).optional(),
+        authorisationId: z.string().max(32).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+
+    let practitionerRole: "DOCTOR" | "NURSE" = "DOCTOR";
+    let verified = false;
+    let title: string | null = null;
+
+    if (data.role === "PRACTITIONER") {
+      const lookup = lookupAuthorisation(data.authorisationId ?? "", data.fullName ?? "");
+      if (!lookup.valid) throw new Error(lookup.message);
+      practitionerRole = lookup.practitionerRole ?? "DOCTOR";
+      verified = true;
+      title = lookup.title;
+    }
+
+    const args: {
+      _role: "PATIENT" | "PRACTITIONER" | "ANALYST";
+      _practitioner_role: "DOCTOR" | "NURSE";
+      _verified: boolean;
+      _full_name?: string;
+      _license?: string;
+    } = { _role: data.role, _practitioner_role: practitionerRole, _verified: verified };
+    if (data.fullName) args._full_name = data.fullName;
+    if (data.role === "PRACTITIONER" && data.authorisationId) args._license = data.authorisationId;
+
+    const { error } = await supabase.rpc("apply_onboarding", args);
+    if (error) throw new Error(error.message);
+
+    return { ok: true, role: data.role, title, verified };
+  });
