@@ -207,6 +207,8 @@ export const finaliseVisit = createServerFn({ method: "POST" })
       .update({
         conclusion: data.conclusion,
         recommendation: data.recommendation,
+        ...(data.symptoms !== undefined ? { symptoms: data.symptoms } : {}),
+
         disposition: data.disposition,
         urgency_level: data.urgencyLevel,
         status: "COMPLETED",
