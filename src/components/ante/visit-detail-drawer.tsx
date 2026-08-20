@@ -31,6 +31,8 @@ export type VisitDetail = {
   urgency_level?: string | null;
   disposition?: string | null;
   symptoms?: string | null;
+  intake_transcript?: string | null;
+
   conclusion?: string | null;
   recommendation?: string | null;
   arrived_at?: string | null;
