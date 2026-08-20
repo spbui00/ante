@@ -41,6 +41,13 @@ import {
   type SexValue,
 } from "@/lib/demographics-options";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -518,7 +525,7 @@ function CareTeamMemberDrawer({
   onOpenChange,
 }: {
   member: CareTeamMember | null;
-  consent?: ConsentRow;
+  consent: ConsentRow | undefined;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
