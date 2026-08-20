@@ -20,6 +20,8 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
+import { ConsultationRecorder } from "@/components/ante/consultation-recorder";
+
 import { CodeChip, DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
 import { RichText, RichTextInline } from "@/components/ante/rich-text";
 import { Button } from "@/components/ui/button";
