@@ -37,7 +37,7 @@ import {
   ENCOUNTER_TYPE_LABEL,
   URGENCY_LABEL,
   formatDateTime,
-  maskCpr,
+  formatCpr,
 } from "@/lib/clinical-utils";
 
 const queueQuery = queryOptions({
@@ -350,7 +350,7 @@ function ClinicalPage() {
                     </span>
                   </div>
                   <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                    {maskCpr(patient?.cpr_number)}
+                    {formatCpr(patient?.cpr_number)}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {formatDateTime(v.visit_date)} · {ENCOUNTER_TYPE_LABEL[v.encounter_type ?? ""] ?? "Visit"}

@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/drawer";
 import { getPassport } from "@/lib/ante.functions";
 import { deleteScheduledVisit } from "@/lib/intake.functions";
-import { formatDate, maskCpr } from "@/lib/clinical-utils";
+import { formatDate, formatCpr } from "@/lib/clinical-utils";
 
 const passportQuery = queryOptions({
   queryKey: ["passport"],
@@ -94,7 +94,7 @@ function PassportPage() {
       subtitle={
         data.patient
           ? [
-              maskCpr(data.patient.cpr_number),
+              formatCpr(data.patient.cpr_number),
               data.patient.date_of_birth ? `born ${formatDate(data.patient.date_of_birth)}` : null,
               data.patient.postal_code,
             ]

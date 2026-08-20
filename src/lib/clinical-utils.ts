@@ -45,6 +45,15 @@ export function maskCpr(cpr: string | null | undefined): string {
   return `${cpr.slice(0, 6)}-••••`;
 }
 
+/** Full CPR, normalised to DDMMYY-XXXX. Clinicians with access see this in full. */
+export function formatCpr(cpr: string | null | undefined): string {
+  if (!cpr) return "—";
+  const digits = cpr.replace(/\D/g, "");
+  if (digits.length === 10) return `${digits.slice(0, 6)}-${digits.slice(6)}`;
+  return cpr;
+}
+
+
 export function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
   return new Date(value).toLocaleDateString("en-GB", {
