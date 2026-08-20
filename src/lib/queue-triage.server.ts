@@ -32,43 +32,24 @@ export function heuristicOrder(candidates: QueueCandidate[]): string[] {
     .map((c) => c.visitId);
 }
 
-const SYSTEM_PROMPT = `You are a clinical triage coordinator for a Danish GP clinic.
-You are given the patients currently waiting to be seen by one clinician.
-Rank them into the order they should be taken in.
-
-Rules:
-- Red-flag / high urgency patients always come first.
-- Among similar urgency, longer waiting time wins.
-- A low-urgency patient who has waited a very long time (>90 minutes) may be moved ahead of a medium-urgency patient who just arrived.
-- Never invent patients and never drop one.
-
-Reply with ONLY JSON: {"order":[{"visitId":"...","reason":"short reason"}]}`;
-
 export async function rankQueue(
   candidates: QueueCandidate[],
 ): Promise<{ order: string[]; reasons: Record<string, string>; source: "agent" | "heuristic" }> {
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey || candidates.length < 2) {
+  if (candidates.length < 2) {
     return { order: heuristicOrder(candidates), reasons: {}, source: "heuristic" };
   }
 
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: JSON.stringify(candidates) },
-        ],
-      }),
-    });
-    if (!res.ok) throw new Error(`gateway ${res.status}`);
+    const { sendAgentMessage } = await import("@/lib/agents/corti-agents.server");
+    const { getAgentDefinition } = await import("@/lib/agents/registry");
 
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const raw = json.choices?.[0]?.message?.content ?? "";
-    const match = raw.match(/\{[\s\S]*\}/);
+    const reply = await sendAgentMessage({
+      definition: getAgentDefinition("queue-triage"),
+      text: JSON.stringify(candidates),
+      contextId: null,
+    });
+
+    const match = reply.text.match(/\{[\s\S]*\}/);
     if (!match) throw new Error("no json");
 
     const parsed = JSON.parse(match[0]) as { order?: { visitId?: string; reason?: string }[] };
