@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/ante/app-shell";
 import { ConsultationRecorder } from "@/components/ante/consultation-recorder";
 import { PatientPassportPanel } from "@/components/ante/patient-passport-panel";
-import { RichText } from "@/components/ante/rich-text";
+
 import { UrgencyBadge } from "@/components/ante/badges";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
 import { VisitTranscript } from "@/components/ante/visit-transcript";
