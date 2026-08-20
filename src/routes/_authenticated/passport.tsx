@@ -112,12 +112,14 @@ function PassportPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <ConsentRequests />
 
+        <QueueStatusCard />
+
+        {scheduled.length > 0 ? (
         <Section
           title="Scheduled visits"
           icon={<CalendarClock className="size-4" />}
           className="lg:col-span-3 border-primary/30 bg-primary/[0.04]"
         >
-          {scheduled.length === 0 ? <Empty label="No upcoming visits" /> : null}
           <div className="grid gap-3 sm:grid-cols-2">
             {scheduled.map((v) => (
               <VisitCard
