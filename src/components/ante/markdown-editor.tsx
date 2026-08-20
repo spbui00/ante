@@ -4,7 +4,6 @@ import { Bold, Italic, List, ListOrdered } from "lucide-react";
 import { RichText } from "@/components/ante/rich-text";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 type MarkdownEditorProps = {
@@ -18,9 +17,8 @@ type MarkdownEditorProps = {
 };
 
 /**
- * Small markdown editor for long clinical free text: write/preview tabs plus
- * a minimal formatting toolbar. Rendering reuses <RichText /> so the preview
- * matches how the text appears everywhere else in the app.
+ * Inline markdown editor: renders formatted text at rest and switches to a
+ * plain textarea (with a light formatting toolbar) while focused.
  */
 export function MarkdownEditor({
   id,
@@ -32,6 +30,7 @@ export function MarkdownEditor({
   className,
 }: MarkdownEditorProps) {
   const ref = React.useRef<HTMLTextAreaElement>(null);
+  const [editing, setEditing] = React.useState(false);
 
   const wrap = (token: string) => {
     const el = ref.current;
@@ -63,75 +62,74 @@ export function MarkdownEditor({
     requestAnimationFrame(() => el.focus());
   };
 
-  return (
-    <Tabs defaultValue="write" className={cn("w-full", className)}>
-      <div className="flex flex-wrap items-center gap-2">
-        <TabsList className="h-8">
-          <TabsTrigger value="write" className="text-xs">
-            Write
-          </TabsTrigger>
-          <TabsTrigger value="preview" className="text-xs">
-            Preview
-          </TabsTrigger>
-        </TabsList>
-        <div className="flex items-center gap-1">
-          <ToolbarButton label="Bold" onClick={() => wrap("**")} disabled={disabled}>
-            <Bold className="size-3.5" />
-          </ToolbarButton>
-          <ToolbarButton label="Italic" onClick={() => wrap("*")} disabled={disabled}>
-            <Italic className="size-3.5" />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Bullet list"
-            onClick={() => prefixLines(() => "- ")}
-            disabled={disabled}
-          >
-            <List className="size-3.5" />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Numbered list"
-            onClick={() => prefixLines((i) => `${i + 1}. `)}
-            disabled={disabled}
-          >
-            <ListOrdered className="size-3.5" />
-          </ToolbarButton>
-        </div>
+  if (disabled || !editing) {
+    return (
+      <div
+        id={id}
+        role={disabled ? undefined : "button"}
+        tabIndex={disabled ? -1 : 0}
+        onClick={() => {
+          if (disabled) return;
+          setEditing(true);
+          requestAnimationFrame(() => ref.current?.focus());
+        }}
+        onFocus={() => {
+          if (!disabled) setEditing(true);
+        }}
+        className={cn(
+          "min-h-[calc(var(--rows)*1.5rem)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+          !disabled && "cursor-text hover:border-ring/50",
+          className,
+        )}
+        style={{ ["--rows" as string]: rows }}
+      >
+        {value.trim() ? (
+          <RichText text={value} />
+        ) : (
+          <span className="text-muted-foreground">{placeholder ?? "Nothing yet."}</span>
+        )}
       </div>
+    );
+  }
 
-      <TabsContent value="write" className="mt-2">
-        <Textarea
-          id={id}
-          ref={ref}
-          rows={rows}
-          value={value}
-          disabled={disabled}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          className="font-normal"
-        />
-      </TabsContent>
-      <TabsContent value="preview" className="mt-2">
-        <div className="min-h-[6rem] rounded-md border border-input bg-background p-3">
-          {value.trim() ? (
-            <RichText text={value} />
-          ) : (
-            <p className="text-sm text-muted-foreground">Nothing to preview yet.</p>
-          )}
-        </div>
-      </TabsContent>
-    </Tabs>
+  return (
+    <div className={cn("w-full space-y-1.5", className)}>
+      <div className="flex items-center gap-1" onMouseDown={(e) => e.preventDefault()}>
+        <ToolbarButton label="Bold" onClick={() => wrap("**")}>
+          <Bold className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton label="Italic" onClick={() => wrap("*")}>
+          <Italic className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton label="Bullet list" onClick={() => prefixLines(() => "- ")}>
+          <List className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton label="Numbered list" onClick={() => prefixLines((i) => `${i + 1}. `)}>
+          <ListOrdered className="size-3.5" />
+        </ToolbarButton>
+      </div>
+      <Textarea
+        id={id}
+        ref={ref}
+        rows={rows}
+        value={value}
+        placeholder={placeholder}
+        autoFocus
+        onBlur={() => setEditing(false)}
+        onChange={(e) => onChange(e.target.value)}
+        className="font-normal"
+      />
+    </div>
   );
 }
 
 function ToolbarButton({
   label,
   onClick,
-  disabled,
   children,
 }: {
   label: string;
   onClick: () => void;
-  disabled?: boolean | undefined;
   children: React.ReactNode;
 }) {
   return (
@@ -142,7 +140,6 @@ function ToolbarButton({
       className="size-7"
       aria-label={label}
       title={label}
-      disabled={disabled}
       onClick={onClick}
     >
       {children}
