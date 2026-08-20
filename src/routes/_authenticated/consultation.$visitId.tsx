@@ -97,6 +97,7 @@ function ConsultationPage() {
 
   const [conclusion, setConclusion] = useState("");
   const [recommendation, setRecommendation] = useState("");
+  const [symptoms, setSymptoms] = useState("");
   const [urgency, setUrgency] = useState("LOW");
   const [disposition, setDisposition] = useState("HOME_CARE");
 
@@ -104,9 +105,24 @@ function ConsultationPage() {
     if (!visit) return;
     setConclusion(visit.conclusion ?? "");
     setRecommendation(visit.recommendation ?? "");
+    setSymptoms(visit.symptoms ?? "");
     setUrgency(visit.urgency_level ?? "LOW");
     setDisposition(visit.disposition ?? "HOME_CARE");
   }, [visit?.id]);
+
+  const saveSymptoms = useMutation({
+    mutationFn: () => updateVisitSymptoms({ data: { visitId, symptoms } }),
+    onSuccess: () => {
+      toast.success("Symptoms updated");
+      void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
+      void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error && error.message ? error.message : "Could not save symptoms",
+      ),
+  });
+
 
   const signOff = useMutation({
     mutationFn: () =>
