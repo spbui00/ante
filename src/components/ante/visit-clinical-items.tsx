@@ -309,6 +309,8 @@ export function VisitClinicalItems({
           ) : null}
         </ItemsTable>
       </Section>
+      ) : null}
+
 
       {!canEdit ? (
         <p className="text-xs text-muted-foreground">
