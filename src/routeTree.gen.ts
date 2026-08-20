@@ -16,6 +16,7 @@ import { Route as AuthenticatedClinicalRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPassportRouteImport } from './routes/_authenticated/passport'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSurveillanceRouteImport } from './routes/_authenticated/surveillance'
+import { Route as AuthenticatedVisitsRouteImport } from './routes/_authenticated/visits'
 import { Route as ApiIntakeRouteImport } from './routes/api/intake'
 import { Route as ApiProcessVisitRouteImport } from './routes/api/process-visit'
 import { Route as ApiVerifyDoctorRouteImport } from './routes/api/verify-doctor'
@@ -55,6 +56,11 @@ const AuthenticatedSurveillanceRoute =
     path: '/surveillance',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVisitsRoute = AuthenticatedVisitsRouteImport.update({
+  id: '/visits',
+  path: '/visits',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiIntakeRoute = ApiIntakeRouteImport.update({
   id: '/api/intake',
   path: '/api/intake',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/passport': typeof AuthenticatedPassportRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/surveillance': typeof AuthenticatedSurveillanceRoute
+  '/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
   '/api/verify-doctor': typeof ApiVerifyDoctorRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/passport': typeof AuthenticatedPassportRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/surveillance': typeof AuthenticatedSurveillanceRoute
+  '/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
   '/api/verify-doctor': typeof ApiVerifyDoctorRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/_authenticated/passport': typeof AuthenticatedPassportRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/surveillance': typeof AuthenticatedSurveillanceRoute
+  '/_authenticated/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
   '/api/verify-doctor': typeof ApiVerifyDoctorRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/passport'
     | '/settings'
     | '/surveillance'
+    | '/visits'
     | '/api/intake'
     | '/api/process-visit'
     | '/api/verify-doctor'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/passport'
     | '/settings'
     | '/surveillance'
+    | '/visits'
     | '/api/intake'
     | '/api/process-visit'
     | '/api/verify-doctor'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_authenticated/passport'
     | '/_authenticated/settings'
     | '/_authenticated/surveillance'
+    | '/_authenticated/visits'
     | '/api/intake'
     | '/api/process-visit'
     | '/api/verify-doctor'
@@ -203,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSurveillanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/visits': {
+      id: '/_authenticated/visits'
+      path: '/visits'
+      fullPath: '/visits'
+      preLoaderRoute: typeof AuthenticatedVisitsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/intake': {
       id: '/api/intake'
       path: '/api/intake'
@@ -232,6 +251,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPassportRoute: typeof AuthenticatedPassportRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSurveillanceRoute: typeof AuthenticatedSurveillanceRoute
+  AuthenticatedVisitsRoute: typeof AuthenticatedVisitsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -239,6 +259,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPassportRoute: AuthenticatedPassportRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSurveillanceRoute: AuthenticatedSurveillanceRoute,
+  AuthenticatedVisitsRoute: AuthenticatedVisitsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

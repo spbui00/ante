@@ -502,3 +502,29 @@ export const removeCareTeamMember = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Full visit history for the signed-in patient, plus the doctors seen. */
+export const getMyVisitHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("patient_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!profile?.patient_id) return { visits: [] };
+
+    const { data, error } = await supabase
+      .from("visit")
+      .select(
+        "id, visit_date, encounter_type, urgency_level, status, disposition, conclusion, recommendation, symptoms, practitioner_id, practitioner:practitioner(id, full_name, title, specialization)",
+      )
+      .eq("patient_id", profile.patient_id)
+      .order("visit_date", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    return { visits: data ?? [] };
+  });

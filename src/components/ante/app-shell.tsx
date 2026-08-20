@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Activity, LogOut, Settings, ShieldCheck, Stethoscope, User } from "lucide-react";
+import { Activity, History, LogOut, Settings, ShieldCheck, Stethoscope, User } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ type NavItem = { to: string; label: string; icon: ReactNode; roles: AnteRole[] }
 
 const NAV: NavItem[] = [
   { to: "/passport", label: "Passport", icon: <User className="size-4" />, roles: ["PATIENT"] },
+  { to: "/visits", label: "Visits", icon: <History className="size-4" />, roles: ["PATIENT"] },
+
   {
     to: "/clinical",
     label: "Clinical",
