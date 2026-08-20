@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { finaliseVisit, getVisitDetail, updateVisitSymptoms } from "@/lib/ante.functions";
 import { getVisitClinicalItems } from "@/lib/visit-clinical.functions";
 
