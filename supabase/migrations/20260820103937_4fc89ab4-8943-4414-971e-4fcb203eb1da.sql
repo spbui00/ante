@@ -1,0 +1,1 @@
+CREATE POLICY "authenticated read anonymized" ON public.anonymized_encounter FOR SELECT TO authenticated USING (true);
