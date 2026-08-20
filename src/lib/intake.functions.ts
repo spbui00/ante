@@ -107,3 +107,38 @@ export const updatePreIntakeVisit = createServerFn({ method: "POST" })
     if (!visit) throw new Error("This intake can no longer be edited");
     return { ok: true, visitId: visit.id };
   });
+
+/**
+ * Patient-driven deletion of one of their own SCHEDULED (draft) pre-intake
+ * visits. Completed or in-progress visits are part of the medical record and
+ * can never be removed.
+ */
+export const deleteScheduledVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ visitId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("patient_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!profile?.patient_id) throw new Error("No patient record linked to this account");
+
+    const { data: deleted, error } = await supabase
+      .from("visit")
+      .delete()
+      .eq("id", data.visitId)
+      .eq("patient_id", profile.patient_id)
+      .eq("status", "SCHEDULED")
+      .select("id")
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!deleted) throw new Error("This intake can no longer be deleted");
+    return { ok: true };
+  });
