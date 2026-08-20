@@ -278,7 +278,9 @@ export function VoiceIntakeModal({
           transcript: conversationText,
           symptoms:
             [
-              result.symptomDetail?.trim() ||
+              (/^\s*(patient|assistant)\s*:/im.test(result.symptomDetail ?? "")
+                ? ""
+                : result.symptomDetail?.trim()) ||
                 result.symptoms.join(", ") ||
                 result.summary,
               result.pertinentNegatives?.length
