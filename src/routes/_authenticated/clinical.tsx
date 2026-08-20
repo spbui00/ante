@@ -19,9 +19,8 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
-import { ConsultationRecorder } from "@/components/ante/consultation-recorder";
 
-import { CodeChip, DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
+import { UrgencyBadge } from "@/components/ante/badges";
 import { RichText, RichTextInline } from "@/components/ante/rich-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,11 +44,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
 
 import {
-  finaliseVisit,
   findScheduledVisitsByCpr,
   getClinicalQueue,
   markVisitTakenIn,
@@ -121,10 +118,8 @@ type QueueVisit = Awaited<ReturnType<typeof getClinicalQueue>>["visits"][number]
 function ClinicalPage() {
   const { data } = useSuspenseQuery(queueQuery);
   const queryClient = useQueryClient();
-  const finalise = useServerFn(finaliseVisit);
 
   const [selectedId, setSelectedId] = useState<string | null>(data.visits[0]?.id ?? null);
-  const [recorderOpen, setRecorderOpen] = useState(false);
 
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -208,17 +203,8 @@ function ClinicalPage() {
   );
 
 
-  const [conclusion, setConclusion] = useState("");
-  const [recommendation, setRecommendation] = useState("");
-  const [disposition, setDisposition] = useState("HOME_CARE");
-  const [urgency, setUrgency] = useState("LOW");
-
   function select(v: QueueVisit) {
     setSelectedId(v.id);
-    setConclusion(v.conclusion ?? "");
-    setRecommendation(v.recommendation ?? "");
-    setDisposition(v.disposition ?? "HOME_CARE");
-    setUrgency(v.urgency_level ?? "LOW");
     if (v.status === "IN_PROGRESS" && !v.taken_in_at) {
       takeIn({ data: { visitId: v.id } }).catch(() => undefined);
     }
@@ -284,26 +270,6 @@ function ClinicalPage() {
     onError: () => toast.error("Could not prioritise the queue"),
   });
 
-
-  const signOff = useMutation({
-    mutationFn: async () => {
-      if (!selected) return;
-      await finalise({
-        data: {
-          visitId: selected.id,
-          conclusion,
-          recommendation,
-          disposition: disposition as "HOME_CARE" | "PRESCRIPTION" | "ER_REFERRAL",
-          urgencyLevel: urgency as "LOW" | "MEDIUM" | "HIGH_RED_FLAG",
-        },
-      });
-    },
-    onSuccess: () => {
-      toast.success("Consultation signed off");
-      queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
-    },
-    onError: () => toast.error("Could not save the consultation"),
-  });
 
   return (
     <AppShell
@@ -765,9 +731,6 @@ function Picker({
   );
 }
 
-function codesOf(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
-}
 
 function Block({ label, value }: { label: string; value: string | null | undefined }) {
   return (
