@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.apply_onboarding(public.app_role, text, text, public.practitioner_role_enum, boolean) FROM anon;
