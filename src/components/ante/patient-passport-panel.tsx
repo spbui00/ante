@@ -147,22 +147,22 @@ function MedicalInfoContent({ data }: { data: any }) {
     <div className="grid gap-4 sm:grid-cols-2">
       <Group title="Conditions">
         {(data?.records ?? [])
-          .filter((r) => r.category === "CONDITION")
-          .map((r) => (
+          .filter((r: any) => r.category === "CONDITION")
+          .map((r: any) => (
             <Line key={r.id} primary={r.description} secondary={r.code ?? undefined} />
           ))}
       </Group>
       <Group title="Allergies">
         {(data?.records ?? [])
-          .filter((r) => r.category === "ALLERGY")
-          .map((r) => (
+          .filter((r: any) => r.category === "ALLERGY")
+          .map((r: any) => (
             <Line key={r.id} primary={r.description} secondary={r.status} />
           ))}
       </Group>
       <Group title="Active medications">
         {(data?.prescriptions ?? [])
-          .filter((p) => !p.end_date)
-          .map((p) => (
+          .filter((p: any) => !p.end_date)
+          .map((p: any) => (
             <Line
               key={p.id}
               primary={p.drug_name}
@@ -171,7 +171,7 @@ function MedicalInfoContent({ data }: { data: any }) {
           ))}
       </Group>
       <Group title="Recent observations">
-        {(data?.observations ?? []).slice(0, 8).map((o) => (
+        {(data?.observations ?? []).slice(0, 8).map((o: any) => (
           <Line
             key={o.id}
             primary={o.test_name}
@@ -188,6 +188,7 @@ function MedicalInfoContent({ data }: { data: any }) {
 }
 
 function Group({
+  title,
   className,
   children,
 }: {
