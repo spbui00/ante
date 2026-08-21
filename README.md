@@ -1,24 +1,141 @@
-# Connect to GitHub
+# Ante
 
-how do i connect to github project
+Ante is a clinical intelligence platform that pairs a **patient clinical passport** with **real-time epidemiological surveillance**.
 
-This project was built with [Lovable](https://lovable.dev).
+It covers the full primary-care loop:
 
-## Build with Lovable
+- **Patients** keep a portable passport (conditions, allergies, prescriptions, observations, visit history), run an AI pre-visit intake by voice or chat, see live queue position with an estimated wait, and receive a plain-language handout after every consultation.
+- **Clinicians** manage a triaged waiting room, register physical arrivals with CPR lookup and consent, run ambient-recorded consultations with speaker diarization and automatic clinical fact extraction, then review and sign off structured notes, prescriptions, lab orders and follow-ups.
+- **Public-health analysts** query a de-identified encounter log through an autonomous epidemiologist agent that writes its own SQL and renders a dashboard of charts, metrics and outbreak alerts.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/089360bf-6885-4452-b224-4ba7cbd8cdce).
+Every signed-off visit is de-identified (demographic brackets, ICD-10/ATC/LOINC codes, postal code, weather, clinical embedding) into a population-level surveillance table — no names, no CPR, no free text.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+---
+
+## Tech stack
+
+| Layer | Technology |
+| --- | --- |
+| Framework | TanStack Start (React 19, TanStack Router + Query, Vite 7) |
+| Styling | Tailwind CSS v4, shadcn/ui, Framer Motion, Recharts |
+| Backend | Postgres (Supabase) with row-level security, server functions, server routes |
+| AI | Corti Agentic v2 (`corti-s1`), Corti STT / ambient streams, `corti-s1-embedding` (2560-dim, pgvector) |
+| Data | ICD-10, ATC, LOINC, SKS coding; Open-Meteo weather enrichment |
+
+---
+
+## Application routes
+
+| Route | Audience | Purpose |
+| --- | --- | --- |
+| `/` | public | Landing page |
+| `/auth` | public | Sign-in, Google OAuth, multi-step onboarding with license verification |
+| `/passport` | patient | Clinical passport, live queue status, care navigator, AI intake |
+| `/visits` | patient | Filterable visit history with detail drawer and patient summaries |
+| `/clinical` | clinician | Triaged patient queue, search/filters, register a physical arrival |
+| `/consultation/$visitId` | clinician | Consultation workspace: passport, intake, ambient recorder, sign-off |
+| `/patients` | clinician | Patient registry with side-by-side passport and editable clinical tables |
+| `/surveillance` | analyst | Agent-generated outbreak dashboard and epidemiology chat |
+| `/settings` | all | Profile, demographics, insurance and contact details |
+
+---
+
+## AI agents
+
+All agents are defined in `src/lib/agents/registry.ts` and run on Corti Agentic v2.
+
+| Agent | Name | Role |
+| --- | --- | --- |
+| Intake | `ante-intake-agent-v3` | Conducts the pre-visit HPI interview with the patient and codes symptoms |
+| Intake edit | `ante-intake-edit-agent-v2` | Lets a patient revise an existing scheduled intake, with prior transcript context |
+| Charge nurse | `ante-charge-nurse-agent-v1` | Estimates consultation duration and patient wait times |
+| Queue triage | `ante-queue-triage-agent-v1` | Ranks the waiting room by urgency plus waiting time |
+| Care navigator | `ante-care-navigator-agent-v1` | Recommends which practitioner a patient should see |
+| Follow-up planner | `ante-follow-up-planner-agent-v1` | Turns a signed-off plan into prefilled scheduled follow-up intakes |
+| Outbreak analyst | `ante-outbreak-analyst-agent-v1` | Interprets precomputed surveillance signals for analysts |
+| Surveillance intelligence | `ante-surveillance-intelligence-agent-v1` | Tool-calling epidemiologist that runs read-only SQL and emits the dashboard spec |
+
+Supporting AI pipelines: ambient transcript → clinical fact extraction (Corti FactsR) → note drafting → structured observations/prescriptions/records → patient handout → de-identified encounter + embedding.
+
+---
+
+## HTTP endpoints (`src/routes/api/`)
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/api/intake` | POST | Streaming intake agent turn, urgency/code extraction, visit creation |
+| `/api/transcribe` | POST | Batch speech-to-text for recorded audio |
+| `/api/stt-session` | POST | Mints a short-lived Corti STT session for hold-to-talk dictation |
+| `/api/stream-session` | POST | Mints an ambient consultation stream (diarization + live facts) |
+| `/api/verify-doctor` | POST | Mock Danish practitioner license registry verification |
+
+---
+
+## Server functions (`createServerFn`)
+
+**Context & passport** — `getMyContext`, `getPassport`, `getMySettings`, `updateMySettings`, `getMyVisitHistory`, `getVisitDetail`, `updateVisitSymptoms`
+
+**Intake** — `createPreIntakeVisit`, `updatePreIntakeVisit`, `deleteScheduledVisit`, `sendAgentTurn`
+
+**Queue & clinic** — `getClinicalQueue`, `prioritizeQueue`, `saveQueueOrder`, `getMyQueueStatus`, `markVisitTakenIn`, `registerVisitArrival`, `findScheduledVisitsByCpr`, `finaliseVisit`
+
+**Consultation** — `extractConsultationFacts`, `saveVisitTranscript`, `reprocessVisitTranscript`, `draftConsultation`, `signOffConsultation`, `generatePatientHandout`, `planVisitFollowUps`, `recordAnonymizedVisit`
+
+**Clinical records** — `getVisitClinicalItems`, `saveVisitObservation`, `saveVisitPrescription`, `saveVisitRecord`, `deleteVisitClinicalItem`, `getPatientRecord`
+
+**Registry & consent** — `getMyPatients`, `removePatientFromRegistry`, `getMyCareTeam`, `addCareTeamMember`, `removeCareTeamMember`, `requestPatientConsent`, `forceRequestPatientConsent`, `getMyConsentRequests`, `respondToConsent`
+
+**Navigation** — `recommendCareForVisit`, `searchPractitioners`, `getPractitionerWaitingRoom`
+
+**Surveillance** — `getSurveillance`, `getOutbreakIntelligence`, `askOutbreakAnalyst`, `analyzeSurveillance`, `listAnalyticsCards`, `saveAnalyticsCard`, `deleteAnalyticsCard`
+
+**Onboarding** — `verifyPractitioner`, `completeOnboarding`
+
+---
+
+## External services
+
+| Service | Endpoint | Used for |
+| --- | --- | --- |
+| Corti API | `https://api.{env}.corti.app/v2` | Interactions, transcripts, facts, chat completions, embeddings |
+| Corti Auth | `https://auth.{env}.corti.app/realms/{tenant}/protocol/openid-connect/token` | OAuth client-credentials token |
+| Corti audio bridge | `wss://api.{env}.corti.app/audio-bridge/v2/interactions/{id}/streams` | Live ambient transcription with speaker diarization |
+| Open-Meteo | `api.open-meteo.com`, `archive-api.open-meteo.com` | Weather conditions per encounter (forecast + historical archive) |
+| Zippopotam | `api.zippopotam.us/dk/{postcode}` | Danish postal code → coordinates |
+
+---
+
+## Database (Postgres + RLS)
+
+Core tables: `patient`, `practitioner`, `organization`, `profiles`, `user_roles`, `visit`, `clinical_record`, `visit_clinical_record`, `observation`, `drug_prescription`, `patient_care_team`, `patient_proxy`, `consent_grant`, `queue_priority`, `anonymized_encounter`, `analytics_card`, `analytics_session`, `icd10_code_lookup`, `industry_lookup`.
+
+Key database functions: `has_role`, `can_read_patient`, `has_consent`, `current_patient_id`, `current_practitioner_id`, `request_consent_by_cpr`, `break_glass_by_cpr`, `apply_onboarding`, `owns_visit`, `outbreak_stats`, `analytics_query` (read-only SQL guard for the surveillance agent).
+
+Roles: `PATIENT`, `PRACTITIONER`, `ANALYST` — stored in `user_roles`, never on the profile.
+
+---
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Requires Node.js 20+.
 
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
-npm i
+npm install
 npm run dev
+```
+
+Environment variables (server-side only unless prefixed `VITE_`):
+
+```
+VITE_SUPABASE_URL
+VITE_SUPABASE_PUBLISHABLE_KEY
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SERVICE_ROLE_KEY
+CORTI_CLIENT_ID
+CORTI_CLIENT_SECRET
+CORTI_TENANT
+CORTI_ENVIRONMENT
 ```
