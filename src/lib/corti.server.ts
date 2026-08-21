@@ -27,6 +27,7 @@ export const CORTI_CODING_SYSTEM = "icd10cm-outpatient";
 const API_BASE = `https://api.${ENVIRONMENT}.corti.app/v2`;
 const AUTH_URL = `https://auth.${ENVIRONMENT}.corti.app/realms/${TENANT}/protocol/openid-connect/token`;
 const MODELS_URL = `https://ai.${ENVIRONMENT}.corti.app/v1/chat/completions`;
+const EMBEDDINGS_URL = `https://ai.${ENVIRONMENT}.corti.app/v1/embeddings`;
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
@@ -249,7 +250,7 @@ export async function cortiChat(opts: {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: opts.model ?? "corti-s1-mini",
+      model: opts.model ?? "corti-s1",
       messages: [
         { role: "system", content: opts.system },
         { role: "user", content: opts.user },
@@ -264,6 +265,32 @@ export async function cortiChat(opts: {
 
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   return data.choices?.[0]?.message?.content?.trim() ?? "";
+}
+
+/** Dimensionality returned by `corti-s1-embedding`. */
+export const CORTI_EMBEDDING_DIMS = 2560;
+
+/** Embeds de-identified clinical text with Corti's embedding model. */
+export async function embedText(text: string, model = "corti-s1-embedding"): Promise<number[]> {
+  const token = await getCortiToken();
+  const res = await fetch(EMBEDDINGS_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model, input: text.slice(0, 20000) }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new CortiError(
+      `Corti embedding failed (${res.status}): ${detail.slice(0, 300)}`,
+      res.status,
+    );
+  }
+
+  const data = (await res.json()) as { data?: { embedding?: number[] }[] };
+  const vector = data.data?.[0]?.embedding;
+  if (!vector?.length) throw new CortiError("Corti embedding returned no vector", 502);
+  return vector;
 }
 
 /* ------------------------------------------------------------------ */

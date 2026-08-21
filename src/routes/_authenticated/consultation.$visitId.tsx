@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { finaliseVisit, getVisitDetail, updateVisitSymptoms } from "@/lib/ante.functions";
-import { generatePatientHandout } from "@/lib/consultation.functions";
+import { generatePatientHandout, recordAnonymizedVisit } from "@/lib/consultation.functions";
 import { printHandout } from "@/lib/print-handout";
 import { getVisitClinicalItems } from "@/lib/visit-clinical.functions";
 
@@ -155,7 +155,10 @@ function ConsultationPage() {
       void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
       void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
       startHandout();
+      // De-identified population row for surveillance; failures stay silent for the clinician.
+      void recordAnonymizedVisit({ data: { visitId } }).catch(() => undefined);
     },
+
     onError: (error) =>
       toast.error(
         error instanceof Error && error.message
