@@ -27,10 +27,12 @@ export function OutbreakAnalystDrawer({
   open,
   onOpenChange,
   days,
+  focus,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   days: number;
+  focus?: string;
 }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
@@ -39,7 +41,7 @@ export function OutbreakAnalystDrawer({
 
   const ask = useMutation({
     mutationFn: (text: string) =>
-      askOutbreakAnalyst({ data: { text, contextId: contextId.current, days } }),
+      askOutbreakAnalyst({ data: { text, contextId: contextId.current, days, focus } }),
     onSuccess: (res) => {
       contextId.current = res.contextId;
       setTurns((t) => [...t, { role: "agent", text: res.reply }]);
