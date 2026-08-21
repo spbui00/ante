@@ -17,12 +17,12 @@ export const extractConsultationFacts = createServerFn({ method: "POST" })
 
 const DRAFT_SYSTEM = `You are a medical scribe for a Danish primary-care clinic.
 Read the consultation transcript and the extracted clinical facts, then respond with STRICT JSON only:
-{"conclusion": string, "recommendation": string, "diagnoses": [{"description": string, "code": string|null, "status": "ACTIVE"|"RESOLVED"|"SUSPECTED"}], "prescriptions": [{"drugName": string, "atcCode": string|null, "dosage": string|null, "frequency": string|null}], "observations": [{"testName": string, "loincCode": string|null, "value": number|null, "unit": string|null}], "urgencyLevel": "LOW"|"MEDIUM"|"HIGH_RED_FLAG", "disposition": "HOME_CARE"|"PRESCRIPTION"|"ER_REFERRAL"}
+{"conclusion": string, "recommendation": string, "diagnoses": [{"description": string, "code": string|null, "status": "ACTIVE"|"RESOLVED"|"SUSPECTED"}], "prescriptions": [{"drugName": string, "atcCode": string|null, "dosage": string|null, "frequency": string|null}], "observations": [{"testName": string, "loincCode": string|null, "value": number|null, "unit": string|null, "status": "ORDERED"|"RESULTED"}], "urgencyLevel": "LOW"|"MEDIUM"|"HIGH_RED_FLAG", "disposition": "HOME_CARE"|"PRESCRIPTION"|"ER_REFERRAL"}
 conclusion: concise clinical summary of the findings (2-5 sentences).
 recommendation: the plan — treatments, follow-up, safety-netting.
 diagnoses: only conditions the clinician actually confirmed or suspected in the conversation; ICD-10 code when confident, else null.
 prescriptions: only medications the clinician verbally ordered, with ATC code when confident.
-observations: vitals or labs mentioned or ordered, with LOINC code when confident; numeric value when stated.
+observations: vitals or labs mentioned or ordered, with LOINC code when confident; numeric value when stated. Use status "ORDERED" (value null) for tests the clinician orders for later, "RESULTED" when a value was measured during the visit.
 Never invent findings that are not supported by the transcript. Empty arrays are fine.`;
 
 /** Turns the finished consultation into an editable structured draft. */
@@ -111,6 +111,7 @@ export const draftConsultation = createServerFn({ method: "POST" })
         loincCode?: string | null;
         value?: number | null;
         unit?: string | null;
+        status?: string | null;
       }>(gen["observations"])
         .filter((o) => o.testName)
         .map((o) => ({
@@ -118,6 +119,7 @@ export const draftConsultation = createServerFn({ method: "POST" })
           loincCode: o.loincCode ?? null,
           value: typeof o.value === "number" ? o.value : null,
           unit: o.unit ?? null,
+          status: (o.status === "ORDERED" ? "ORDERED" : "RESULTED") as "ORDERED" | "RESULTED",
         })),
       urgencyLevel: (["LOW", "MEDIUM", "HIGH_RED_FLAG"] as const).includes(
         gen["urgencyLevel"] as never,
@@ -174,6 +176,7 @@ export const signOffConsultation = createServerFn({ method: "POST" })
               loincCode: z.string().max(24).nullable().optional(),
               value: z.number().nullable().optional(),
               unit: z.string().max(32).nullable().optional(),
+              status: z.enum(["ORDERED", "PENDING", "RESULTED", "CANCELLED"]).optional(),
             }),
           )
           .max(30)
@@ -277,6 +280,9 @@ export const signOffConsultation = createServerFn({ method: "POST" })
           loinc_code: o.loincCode || null,
           value: o.value ?? null,
           unit: o.unit || null,
+          status: o.status ?? "RESULTED",
+          ordered_date:
+            (o.status ?? "RESULTED") === "RESULTED" ? null : new Date().toISOString().slice(0, 10),
           source: "Ambient consultation",
         })),
       );

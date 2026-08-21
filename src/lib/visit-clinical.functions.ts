@@ -84,6 +84,8 @@ export const saveVisitObservation = createServerFn({ method: "POST" })
         value: z.number().nullable().optional(),
         unit: nullableString(32),
         source: nullableString(80),
+        status: z.enum(["ORDERED", "PENDING", "RESULTED", "CANCELLED"]).optional(),
+        orderedDate: nullableString(10),
         recordedAt: z.string().min(4).max(40).optional(),
       })
       .parse(input),
@@ -100,6 +102,8 @@ export const saveVisitObservation = createServerFn({ method: "POST" })
       value: data.value ?? null,
       unit: data.unit || null,
       source: data.source || "Practitioner entry",
+      status: data.status ?? "RESULTED",
+      ordered_date: data.orderedDate || null,
       ...(data.recordedAt ? { recorded_at: new Date(data.recordedAt).toISOString() } : {}),
     };
 

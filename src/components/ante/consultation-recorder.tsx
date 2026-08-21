@@ -33,7 +33,7 @@ type Fact = { group: string; text: string };
 type Segment = { id: string; speakerId: number; text: string };
 type Diagnosis = { description: string; code: string | null; status: "ACTIVE" | "RESOLVED" | "SUSPECTED" };
 type Prescription = { drugName: string; atcCode: string | null; dosage: string | null; frequency: string | null };
-type Observation = { testName: string; loincCode: string | null; value: number | null; unit: string | null };
+type Observation = { testName: string; loincCode: string | null; value: number | null; unit: string | null; status?: "ORDERED" | "PENDING" | "RESULTED" | "CANCELLED" };
 
 type Draft = {
   conclusion: string;
@@ -399,7 +399,11 @@ export function ConsultationRecorder({
                     empty="No labs or vitals captured."
                     items={draft.observations.map((o, i) => ({
                       key: String(i),
-                      label: [o.testName, o.value != null ? `${o.value}${o.unit ? ` ${o.unit}` : ""}` : null]
+                      label: [
+                        o.testName,
+                        o.value != null ? `${o.value}${o.unit ? ` ${o.unit}` : ""}` : null,
+                        o.status === "ORDERED" ? "ordered — awaiting result" : null,
+                      ]
                         .filter(Boolean)
                         .join(" · "),
                       code: o.loincCode,

@@ -179,7 +179,11 @@ function PassportPage() {
             <Row
               key={o.id}
               primary={o.test_name}
-              secondary={`${o.value ?? "—"} ${o.unit ?? ""} · ${formatDate(o.recorded_at)}`}
+              secondary={
+                o.status === "ORDERED" || o.status === "PENDING"
+                  ? `⏱ ${o.status === "ORDERED" ? "Ordered" : "Pending"} · ${formatDate(o.ordered_date ?? o.recorded_at)}`
+                  : `${o.value ?? "—"} ${o.unit ?? ""} · ${formatDate(o.recorded_at)}`
+              }
             />
           ))}
         </Section>
