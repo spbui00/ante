@@ -143,8 +143,8 @@ function ConsultationPage() {
 
 
   const signOff = useMutation({
-    mutationFn: () =>
-      finaliseVisit({
+    mutationFn: async () => {
+      await finaliseVisit({
         data: {
           visitId,
           conclusion,
@@ -154,31 +154,35 @@ function ConsultationPage() {
           urgencyLevel: urgency as "LOW" | "MEDIUM" | "HIGH_RED_FLAG",
           disposition: disposition as "HOME_CARE" | "PRESCRIPTION" | "ER_REFERRAL",
         },
-      }),
-    onSuccess: () => {
+      });
+
+      // Blocking: the de-identified population row and the follow-up intakes must be written
+      // before we release the screen, otherwise a refresh cancels them mid-flight.
+      const [anon, followUps] = await Promise.allSettled([
+        recordAnonymizedVisit({ data: { visitId } }),
+        planVisitFollowUps({ data: { visitId } }),
+      ]);
+      if (anon.status === "rejected" || !anon.value?.ok) {
+        console.error("[anonymized-encounter] not written", anon);
+      }
+      return {
+        followUpsCreated:
+          followUps.status === "fulfilled" ? (followUps.value?.created ?? 0) : 0,
+      };
+    },
+    onSuccess: ({ followUpsCreated }) => {
       toast.success("Consultation signed off");
       void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
       void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
+      if (followUpsCreated > 0) {
+        toast.success(
+          followUpsCreated === 1
+            ? "Follow-up intake prepared for the patient"
+            : `${followUpsCreated} follow-up intakes prepared for the patient`,
+        );
+        void queryClient.invalidateQueries({ queryKey: ["patient-visits"] });
+      }
       startHandout();
-      // De-identified population row for surveillance; failures stay silent for the clinician.
-      void recordAnonymizedVisit({ data: { visitId } })
-        .then((res) => {
-          if (!res?.ok) console.error("[anonymized-encounter] not written", res);
-        })
-        .catch((err) => console.error("[anonymized-encounter] call failed", err));
-      // Follow-up planner: turns the plan into prefilled SCHEDULED intakes for the patient.
-      void planVisitFollowUps({ data: { visitId } })
-        .then((res) => {
-          if (res?.created) {
-            toast.success(
-              res.created === 1
-                ? "Follow-up intake prepared for the patient"
-                : `${res.created} follow-up intakes prepared for the patient`,
-            );
-            void queryClient.invalidateQueries({ queryKey: ["patient-visits"] });
-          }
-        })
-        .catch(() => undefined);
     },
 
 
@@ -189,6 +193,7 @@ function ConsultationPage() {
           : "Could not save the consultation",
       ),
   });
+
 
   const handout = useMutation({
     mutationFn: (regenerate: boolean = false) =>
