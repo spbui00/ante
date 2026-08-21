@@ -1,13 +1,18 @@
-import { Pencil, Printer, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, Pencil, Printer, Trash2 } from "lucide-react";
 
 import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
 import { RichText } from "@/components/ante/rich-text";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
 import { VisitTranscript } from "@/components/ante/visit-transcript";
 
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Drawer,
   DrawerClose,
@@ -17,6 +22,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { cn } from "@/lib/utils";
 import { ENCOUNTER_TYPE_LABEL, formatDate, formatDateTime } from "@/lib/clinical-utils";
 import { printHandout } from "@/lib/print-handout";
 
