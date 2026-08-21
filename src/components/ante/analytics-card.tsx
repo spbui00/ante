@@ -26,13 +26,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+export type CardSeries = { key: string; label?: string | null; color?: string | null };
+export type CardColumn = { key: string; label?: string | null };
+
+export type CardConfig = {
+  xKey?: string | null;
+  valueKey?: string | null;
+  unit?: string | null;
+  severity?: "critical" | "warning" | "info" | null;
+  text?: string | null;
+  series?: CardSeries[] | null;
+  columns?: CardColumn[] | null;
+};
+
 export type AnalyticsCardData = {
   id: string;
   title: string;
   subtitle?: string | null;
   kind: string;
   sql?: string | null;
-  config: Record<string, any>;
+  config: CardConfig;
   windowDays?: number;
   pinned?: boolean;
   rows: Record<string, unknown>[];
@@ -45,9 +58,9 @@ function labelise(key: string) {
   return key.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 }
 
-function seriesOf(card: AnalyticsCardData) {
-  const configured = Array.isArray(card.config?.series) ? card.config.series : [];
-  if (configured.length) return configured as { key: string; label?: string; color?: string }[];
+function seriesOf(card: AnalyticsCardData): CardSeries[] {
+  const configured = card.config?.series;
+  if (Array.isArray(configured) && configured.length) return configured;
   const xKey = card.config?.xKey;
   const first = card.rows[0] ?? {};
   return Object.keys(first)
@@ -56,13 +69,14 @@ function seriesOf(card: AnalyticsCardData) {
     .map((k) => ({ key: k }));
 }
 
-function columnsOf(card: AnalyticsCardData) {
-  const configured = Array.isArray(card.config?.columns) ? card.config.columns : [];
-  if (configured.length) return configured as { key: string; label?: string }[];
+function columnsOf(card: AnalyticsCardData): CardColumn[] {
+  const configured = card.config?.columns;
+  if (Array.isArray(configured) && configured.length) return configured;
   return Object.keys(card.rows[0] ?? {})
     .slice(0, 6)
     .map((k) => ({ key: k }));
 }
+
 
 function CardChrome({
   card,
