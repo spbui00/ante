@@ -52,13 +52,68 @@ type SupabaseLike = {
   rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
 };
 
+/**
+ * The model sometimes emits identifiers with the underscores stripped
+ * (`surveillanceencounter`, `primaryicd10`). Map those back to real names.
+ */
+const KNOWN_IDENTIFIERS = [
+  "surveillance_encounter",
+  "icd10_code_lookup",
+  "anonymized_encounter",
+  "encounter_date",
+  "encounter_day",
+  "day_of_week",
+  "hour_of_day",
+  "postal_code",
+  "age_bracket",
+  "is_pregnant",
+  "weather_conditions",
+  "primary_icd_10",
+  "secondary_icd_10_codes",
+  "symptom_icd_codes",
+  "clinical_history_icd_codes",
+  "observations_loinc",
+  "prescription_atc_codes",
+  "encounter_type",
+  "symptom_duration_category",
+  "travel_history",
+  "urgency_level",
+  "gender_identity",
+  "race_ethnicity",
+  "primary_language",
+  "marital_status",
+  "employment_status",
+  "insurance_type",
+  "temperature_mean_c",
+  "precipitation_mm",
+  "humidity_mean_pct",
+  "wind_max_kmh",
+  "jsonb_array_elements_text",
+  "date_trunc",
+];
+
+const squash = (s: string) => s.toLowerCase().replace(/_/g, "");
+const SQUASHED = new Map(KNOWN_IDENTIFIERS.map((n) => [squash(n), n]));
+const KNOWN_SET = new Set(KNOWN_IDENTIFIERS);
+
+export function repairSqlIdentifiers(sql: string): string {
+  return sql.replace(/[A-Za-z_][A-Za-z0-9_]*/g, (token) => {
+    if (KNOWN_SET.has(token.toLowerCase())) return token;
+    const match = SQUASHED.get(squash(token));
+    return match && match !== token.toLowerCase() ? match : token;
+  });
+}
+
 /** Runs one read-only aggregate query through the guarded SQL helper. */
 export async function runAnalyticsSql(
   supabase: SupabaseLike,
   sql: string,
   limit = 500,
 ): Promise<AnalyticsRow[]> {
-  const { data, error } = await supabase.rpc("analytics_query", { _sql: sql, _limit: limit });
+  const { data, error } = await supabase.rpc("analytics_query", {
+    _sql: repairSqlIdentifiers(sql),
+    _limit: limit,
+  });
   if (error) throw new Error(error.message);
   return (Array.isArray(data) ? data : []) as AnalyticsRow[];
 }
