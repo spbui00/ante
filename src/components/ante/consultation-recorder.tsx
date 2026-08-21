@@ -278,7 +278,7 @@ export function ConsultationRecorder({
                       {segments.map((s) => (
                         <p key={s.id}>
                           <span className="mr-2 font-medium text-primary">
-                            {speakerLabel(s.speakerId, swapSpeakers)}:
+                            {speakerLabel(s.speakerId, swapSpeakers, speakerOrder)}:
                           </span>
                           {s.text}
                         </p>
