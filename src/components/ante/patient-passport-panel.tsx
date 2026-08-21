@@ -142,7 +142,7 @@ export function PatientPassportPanel({
   );
 }
 
-function MedicalInfoContent({ data }: { data: ReturnType<typeof getPatientRecord> extends Promise<infer T> ? T : never }) {
+function MedicalInfoContent({ data }: { data: any }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Group title="Conditions">
@@ -187,7 +187,7 @@ function MedicalInfoContent({ data }: { data: ReturnType<typeof getPatientRecord
   );
 }
 
-  title,
+function Group({
   className,
   children,
 }: {
