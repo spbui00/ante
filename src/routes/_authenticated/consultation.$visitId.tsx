@@ -436,6 +436,21 @@ function ConsultationPage() {
                 <Copy className="size-4" />
                 Copy
               </Button>
+              <Button
+                variant="outline"
+                disabled={handout.isPending || !handout.data?.text}
+                onClick={() => {
+                  const ok = printHandout({
+                    title: `Patient summary — ${patientName}`,
+                    subtitle: formatDateTime(new Date().toISOString()),
+                    text: handout.data?.text ?? "",
+                  });
+                  if (!ok) toast.error("Allow pop-ups to print this summary");
+                }}
+              >
+                <Printer className="size-4" />
+                Print
+              </Button>
               <Button variant="outline" onClick={() => handout.mutate()} disabled={handout.isPending}>
                 Regenerate
               </Button>
