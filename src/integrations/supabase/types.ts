@@ -780,6 +780,8 @@ export type Database = {
       }
       visit: {
         Row: {
+          anonymized_at: string | null
+          anonymized_encounter_id: string | null
           arrived_at: string | null
           completed_at: string | null
           conclusion: string | null
@@ -805,6 +807,8 @@ export type Database = {
           visit_transcript: string | null
         }
         Insert: {
+          anonymized_at?: string | null
+          anonymized_encounter_id?: string | null
           arrived_at?: string | null
           completed_at?: string | null
           conclusion?: string | null
@@ -830,6 +834,8 @@ export type Database = {
           visit_transcript?: string | null
         }
         Update: {
+          anonymized_at?: string | null
+          anonymized_encounter_id?: string | null
           arrived_at?: string | null
           completed_at?: string | null
           conclusion?: string | null
