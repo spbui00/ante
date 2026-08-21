@@ -26,8 +26,10 @@ import {
 import {
   draftConsultation,
   extractConsultationFacts,
+  saveVisitTranscript,
   signOffConsultation,
 } from "@/lib/consultation.functions";
+
 
 type Fact = { group: string; text: string };
 type Segment = { id: string; speakerId: number; text: string; start?: number };
@@ -63,12 +65,14 @@ function speakerLabel(speakerId: number, order: number[]) {
 export function ConsultationRecorder({
   visitId,
   patientName,
+  existingTranscript = "",
   open,
   onOpenChange,
   onSigned,
 }: {
   visitId: string;
   patientName: string;
+  existingTranscript?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSigned: () => void;
@@ -78,13 +82,17 @@ export function ConsultationRecorder({
   const [extracting, setExtracting] = useState(false);
   const [phase, setPhase] = useState<"record" | "drafting" | "review" | "saving">("record");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
   const liveFacts = useRef(false);
   const lastFactLength = useRef(0);
+  const lastSaved = useRef("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const extract = useServerFn(extractConsultationFacts);
   const makeDraft = useServerFn(draftConsultation);
+  const saveTranscript = useServerFn(saveVisitTranscript);
   const signOff = useServerFn(signOffConsultation);
+
 
   const handleFacts = useCallback((incoming: StreamFact[]) => {
     liveFacts.current = true;
@@ -122,10 +130,36 @@ export function ConsultationRecorder({
     return seen;
   }, [segments]);
 
-  const transcript = segments
+  const sessionTranscript = segments
     .map((s) => `${speakerLabel(s.speakerId, speakerOrder)}: ${s.text}`)
     .join("\n");
+  const transcript = sessionTranscript;
+  const fullTranscript = [existingTranscript.trim(), sessionTranscript.trim()]
+    .filter(Boolean)
+    .join("\n\n");
   const recording = stream.status === "listening" || stream.status === "connecting";
+
+  // Autosave: persist the transcript to the visit every few seconds so a refresh,
+  // a crash or a closed tab never loses the conversation.
+  const persistTranscript = useCallback(
+    async (text: string) => {
+      if (!text || text === lastSaved.current) return;
+      lastSaved.current = text;
+      try {
+        await saveTranscript({ data: { visitId, transcript: text } });
+        setSavedAt(new Date());
+      } catch {
+        lastSaved.current = "";
+      }
+    },
+    [saveTranscript, visitId],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setInterval(() => void persistTranscript(fullTranscript), 8000);
+    return () => clearInterval(timer);
+  }, [open, fullTranscript, persistTranscript]);
 
   // Reset when the drawer is reopened for a new consultation.
   useEffect(() => {
@@ -134,9 +168,12 @@ export function ConsultationRecorder({
     setFacts([]);
     setDraft(null);
     setPhase("record");
+    setSavedAt(null);
     liveFacts.current = false;
     lastFactLength.current = 0;
+    lastSaved.current = "";
   }, [open]);
+
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -185,6 +222,7 @@ export function ConsultationRecorder({
       toast.error("Not enough conversation captured yet");
       return;
     }
+    await persistTranscript(fullTranscript);
     setPhase("drafting");
     try {
       const result = (await makeDraft({ data: { transcript: text, facts } })) as Draft;
@@ -200,10 +238,13 @@ export function ConsultationRecorder({
     if (!draft) return;
     setPhase("saving");
     try {
+      await persistTranscript(fullTranscript);
       await signOff({
         data: {
           visitId,
-          transcript: transcript.trim(),
+          // The transcript is already autosaved in full; don't append it again.
+          transcript: "",
+
           conclusion: draft.conclusion,
           recommendation: draft.recommendation,
           urgencyLevel: draft.urgencyLevel as "LOW" | "MEDIUM" | "HIGH_RED_FLAG",
@@ -252,6 +293,11 @@ export function ConsultationRecorder({
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Transcript
                     </p>
+                    {savedAt ? (
+                      <p className="text-xs text-muted-foreground">
+                        Autosaved {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    ) : null}
                   </div>
                   {segments.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
