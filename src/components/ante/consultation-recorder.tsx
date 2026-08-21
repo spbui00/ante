@@ -75,7 +75,6 @@ export function ConsultationRecorder({
 }) {
   const [segments, setSegments] = useState<Segment[]>([]);
   const [facts, setFacts] = useState<Fact[]>([]);
-  const [swapSpeakers, setSwapSpeakers] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [phase, setPhase] = useState<"record" | "drafting" | "review" | "saving">("record");
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -124,7 +123,7 @@ export function ConsultationRecorder({
   }, [segments]);
 
   const transcript = segments
-    .map((s) => `${speakerLabel(s.speakerId, swapSpeakers, speakerOrder)}: ${s.text}`)
+    .map((s) => `${speakerLabel(s.speakerId, speakerOrder)}: ${s.text}`)
     .join("\n");
   const recording = stream.status === "listening" || stream.status === "connecting";
 
@@ -134,7 +133,6 @@ export function ConsultationRecorder({
     setSegments([]);
     setFacts([]);
     setDraft(null);
-    setSwapSpeakers(false);
     setPhase("record");
     liveFacts.current = false;
     lastFactLength.current = 0;
@@ -254,17 +252,6 @@ export function ConsultationRecorder({
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Transcript
                     </p>
-                    {segments.length ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSwapSpeakers((v) => !v)}
-                        title="Swap the doctor and patient labels"
-                      >
-                        <ArrowLeftRight className="size-3.5" />
-                        Swap speakers
-                      </Button>
-                    ) : null}
                   </div>
                   {segments.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
@@ -276,7 +263,7 @@ export function ConsultationRecorder({
                       {segments.map((s) => (
                         <p key={s.id}>
                           <span className="mr-2 font-medium text-primary">
-                            {speakerLabel(s.speakerId, swapSpeakers, speakerOrder)}:
+                            {speakerLabel(s.speakerId, speakerOrder)}:
                           </span>
                           {s.text}
                         </p>
