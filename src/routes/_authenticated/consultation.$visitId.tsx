@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Copy, FileText, Loader2, Mic, Printer } from "lucide-react";
+import { ArrowLeft, Copy, FileText, Loader2, Mic, Printer, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -37,6 +37,7 @@ import {
   generatePatientHandout,
   planVisitFollowUps,
   recordAnonymizedVisit,
+  reprocessVisitTranscript,
 } from "@/lib/consultation.functions";
 
 import { printHandout } from "@/lib/print-handout";
@@ -89,6 +90,7 @@ function ConsultationPage() {
   const [recorderOpen, setRecorderOpen] = useState(false);
   const [handoutOpen, setHandoutOpen] = useState(false);
   const [signOffPhrase, setSignOffPhrase] = useState(0);
+  const [reprocessOpen, setReprocessOpen] = useState(false);
 
 
   const { data, isPending } = useQuery({
