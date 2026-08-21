@@ -264,6 +264,7 @@ export async function reprocessVisitFromTranscript(supabase: DB, visitId: string
 
   // Keep the de-identified population record in sync with the reprocessed visit.
   let anonymized: { ok: boolean; embedded: boolean; reason?: string } | null = null;
+  let followUpsCreated = 0;
   if ((visit as any).status === "COMPLETED") {
     try {
       const { recordAnonymizedEncounter } = await import("@/lib/anonymized-encounter.server");
@@ -271,7 +272,15 @@ export async function reprocessVisitFromTranscript(supabase: DB, visitId: string
     } catch (error) {
       console.error("[transcript-reprocess] anonymized refresh failed", error);
     }
+    // The reprocessed plan may introduce a follow-up the original sign-off did not have.
+    try {
+      const { planFollowUpVisits } = await import("@/lib/followup.server");
+      const planned = await planFollowUpVisits(supabase, visitId);
+      followUpsCreated = planned.created;
+    } catch (error) {
+      console.error("[transcript-reprocess] follow-up planning failed", error);
+    }
   }
 
-  return { ok: true, ...counts, conclusion, recommendation, anonymized };
+  return { ok: true, ...counts, conclusion, recommendation, anonymized, followUpsCreated };
 }

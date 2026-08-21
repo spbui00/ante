@@ -93,3 +93,59 @@ export const FOLLOW_UP_MARKER_RE = /^\[AUTO_FOLLOW_UP:[0-9a-f-]+\]\s*$/gim;
 export function stripFollowUpMarker(text?: string | null) {
   return (text ?? "").replace(FOLLOW_UP_MARKER_RE, "").trim();
 }
+
+/**
+ * Vital signs fluctuate every encounter, so the passport only ever shows the
+ * most recent value for each of them; everything else (labs, imaging, scores)
+ * is trend-worthy and kept in full so we can chart it later.
+ */
+const VITAL_SIGN_NAMES = [
+  "temperature",
+  "heart rate",
+  "pulse",
+  "respiratory rate",
+  "oxygen saturation",
+  "spo2",
+  "systolic blood pressure",
+  "diastolic blood pressure",
+  "blood pressure",
+  "weight",
+  "height",
+  "pain score",
+];
+
+export function isVitalSign(testName: string | null | undefined): boolean {
+  const n = (testName ?? "").trim().toLowerCase();
+  return VITAL_SIGN_NAMES.some((v) => n === v || n.startsWith(v));
+}
+
+type ObservationLike = {
+  id: string;
+  test_name: string;
+  status?: string | null;
+  recorded_at: string;
+  ordered_date?: string | null;
+};
+
+/**
+ * Orders observations for the passport: pending/ordered tests first, then the
+ * latest value per vital sign, then other results newest-first.
+ */
+export function summariseObservations<T extends ObservationLike>(list: T[]): T[] {
+  const sorted = [...list].sort(
+    (a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime(),
+  );
+  const pending = sorted.filter((o) => o.status === "ORDERED" || o.status === "PENDING");
+  const done = sorted.filter((o) => o.status !== "ORDERED" && o.status !== "PENDING");
+
+  const seenVital = new Set<string>();
+  const rest = done.filter((o) => {
+    if (!isVitalSign(o.test_name)) return true;
+    const key = o.test_name.trim().toLowerCase();
+    if (seenVital.has(key)) return false;
+    seenVital.add(key);
+    return true;
+  });
+
+  return [...pending, ...rest];
+}

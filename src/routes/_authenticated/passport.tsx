@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/drawer";
 import { getPassport } from "@/lib/ante.functions";
 import { deleteScheduledVisit } from "@/lib/intake.functions";
-import { formatDate, formatCpr } from "@/lib/clinical-utils";
+import { formatDate, formatCpr, summariseObservations } from "@/lib/clinical-utils";
 
 const passportQuery = queryOptions({
   queryKey: ["passport"],
@@ -175,7 +175,8 @@ function PassportPage() {
 
         <Section title="Recent observations" icon={<Activity className="size-4" />} className="lg:col-span-1">
           {data.observations.length === 0 ? <Empty /> : null}
-          {data.observations.slice(0, 8).map((o) => (
+          {summariseObservations(data.observations).slice(0, 12).map((o) => (
+
             <Row
               key={o.id}
               primary={o.test_name}
