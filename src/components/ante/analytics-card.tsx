@@ -26,7 +26,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export type CardSeries = { key: string; label?: string | null; color?: string | null };
+export type CardSeries = {
+  key: string;
+  label?: string | null;
+  color?: string | null;
+  /** Overlay only: how this series is drawn. */
+  type?: "line" | "bar" | "area" | null;
+  /** Overlay only: which y-axis it uses (use "right" for different units/scales). */
+  axis?: "left" | "right" | null;
+};
 export type CardColumn = { key: string; label?: string | null };
 
 export type CardConfig = {
