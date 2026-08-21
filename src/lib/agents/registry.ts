@@ -151,7 +151,15 @@ export const AGENTS = {
     systemPrompt: CARE_NAVIGATOR_SYSTEM_PROMPT,
     includePatientContext: false,
   },
+  "follow-up-planner": {
+    key: "follow-up-planner",
+    name: "ante-follow-up-planner-agent-v1",
+    description: "Turns a signed-off consultation plan into prefilled follow-up intakes.",
+    systemPrompt: FOLLOW_UP_PLANNER_SYSTEM_PROMPT,
+    includePatientContext: false,
+  },
 } satisfies Record<string, AgentDefinition>;
+
 
 
 export type AgentKey = keyof typeof AGENTS;
