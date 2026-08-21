@@ -178,7 +178,10 @@ export function IntelligencePanel() {
               <AnalyticsCardView
                 card={c}
                 onPin={(card) => pin.mutate(card)}
-                onRemove={(card) => setGenerated((cards) => cards.filter((x) => x.id !== card.id))}
+                onRemove={(card) => {
+                  setGenerated((cards) => cards.filter((x) => x.id !== card.id));
+                  if (/^[0-9a-f-]{36}$/i.test(card.id)) deleteAnalyticsCard({ data: { id: card.id } });
+                }}
               />
             </div>
           ))}
