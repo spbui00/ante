@@ -27,6 +27,7 @@ export const CORTI_CODING_SYSTEM = "icd10cm-outpatient";
 const API_BASE = `https://api.${ENVIRONMENT}.corti.app/v2`;
 const AUTH_URL = `https://auth.${ENVIRONMENT}.corti.app/realms/${TENANT}/protocol/openid-connect/token`;
 const MODELS_URL = `https://ai.${ENVIRONMENT}.corti.app/v1/chat/completions`;
+const EMBEDDINGS_URL = `https://ai.${ENVIRONMENT}.corti.app/v1/embeddings`;
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
