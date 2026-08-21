@@ -32,6 +32,8 @@ export const cardSpecSchema = z.object({
             key: z.string().max(60),
             label: z.string().max(80).nullish(),
             color: z.string().max(40).nullish(),
+            type: z.enum(["line", "bar", "area"]).nullish(),
+            axis: z.enum(["left", "right"]).nullish(),
           }),
         )
         .max(6)
