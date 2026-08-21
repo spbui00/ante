@@ -394,16 +394,16 @@ function ChartBody({
         tickLine={false}
         axisLine={false}
         width={46}
-        label={
-          card.config?.yLabel
-            ? {
+        {...(card.config?.yLabel
+          ? {
+              label: {
                 value: card.config.yLabel,
                 angle: -90,
-                position: "insideLeft",
+                position: "insideLeft" as const,
                 style: { fontSize: 11, fill: "var(--muted-foreground)" },
-              }
-            : undefined
-        }
+              },
+            }
+          : {})}
       />
       {hasRightAxis ? (
         <YAxis
@@ -414,16 +414,16 @@ function ChartBody({
           tickLine={false}
           axisLine={false}
           width={46}
-          label={
-            card.config?.yRightLabel
-              ? {
+          {...(card.config?.yRightLabel
+            ? {
+                label: {
                   value: card.config.yRightLabel,
                   angle: 90,
-                  position: "insideRight",
+                  position: "insideRight" as const,
                   style: { fontSize: 11, fill: "var(--muted-foreground)" },
-                }
-              : undefined
-          }
+                },
+              }
+            : {})}
         />
       ) : null}
       <Tooltip
@@ -486,7 +486,7 @@ function ChartBody({
           fill={color}
           radius={[4, 4, 0, 0]}
           maxBarSize={48}
-          stackId={stacked ? "a" : undefined}
+          {...(stacked ? { stackId: "a" } : {})}
         />
       );
     }
@@ -499,7 +499,7 @@ function ChartBody({
           strokeWidth={2}
           fill={`url(#${gradientId(s.key)})`}
           activeDot={{ r: 4, strokeWidth: 0 }}
-          stackId={stacked ? "a" : undefined}
+          {...(stacked ? { stackId: "a" } : {})}
         />
       );
     }
