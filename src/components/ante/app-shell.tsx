@@ -30,7 +30,7 @@ const NAV: NavItem[] = [
     to: "/surveillance",
     label: "Surveillance",
     icon: <Activity className="size-4" />,
-    roles: ["ANALYST"],
+    roles: ["PATIENT", "PRACTITIONER", "ANALYST"],
   },
   {
     to: "/settings",
