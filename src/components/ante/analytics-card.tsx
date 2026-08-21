@@ -269,11 +269,50 @@ export function AnalyticsCardView({
     <CardChrome card={card} onPin={onPin} onRemove={onRemove}>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          {card.kind === "bar" ? (
+          {card.kind === "combo" ? (
+            <ComposedChart data={card.rows} margin={{ left: -20, right: 8 }}>
+              {axes}
+              {series.map((s, i) => {
+                const color = s.color ?? PALETTE[i % PALETTE.length];
+                const name = s.label ?? labelise(s.key);
+                if (s.type === "bar") {
+                  return (
+                    <Bar key={s.key} yAxisId={axisIdOf(s)} dataKey={s.key} name={name} fill={color} fillOpacity={0.75} />
+                  );
+                }
+                if (s.type === "area") {
+                  return (
+                    <Area
+                      key={s.key}
+                      yAxisId={axisIdOf(s)}
+                      type="monotone"
+                      dataKey={s.key}
+                      name={name}
+                      stroke={color}
+                      fill={color}
+                      fillOpacity={0.18}
+                    />
+                  );
+                }
+                return (
+                  <Line
+                    key={s.key}
+                    yAxisId={axisIdOf(s)}
+                    type="monotone"
+                    dataKey={s.key}
+                    name={name}
+                    stroke={color}
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                );
+              })}
+            </ComposedChart>
+          ) : card.kind === "bar" ? (
             <BarChart data={card.rows} margin={{ left: -20, right: 8 }}>
               {axes}
               {series.map((s, i) => (
-                <Bar key={s.key} dataKey={s.key} name={s.label ?? labelise(s.key)} fill={s.color ?? PALETTE[i % PALETTE.length]} />
+                <Bar key={s.key} yAxisId={axisIdOf(s)} dataKey={s.key} name={s.label ?? labelise(s.key)} fill={s.color ?? PALETTE[i % PALETTE.length]} />
               ))}
             </BarChart>
           ) : card.kind === "area" ? (
@@ -282,6 +321,7 @@ export function AnalyticsCardView({
               {series.map((s, i) => (
                 <Area
                   key={s.key}
+                  yAxisId={axisIdOf(s)}
                   type="monotone"
                   dataKey={s.key}
                   name={s.label ?? labelise(s.key)}
@@ -297,6 +337,7 @@ export function AnalyticsCardView({
               {series.map((s, i) => (
                 <Line
                   key={s.key}
+                  yAxisId={axisIdOf(s)}
                   type="monotone"
                   dataKey={s.key}
                   name={s.label ?? labelise(s.key)}
