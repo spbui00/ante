@@ -53,6 +53,7 @@ export function buildEmbeddingText(input: {
   region: string | null;
   industry: string | null;
   period: string | null;
+  weather: string | null;
 }): string {
   const who = [
     input.ageYears != null ? `${input.ageYears}yo` : "age unknown",
@@ -76,6 +77,7 @@ export function buildEmbeddingText(input: {
     line("Region", input.region),
     line("Industry", input.industry),
     line("Period", input.period),
+    line("Weather", input.weather),
   ]
     .filter(Boolean)
     .join("\n");
@@ -125,6 +127,12 @@ export async function recordAnonymizedEncounter(
 
   const when = new Date(visit.completed_at ?? visit.visit_date ?? Date.now());
 
+  // Environmental context for the encounter day (never blocks sign-off).
+  const { getWeatherForEncounter } = await import("@/lib/weather.server");
+  const weather = await getWeatherForEncounter(patient?.postal_code ?? null, when).catch(
+    () => null,
+  );
+
   const visitRecords = (records ?? []).filter((r: any) => r.visit_id === visitId);
   const historyRecords = (records ?? []).filter((r: any) => r.visit_id !== visitId);
 
@@ -172,6 +180,7 @@ export async function recordAnonymizedEncounter(
     region: patient?.postal_code ? `${String(patient.postal_code).slice(0, 2)}xx` : null,
     industry: patient?.industry ?? null,
     period: `${when.toLocaleString("en-GB", { month: "long" })} ${when.getFullYear()}`,
+    weather: weather?.summary ?? null,
   });
 
   let embedding: number[] | null = null;
@@ -193,6 +202,7 @@ export async function recordAnonymizedEncounter(
     postal_code: patient?.postal_code ?? null,
     age_bracket: ageBracketFromDob(patient?.date_of_birth),
     industry: patient?.industry ?? null,
+    weather_conditions: weather ?? {},
     is_pregnant: Boolean(visit.is_pregnant),
     sex: patient?.sex ?? null,
     gender_identity: patient?.gender_identity ?? null,
