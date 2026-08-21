@@ -346,9 +346,11 @@ export type Database = {
         Row: {
           id: string
           loinc_code: string | null
+          ordered_date: string | null
           patient_id: string
           recorded_at: string
           source: string | null
+          status: Database["public"]["Enums"]["observation_status_enum"]
           test_name: string
           unit: string | null
           value: number | null
@@ -357,9 +359,11 @@ export type Database = {
         Insert: {
           id?: string
           loinc_code?: string | null
+          ordered_date?: string | null
           patient_id: string
           recorded_at?: string
           source?: string | null
+          status?: Database["public"]["Enums"]["observation_status_enum"]
           test_name: string
           unit?: string | null
           value?: number | null
@@ -368,9 +372,11 @@ export type Database = {
         Update: {
           id?: string
           loinc_code?: string | null
+          ordered_date?: string | null
           patient_id?: string
           recorded_at?: string
           source?: string | null
+          status?: Database["public"]["Enums"]["observation_status_enum"]
           test_name?: string
           unit?: string | null
           value?: number | null
@@ -1008,6 +1014,7 @@ export type Database = {
         | "DIVORCED"
         | "WIDOWED"
         | "UNKNOWN"
+      observation_status_enum: "ORDERED" | "PENDING" | "RESULTED" | "CANCELLED"
       organization_type_enum: "HOSPITAL" | "GP_CLINIC" | "SPECIALIST"
       practitioner_role_enum: "DOCTOR" | "NURSE" | "ADMIN"
       proxy_relationship_enum: "PARENT" | "GUARDIAN" | "SPOUSE" | "POA"
@@ -1188,6 +1195,7 @@ export const Constants = {
         "WIDOWED",
         "UNKNOWN",
       ],
+      observation_status_enum: ["ORDERED", "PENDING", "RESULTED", "CANCELLED"],
       organization_type_enum: ["HOSPITAL", "GP_CLINIC", "SPECIALIST"],
       practitioner_role_enum: ["DOCTOR", "NURSE", "ADMIN"],
       proxy_relationship_enum: ["PARENT", "GUARDIAN", "SPOUSE", "POA"],
