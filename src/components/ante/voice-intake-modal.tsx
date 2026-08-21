@@ -3,7 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Loader2, Mic, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
+import { stripFollowUpMarker } from "@/lib/clinical-utils";
 import { useCortiDictation } from "@/lib/use-corti-dictation";
+
 import { CodeChip, UrgencyBadge } from "@/components/ante/badges";
 import { Waveform } from "@/components/ante/waveform";
 import {
