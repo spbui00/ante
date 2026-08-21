@@ -124,7 +124,9 @@ export function IntelligencePanel() {
           </p>
           <div className="grid gap-3 md:grid-cols-2">
             {pinnedCards.map((c) => (
-              <AnalyticsCardView key={c.id} card={{ ...c, pinned: true }} onPin={() => unpin.mutate(c)} />
+              <div key={c.id} className={isWide(c.kind) ? "md:col-span-2" : undefined}>
+                <AnalyticsCardView card={{ ...c, pinned: true }} onPin={() => unpin.mutate(c)} />
+              </div>
             ))}
           </div>
         </section>
