@@ -262,5 +262,16 @@ export async function reprocessVisitFromTranscript(supabase: DB, visitId: string
     await supabase.from("visit").update(update).eq("id", visitId);
   }
 
-  return { ok: true, ...counts, conclusion, recommendation };
+  // Keep the de-identified population record in sync with the reprocessed visit.
+  let anonymized: { ok: boolean; embedded: boolean; reason?: string } | null = null;
+  if ((visit as any).status === "COMPLETED") {
+    try {
+      const { recordAnonymizedEncounter } = await import("@/lib/anonymized-encounter.server");
+      anonymized = await recordAnonymizedEncounter(supabase, visitId);
+    } catch (error) {
+      console.error("[transcript-reprocess] anonymized refresh failed", error);
+    }
+  }
+
+  return { ok: true, ...counts, conclusion, recommendation, anonymized };
 }
