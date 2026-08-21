@@ -62,14 +62,21 @@ export function VisitDetailDrawer({
   onOpenChange,
   onEdit,
   onDelete,
+  summaryDefaultOpen = true,
 }: {
   visit: VisitDetail | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  summaryDefaultOpen?: boolean;
 }) {
   const canEdit = visit?.status === "SCHEDULED";
+  const [summaryOpen, setSummaryOpen] = useState(summaryDefaultOpen);
+
+  useEffect(() => {
+    if (open) setSummaryOpen(summaryDefaultOpen);
+  }, [open, summaryDefaultOpen]);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
