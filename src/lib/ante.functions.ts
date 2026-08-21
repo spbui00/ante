@@ -74,7 +74,7 @@ export const getPassport = createServerFn({ method: "GET" })
         .select("*")
         .eq("patient_id", patientId)
         .order("recorded_at", { ascending: false })
-        .limit(25),
+        .limit(80),
       supabase
         .from("visit")
         .select("*, practitioner:practitioner(id, full_name, title, specialization)")
@@ -817,7 +817,7 @@ export const getPatientRecord = createServerFn({ method: "GET" })
         .select("*")
         .eq("patient_id", data.patientId)
         .order("recorded_at", { ascending: false })
-        .limit(20),
+        .limit(80),
       supabase
         .from("visit")
         .select(
