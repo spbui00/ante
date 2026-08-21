@@ -61,7 +61,7 @@ export async function reprocessVisitFromTranscript(supabase: DB, visitId: string
 
   const { data: visit } = await supabase
     .from("visit")
-    .select("id, patient_id, visit_transcript")
+    .select("id, patient_id, visit_transcript, status")
     .eq("id", visitId)
     .maybeSingle();
 
