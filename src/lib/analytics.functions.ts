@@ -46,9 +46,47 @@ export const analyzeSurveillance = createServerFn({ method: "POST" })
         "Analyse the whole de-identified encounter log for this window. Find what is actually happening — growth signals, geographic clusters, severity shifts, age or seasonal patterns — with no assumption about which disease it is. Then build the dashboard.",
     });
 
+    // Persist this batch as the user's "last generated" dashboard so it survives navigation.
+    await context.supabase
+      .from("analytics_card")
+      .delete()
+      .eq("owner_id", context.userId)
+      .eq("pinned", false);
+
+    let cards = result.cards;
+    if (cards.length) {
+      const { data: saved } = await context.supabase
+        .from("analytics_card")
+        .insert(
+          cards.map((c: any, i: number) => ({
+            owner_id: context.userId,
+            title: c.title,
+            subtitle: c.subtitle ?? null,
+            kind: c.kind,
+            sql_query: c.sql ?? "",
+            config: (c.config ?? {}) as never,
+            window_days: data.days,
+            position: i,
+            pinned: false,
+          })),
+        )
+        .select("id");
+      if (saved?.length === cards.length) {
+        cards = cards.map((c: any, i: number) => ({ ...c, id: saved[i].id as string }));
+      }
+    }
+
+    await context.supabase.from("analytics_session").upsert({
+      owner_id: context.userId,
+      narrative: result.narrative ?? null,
+      context_id: result.contextId ?? null,
+      window_days: data.days,
+      updated_at: new Date().toISOString(),
+    });
+
     return {
       narrative: result.narrative,
-      cards: result.cards,
+      cards,
       contextId: result.contextId,
       steps: result.steps.map((s) => ({ note: s.note ?? "", rows: s.rows, error: s.error ?? null })),
     };
