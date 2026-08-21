@@ -128,6 +128,24 @@ export function RichText({ text, className }: { text: string; className?: string
           );
         }
 
+        if (block.kind === "hr") {
+          return <hr key={i} className="my-3 border-border" />;
+        }
+
+        if (block.kind === "h") {
+          const size =
+            block.level <= 1
+              ? "text-base font-semibold"
+              : block.level === 2
+                ? "text-sm font-semibold"
+                : "text-sm font-medium";
+          return (
+            <p key={i} className={cn("mt-3 text-foreground first:mt-0", size)}>
+              <Inline text={block.text} />
+            </p>
+          );
+        }
+
         const ListTag = block.kind === "ol" ? "ol" : "ul";
         return (
           <ListTag
