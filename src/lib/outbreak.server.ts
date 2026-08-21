@@ -9,7 +9,7 @@
 export type DailyRow = {
   d: string;
   total: number;
-  covid: number;
+  focus: number;
   respiratory: number;
   gastro: number;
   febrile: number;
@@ -17,24 +17,25 @@ export type DailyRow = {
   er: number;
 };
 
-export type WeeklyRow = { w: string; total: number; covid: number; red_flag: number; er: number };
+export type WeeklyRow = { w: string; total: number; focus: number; red_flag: number; er: number };
 export type PostalRow = {
   postal_code: string;
   recent: number;
   prior: number;
-  recent_covid: number;
+  recent_focus: number;
 };
 export type CodeRow = { code: string; recent: number; prior: number };
 export type AgeRow = {
   age_bracket: string;
   recent: number;
   prior: number;
-  recent_covid: number;
+  recent_focus: number;
 };
 
 export type OutbreakStats = {
   since: string;
   generatedAt: string;
+  focusPrefixes?: string[];
   total: number;
   daily: DailyRow[];
   weekly: WeeklyRow[];
@@ -51,7 +52,7 @@ export type Anomaly = {
 };
 
 const SYNDROMES = ["respiratory", "gastro", "febrile"] as const;
-export type Syndrome = (typeof SYNDROMES)[number] | "covid" | "total";
+export type Syndrome = (typeof SYNDROMES)[number] | "focus" | "total";
 
 function movingAverage(values: number[], window: number) {
   return values.map((_, i) => {
@@ -75,31 +76,33 @@ function doublingTime(current: number, previous: number, periodDays: number) {
   return Math.log(2) / growth;
 }
 
-export function computeSignals(stats: OutbreakStats) {
+export type FocusMeta = { id: string; label: string; short: string; prefixes: string[] };
+
+export function computeSignals(stats: OutbreakStats, focus: FocusMeta) {
   const daily = [...(stats.daily ?? [])].sort((a, b) => a.d.localeCompare(b.d));
 
   const series = daily.map((r, i, arr) => ({
     date: r.d,
     total: Number(r.total),
-    covid: Number(r.covid),
+    focus: Number(r.focus),
     respiratory: Number(r.respiratory),
     gastro: Number(r.gastro),
     febrile: Number(r.febrile),
     redFlag: Number(r.red_flag),
     er: Number(r.er),
     totalAvg: 0,
-    covidAvg: 0,
+    focusAvg: 0,
     respiratoryAvg: 0,
     _i: i,
     _n: arr.length,
   }));
 
   const totalAvg = movingAverage(series.map((s) => s.total), 7);
-  const covidAvg = movingAverage(series.map((s) => s.covid), 7);
+  const focusAvg = movingAverage(series.map((s) => s.focus), 7);
   const respAvg = movingAverage(series.map((s) => s.respiratory), 7);
   series.forEach((s, i) => {
     s.totalAvg = Number((totalAvg[i] ?? 0).toFixed(1));
-    s.covidAvg = Number((covidAvg[i] ?? 0).toFixed(1));
+    s.focusAvg = Number((focusAvg[i] ?? 0).toFixed(1));
     s.respiratoryAvg = Number((respAvg[i] ?? 0).toFixed(1));
   });
 
@@ -121,7 +124,7 @@ export function computeSignals(stats: OutbreakStats) {
 
   const metrics = [
     metric("total", "All encounters"),
-    metric("covid", "COVID-19 (U07.1)"),
+    metric("focus", focus.label),
     metric("respiratory", "Respiratory syndrome"),
     metric("gastro", "Gastrointestinal syndrome"),
     metric("febrile", "Febrile illness"),
@@ -137,11 +140,11 @@ export function computeSignals(stats: OutbreakStats) {
         postalCode: p.postal_code,
         recent,
         prior,
-        recentCovid: Number(p.recent_covid),
+        recentFocus: Number(p.recent_focus),
         growth: prior > 0 ? (recent - prior) / prior : recent > 0 ? 1 : 0,
       };
     })
-    .sort((a, b) => b.recentCovid - a.recentCovid || b.growth - a.growth)
+    .sort((a, b) => b.recentFocus - a.recentFocus || b.growth - a.growth)
     .slice(0, 12);
 
   const emergingCodes = (stats.codes ?? [])
@@ -165,26 +168,28 @@ export function computeSignals(stats: OutbreakStats) {
       ageBracket: a.age_bracket,
       recent: Number(a.recent),
       prior: Number(a.prior),
-      recentCovid: Number(a.recent_covid),
+      recentFocus: Number(a.recent_focus),
       growth: Number(a.prior) > 0 ? (Number(a.recent) - Number(a.prior)) / Number(a.prior) : 0,
     }))
     .filter((a) => a.recent > 0)
     .sort((a, b) => b.recent - a.recent);
 
-  const covid = metrics.find((m) => m.key === "covid")!;
+  const focusMetric = metrics.find((m) => m.key === "focus")!;
   const resp = metrics.find((m) => m.key === "respiratory")!;
   const er = metrics.find((m) => m.key === "er")!;
 
   const anomalies: Anomaly[] = [];
   const pct = (v: number) => `${v > 0 ? "+" : ""}${Math.round(v * 100)}%`;
 
-  if (covid.last7 > 0 && covid.growth >= 0.5) {
+  if (focusMetric.last7 > 0 && focusMetric.growth >= 0.5) {
     anomalies.push({
-      id: "covid-growth",
-      severity: covid.growth >= 1 ? "critical" : "warning",
-      title: `COVID-19 encounters ${pct(covid.growth)} week over week`,
-      detail: `${covid.last7} coded U07.1 encounters in the last 7 days versus ${covid.prev7} the week before${
-        covid.doublingDays ? `, doubling roughly every ${covid.doublingDays.toFixed(1)} days` : ""
+      id: "focus-growth",
+      severity: focusMetric.growth >= 1 ? "critical" : "warning",
+      title: `${focus.short} encounters ${pct(focusMetric.growth)} week over week`,
+      detail: `${focusMetric.last7} encounters coded ${focus.prefixes.join("/")}* in the last 7 days versus ${focusMetric.prev7} the week before${
+        focusMetric.doublingDays
+          ? `, doubling roughly every ${focusMetric.doublingDays.toFixed(1)} days`
+          : ""
       }.`,
     });
   }
@@ -210,7 +215,7 @@ export function computeSignals(stats: OutbreakStats) {
         id: `hotspot-${h.postalCode}`,
         severity: h.growth >= 1.5 ? "critical" : "warning",
         title: `Cluster in postal code ${h.postalCode} (${pct(h.growth)})`,
-        detail: `${h.recent} encounters in the last 14 days (${h.prior} in the prior fortnight), of which ${h.recentCovid} are COVID-coded.`,
+        detail: `${h.recent} encounters in the last 14 days (${h.prior} in the prior fortnight), of which ${h.recentFocus} are ${focus.short}-coded.`,
       });
     }
   }
@@ -239,12 +244,13 @@ export function computeSignals(stats: OutbreakStats) {
   return {
     since: stats.since,
     generatedAt: stats.generatedAt,
+    focus,
     total: Number(stats.total ?? 0),
     series,
     weekly: (stats.weekly ?? []).map((w) => ({
       week: w.w,
       total: Number(w.total),
-      covid: Number(w.covid),
+      focus: Number(w.focus),
       redFlag: Number(w.red_flag),
       er: Number(w.er),
     })),
@@ -263,13 +269,14 @@ export function buildAnalystBriefing(intel: OutbreakIntelligence) {
   const last30 = intel.series.slice(-30).map((s) => ({
     d: s.date,
     all: s.total,
-    covid: s.covid,
+    focus: s.focus,
     resp: s.respiratory,
     er: s.er,
   }));
 
   return JSON.stringify(
     {
+      focus: { label: intel.focus.label, icd10Prefixes: intel.focus.prefixes },
       windowSince: intel.since,
       generatedAt: intel.generatedAt,
       totalEncounters: intel.total,
@@ -286,7 +293,7 @@ export function buildAnalystBriefing(intel: OutbreakIntelligence) {
         postalCode: h.postalCode,
         last14: h.recent,
         prior14: h.prior,
-        covid14: h.recentCovid,
+        focus14: h.recentFocus,
         growth: Number(h.growth.toFixed(2)),
       })),
       emergingCodes: intel.emergingCodes.map((c) => ({
@@ -298,7 +305,7 @@ export function buildAnalystBriefing(intel: OutbreakIntelligence) {
       ageMix: intel.ages.map((a) => ({
         bracket: a.ageBracket,
         last14: a.recent,
-        covid14: a.recentCovid,
+        focus14: a.recentFocus,
         growth: Number(a.growth.toFixed(2)),
       })),
       detectedAnomalies: intel.anomalies.map((a) => `${a.severity.toUpperCase()}: ${a.title}`),

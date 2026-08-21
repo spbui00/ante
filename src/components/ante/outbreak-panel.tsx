@@ -26,8 +26,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { OutbreakAnalystDrawer } from "@/components/ante/outbreak-analyst-drawer";
 import { getOutbreakIntelligence } from "@/lib/outbreak.functions";
+import { DEFAULT_FOCUS_ID, OUTBREAK_FOCUSES } from "@/lib/outbreak-focus";
 
 function pct(v: number) {
   const rounded = Math.round(v * 100);
@@ -36,10 +44,13 @@ function pct(v: number) {
 
 export function OutbreakPanel({ days = 180 }: { days?: number }) {
   const [chatOpen, setChatOpen] = useState(false);
+  const [focus, setFocus] = useState(DEFAULT_FOCUS_ID);
+
+  const focusMeta = OUTBREAK_FOCUSES.find((f) => f.id === focus) ?? OUTBREAK_FOCUSES[0]!;
 
   const { data, isPending, error } = useQuery({
-    queryKey: ["outbreak-intelligence", days],
-    queryFn: () => getOutbreakIntelligence({ data: { days } }),
+    queryKey: ["outbreak-intelligence", days, focus],
+    queryFn: () => getOutbreakIntelligence({ data: { days, focus } }),
     staleTime: 5 * 60_000,
   });
 
@@ -64,7 +75,7 @@ export function OutbreakPanel({ days = 180 }: { days?: number }) {
   }
 
   const headline = data.metrics.filter((m) =>
-    ["total", "covid", "respiratory", "er"].includes(m.key),
+    ["total", "focus", "respiratory", "er"].includes(m.key),
   );
 
   return (
@@ -73,13 +84,28 @@ export function OutbreakPanel({ days = 180 }: { days?: number }) {
         <div>
           <h2 className="text-base font-semibold text-foreground">Outbreak intelligence</h2>
           <p className="text-xs text-muted-foreground">
-            {data.total.toLocaleString()} de-identified encounters analysed · 7-day moving averages
+            {data.total.toLocaleString()} de-identified encounters analysed · tracking{" "}
+            {focusMeta.short} ({focusMeta.prefixes.join(", ")}*) · 7-day moving averages
           </p>
         </div>
-        <Button className="gap-2" onClick={() => setChatOpen(true)}>
-          <Brain className="size-4" />
-          Ask the epidemiologist
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={focus} onValueChange={setFocus}>
+            <SelectTrigger className="w-[240px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {OUTBREAK_FOCUSES.map((f) => (
+                <SelectItem key={f.id} value={f.id}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button className="gap-2" onClick={() => setChatOpen(true)}>
+            <Brain className="size-4" />
+            Ask the epidemiologist
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -182,16 +208,16 @@ export function OutbreakPanel({ days = 180 }: { days?: number }) {
               />
               <Area
                 type="monotone"
-                dataKey="covid"
-                name="COVID-19 coded"
+                dataKey="focus"
+                name={`${focusMeta.short} coded`}
                 stroke="var(--destructive)"
                 fill="var(--destructive)"
                 fillOpacity={0.2}
               />
               <Line
                 type="monotone"
-                dataKey="covidAvg"
-                name="COVID 7-day avg"
+                dataKey="focusAvg"
+                name={`${focusMeta.short} 7-day avg`}
                 stroke="var(--chart-1)"
                 strokeWidth={2}
                 dot={false}
@@ -226,7 +252,7 @@ export function OutbreakPanel({ days = 180 }: { days?: number }) {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="covid" name="COVID-19" fill="var(--destructive)" />
+                <Bar dataKey="focus" name={focusMeta.short} fill="var(--destructive)" />
                 <Bar dataKey="redFlag" name="Red flag" fill="var(--chart-4)" />
                 <Bar dataKey="er" name="ER referral" fill="var(--chart-3)" />
               </BarChart>
@@ -244,7 +270,7 @@ export function OutbreakPanel({ days = 180 }: { days?: number }) {
                 <TableRow>
                   <TableHead>Postal</TableHead>
                   <TableHead className="text-right">Cases</TableHead>
-                  <TableHead className="text-right">COVID</TableHead>
+                  <TableHead className="text-right">{focusMeta.short}</TableHead>
                   <TableHead className="text-right">Growth</TableHead>
                 </TableRow>
               </TableHeader>
@@ -253,7 +279,7 @@ export function OutbreakPanel({ days = 180 }: { days?: number }) {
                   <TableRow key={h.postalCode}>
                     <TableCell className="font-medium">{h.postalCode}</TableCell>
                     <TableCell className="text-right">{h.recent}</TableCell>
-                    <TableCell className="text-right">{h.recentCovid}</TableCell>
+                    <TableCell className="text-right">{h.recentFocus}</TableCell>
                     <TableCell
                       className={`text-right ${h.growth >= 0.5 ? "font-medium text-destructive" : "text-muted-foreground"}`}
                     >
@@ -318,14 +344,14 @@ export function OutbreakPanel({ days = 180 }: { days?: number }) {
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="recent" name="All encounters" fill="var(--chart-2)" />
-                <Bar dataKey="recentCovid" name="COVID-19" fill="var(--destructive)" />
+                <Bar dataKey="recentFocus" name={focusMeta.short} fill="var(--destructive)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      <OutbreakAnalystDrawer open={chatOpen} onOpenChange={setChatOpen} days={days} />
+      <OutbreakAnalystDrawer open={chatOpen} onOpenChange={setChatOpen} days={days} focus={focus} />
     </div>
   );
 }
