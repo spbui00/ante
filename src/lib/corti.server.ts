@@ -266,6 +266,32 @@ export async function cortiChat(opts: {
   return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
+/** Dimensionality returned by `corti-s1-embedding`. */
+export const CORTI_EMBEDDING_DIMS = 2560;
+
+/** Embeds de-identified clinical text with Corti's embedding model. */
+export async function embedText(text: string, model = "corti-s1-embedding"): Promise<number[]> {
+  const token = await getCortiToken();
+  const res = await fetch(EMBEDDINGS_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model, input: text.slice(0, 20000) }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new CortiError(
+      `Corti embedding failed (${res.status}): ${detail.slice(0, 300)}`,
+      res.status,
+    );
+  }
+
+  const data = (await res.json()) as { data?: { embedding?: number[] }[] };
+  const vector = data.data?.[0]?.embedding;
+  if (!vector?.length) throw new CortiError("Corti embedding returned no vector", 502);
+  return vector;
+}
+
 /* ------------------------------------------------------------------ */
 /* 4. Medical coding                                                    */
 /* ------------------------------------------------------------------ */
