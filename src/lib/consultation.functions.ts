@@ -289,10 +289,23 @@ export const signOffConsultation = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    // The patient-facing after-visit summary is generated separately (background call from the
-    // client) so sign-off returns immediately instead of waiting on the LLM.
+    // The patient-facing after-visit summary and the de-identified population row are generated
+    // separately (background calls from the client) so sign-off returns immediately.
     return { ok: true, patientSummary: null as string | null };
   });
+
+/**
+ * Writes the de-identified population row (`anonymized_encounter`) for a signed-off visit.
+ * Fire-and-forget from the client after sign-off; never blocks the clinician.
+ */
+export const recordAnonymizedVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ visitId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { recordAnonymizedEncounter } = await import("@/lib/anonymized-encounter.server");
+    return recordAnonymizedEncounter(context.supabase, data.visitId);
+  });
+
 
 /** Patient-facing after-visit summary; returns the stored one unless regeneration is asked for. */
 export const generatePatientHandout = createServerFn({ method: "POST" })
