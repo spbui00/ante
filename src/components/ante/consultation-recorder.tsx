@@ -26,8 +26,10 @@ import {
 import {
   draftConsultation,
   extractConsultationFacts,
+  saveVisitTranscript,
   signOffConsultation,
 } from "@/lib/consultation.functions";
+
 
 type Fact = { group: string; text: string };
 type Segment = { id: string; speakerId: number; text: string; start?: number };
