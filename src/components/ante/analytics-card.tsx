@@ -247,110 +247,293 @@ export function AnalyticsCardView({
   const xKey = card.config?.xKey ?? Object.keys(card.rows[0] ?? {})[0] ?? "x";
   const series = seriesOf(card);
   const hasRightAxis = series.some((s) => s.axis === "right");
-  const axes = (
-    <>
-      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-      <XAxis dataKey={xKey} tick={{ fontSize: 11 }} minTickGap={24} />
-      <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
-      {hasRightAxis ? <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} /> : null}
-      <Tooltip
-        contentStyle={{
-          background: "var(--popover)",
-          border: "1px solid var(--border)",
-          borderRadius: 8,
-          fontSize: 12,
-        }}
-      />
-      <Legend wrapperStyle={{ fontSize: 11 }} />
-    </>
-  );
-  const axisIdOf = (s: CardSeries) => (s.axis === "right" && hasRightAxis ? "right" : "left");
+  const stacked = card.config?.stacked === true;
+  const rows = card.rows;
 
   return (
     <CardChrome card={card} onPin={onPin} onRemove={onRemove}>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          {card.kind === "combo" ? (
-            <ComposedChart data={card.rows} margin={{ left: -20, right: 8 }}>
-              {axes}
-              {series.map((s, i) => {
-                const color = s.color ?? PALETTE[i % PALETTE.length];
-                const name = s.label ?? labelise(s.key);
-                if (s.type === "bar") {
-                  return (
-                    <Bar key={s.key} yAxisId={axisIdOf(s)} dataKey={s.key} name={name} fill={color} fillOpacity={0.75} />
-                  );
-                }
-                if (s.type === "area") {
-                  return (
-                    <Area
-                      key={s.key}
-                      yAxisId={axisIdOf(s)}
-                      type="monotone"
-                      dataKey={s.key}
-                      name={name}
-                      stroke={color}
-                      fill={color}
-                      fillOpacity={0.18}
-                    />
-                  );
-                }
-                return (
-                  <Line
-                    key={s.key}
-                    yAxisId={axisIdOf(s)}
-                    type="monotone"
-                    dataKey={s.key}
-                    name={name}
-                    stroke={color}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                );
-              })}
-            </ComposedChart>
-          ) : card.kind === "bar" ? (
-            <BarChart data={card.rows} margin={{ left: -20, right: 8 }}>
-              {axes}
-              {series.map((s, i) => (
-                <Bar key={s.key} yAxisId={axisIdOf(s)} dataKey={s.key} name={s.label ?? labelise(s.key)} fill={s.color ?? PALETTE[i % PALETTE.length]} />
-              ))}
-            </BarChart>
-          ) : card.kind === "area" ? (
-            <AreaChart data={card.rows} margin={{ left: -20, right: 8 }}>
-              {axes}
-              {series.map((s, i) => (
-                <Area
-                  key={s.key}
-                  yAxisId={axisIdOf(s)}
-                  type="monotone"
-                  dataKey={s.key}
-                  name={s.label ?? labelise(s.key)}
-                  stroke={s.color ?? PALETTE[i % PALETTE.length]}
-                  fill={s.color ?? PALETTE[i % PALETTE.length]}
-                  fillOpacity={0.18}
-                />
-              ))}
-            </AreaChart>
-          ) : (
-            <LineChart data={card.rows} margin={{ left: -20, right: 8 }}>
-              {axes}
-              {series.map((s, i) => (
-                <Line
-                  key={s.key}
-                  yAxisId={axisIdOf(s)}
-                  type="monotone"
-                  dataKey={s.key}
-                  name={s.label ?? labelise(s.key)}
-                  stroke={s.color ?? PALETTE[i % PALETTE.length]}
-                  strokeWidth={2}
-                  dot={false}
-                />
-              ))}
-            </LineChart>
-          )}
-        </ResponsiveContainer>
-      </div>
+      <ChartBody
+        card={card}
+        rows={rows}
+        xKey={xKey}
+        series={series}
+        hasRightAxis={hasRightAxis}
+        stacked={stacked}
+      />
     </CardChrome>
   );
 }
+
+function isDateLike(v: unknown) {
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v);
+}
+
+function formatX(v: unknown) {
+  if (isDateLike(v)) {
+    const d = new Date(v as string);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+    }
+  }
+  const s = String(v ?? "");
+  return s.length > 14 ? `${s.slice(0, 13)}…` : s;
+}
+
+function formatNumber(v: unknown) {
+  if (typeof v !== "number") return String(v ?? "—");
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (abs >= 10_000) return `${Math.round(v / 1000)}k`;
+  if (abs >= 1000) return v.toLocaleString();
+  if (!Number.isInteger(v)) return v.toFixed(abs < 10 ? 1 : 0);
+  return String(v);
+}
+
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: any[];
+  label?: unknown;
+}) {
+  if (!active || !payload?.length) return null;
+  const heading = isDateLike(label)
+    ? new Date(label as string).toLocaleDateString(undefined, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : String(label ?? "");
+  return (
+    <div className="rounded-lg border border-border bg-popover/95 px-3 py-2 shadow-md backdrop-blur">
+      <p className="mb-1 text-xs font-medium text-foreground">{heading}</p>
+      <div className="space-y-0.5">
+        {payload.map((p) => (
+          <div key={String(p.dataKey)} className="flex items-center gap-2 text-xs">
+            <span
+              className="size-2 shrink-0 rounded-full"
+              style={{ background: p.color ?? p.stroke ?? p.fill }}
+            />
+            <span className="text-muted-foreground">{p.name}</span>
+            <span className="ml-auto font-medium tabular-nums text-foreground">
+              {typeof p.value === "number" ? p.value.toLocaleString() : String(p.value ?? "—")}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ChartBody({
+  card,
+  rows,
+  xKey,
+  series,
+  hasRightAxis,
+  stacked,
+}: {
+  card: AnalyticsCardData;
+  rows: Record<string, unknown>[];
+  xKey: string;
+  series: CardSeries[];
+  hasRightAxis: boolean;
+  stacked: boolean;
+}) {
+  const [hidden, setHidden] = React.useState<Record<string, boolean>>({});
+  const [focus, setFocus] = React.useState<string | null>(null);
+
+  const visible = series.filter((s) => !hidden[s.key]);
+  const axisIdOf = (s: CardSeries) => (s.axis === "right" && hasRightAxis ? "right" : "left");
+  const opacityOf = (s: CardSeries) => (focus && focus !== s.key ? 0.22 : 1);
+  const colorOf = (s: CardSeries, i: number) => s.color ?? PALETTE[i % PALETTE.length];
+  const gradientId = (key: string) => `grad-${card.id}-${key}`.replace(/[^a-zA-Z0-9-]/g, "");
+  const showBrush = rows.length > 45 && card.kind !== "bar";
+
+  const defs = (
+    <defs>
+      {series.map((s, i) => {
+        const color = colorOf(s, i);
+        return (
+          <linearGradient key={s.key} id={gradientId(s.key)} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+          </linearGradient>
+        );
+      })}
+    </defs>
+  );
+
+  const axes = (
+    <>
+      {defs}
+      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+      <XAxis
+        dataKey={xKey}
+        tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+        tickFormatter={formatX}
+        tickLine={false}
+        axisLine={{ stroke: "var(--border)" }}
+        minTickGap={20}
+        height={28}
+      />
+      <YAxis
+        yAxisId="left"
+        tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+        tickFormatter={formatNumber}
+        tickLine={false}
+        axisLine={false}
+        width={46}
+        label={
+          card.config?.yLabel
+            ? {
+                value: card.config.yLabel,
+                angle: -90,
+                position: "insideLeft",
+                style: { fontSize: 11, fill: "var(--muted-foreground)" },
+              }
+            : undefined
+        }
+      />
+      {hasRightAxis ? (
+        <YAxis
+          yAxisId="right"
+          orientation="right"
+          tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+          tickFormatter={formatNumber}
+          tickLine={false}
+          axisLine={false}
+          width={46}
+          label={
+            card.config?.yRightLabel
+              ? {
+                  value: card.config.yRightLabel,
+                  angle: 90,
+                  position: "insideRight",
+                  style: { fontSize: 11, fill: "var(--muted-foreground)" },
+                }
+              : undefined
+          }
+        />
+      ) : null}
+      <Tooltip
+        content={<ChartTooltip />}
+        cursor={{ stroke: "var(--muted-foreground)", strokeOpacity: 0.35, strokeDasharray: "3 3" }}
+      />
+      <Legend
+        wrapperStyle={{ fontSize: 11, cursor: "pointer", paddingTop: 4 }}
+        onClick={(e: any) => {
+          const key = String(e?.dataKey ?? e?.value ?? "");
+          setHidden((h) => ({ ...h, [key]: !h[key] }));
+        }}
+        onMouseEnter={(e: any) => setFocus(String(e?.dataKey ?? ""))}
+        onMouseLeave={() => setFocus(null)}
+        formatter={(value: any, entry: any) => (
+          <span
+            style={{
+              color: hidden[String(entry?.dataKey ?? "")]
+                ? "var(--muted-foreground)"
+                : "var(--foreground)",
+              textDecoration: hidden[String(entry?.dataKey ?? "")] ? "line-through" : "none",
+            }}
+          >
+            {value}
+          </span>
+        )}
+      />
+      {showBrush ? (
+        <Brush
+          dataKey={xKey}
+          height={20}
+          travellerWidth={8}
+          stroke="var(--border)"
+          fill="var(--muted)"
+          tickFormatter={formatX as any}
+        />
+      ) : null}
+    </>
+  );
+
+  const margin = { top: 8, left: 4, right: hasRightAxis ? 4 : 12, bottom: 0 };
+
+  const renderSeries = (s: CardSeries, i: number, fallback: "line" | "area" | "bar") => {
+    const kind = s.type ?? fallback;
+    const color = colorOf(s, i);
+    const name = s.label ?? labelise(s.key);
+    const common = {
+      key: s.key,
+      yAxisId: axisIdOf(s),
+      dataKey: s.key,
+      name,
+      opacity: opacityOf(s),
+      onMouseEnter: () => setFocus(s.key),
+      onMouseLeave: () => setFocus(null),
+    } as const;
+    if (kind === "bar") {
+      return (
+        <Bar
+          {...common}
+          fill={color}
+          radius={[4, 4, 0, 0]}
+          maxBarSize={48}
+          stackId={stacked ? "a" : undefined}
+        />
+      );
+    }
+    if (kind === "area") {
+      return (
+        <Area
+          {...common}
+          type="monotone"
+          stroke={color}
+          strokeWidth={2}
+          fill={`url(#${gradientId(s.key)})`}
+          activeDot={{ r: 4, strokeWidth: 0 }}
+          stackId={stacked ? "a" : undefined}
+        />
+      );
+    }
+    return (
+      <Line
+        {...common}
+        type="monotone"
+        stroke={color}
+        strokeWidth={2}
+        dot={rows.length <= 20 ? { r: 2.5, strokeWidth: 0, fill: color } : false}
+        activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--background)" }}
+      />
+    );
+  };
+
+  return (
+    <div className="h-72">
+      <ResponsiveContainer width="100%" height="100%">
+        {card.kind === "combo" ? (
+          <ComposedChart data={rows} margin={margin}>
+            {axes}
+            {visible.map((s) => renderSeries(s, series.indexOf(s), "line"))}
+          </ComposedChart>
+        ) : card.kind === "bar" ? (
+          <BarChart data={rows} margin={margin}>
+            {axes}
+            {visible.map((s) => renderSeries(s, series.indexOf(s), "bar"))}
+          </BarChart>
+        ) : card.kind === "area" ? (
+          <AreaChart data={rows} margin={margin}>
+            {axes}
+            {visible.map((s) => renderSeries(s, series.indexOf(s), "area"))}
+          </AreaChart>
+        ) : (
+          <LineChart data={rows} margin={margin}>
+            {axes}
+            {visible.map((s) => renderSeries(s, series.indexOf(s), "line"))}
+          </LineChart>
+        )}
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
