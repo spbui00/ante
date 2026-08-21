@@ -41,11 +41,21 @@ export function IntelligencePanel() {
   const [narrative, setNarrative] = useState("");
   const [contextId, setContextId] = useState<string | null>(null);
 
-  const pinned = useQuery({
+  const dashboard = useQuery({
     queryKey: ["analytics-cards"],
     queryFn: () => listAnalyticsCards(),
     staleTime: 60_000,
   });
+
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    if (hydrated || !dashboard.data) return;
+    setGenerated(dashboard.data.generated as AnalyticsCardData[]);
+    setNarrative(dashboard.data.narrative ?? "");
+    setContextId(dashboard.data.contextId ?? null);
+    if (dashboard.data.windowDays) setDays(dashboard.data.windowDays);
+    setHydrated(true);
+  }, [dashboard.data, hydrated]);
 
   const analyse = useMutation({
     mutationFn: (instruction?: string) =>
@@ -61,6 +71,7 @@ export function IntelligencePanel() {
     mutationFn: (card: AnalyticsCardData) =>
       saveAnalyticsCard({
         data: {
+          ...(card.id && /^[0-9a-f-]{36}$/i.test(card.id) ? { id: card.id } : {}),
           title: card.title,
           subtitle: card.subtitle ?? null,
           kind: card.kind as never,
@@ -80,7 +91,7 @@ export function IntelligencePanel() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["analytics-cards"] }),
   });
 
-  const pinnedCards = (pinned.data ?? []) as AnalyticsCardData[];
+  const pinnedCards = (dashboard.data?.pinned ?? []) as AnalyticsCardData[];
 
   return (
     <div className="mb-8 space-y-4">
