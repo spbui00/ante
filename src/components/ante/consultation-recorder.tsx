@@ -101,7 +101,14 @@ export function ConsultationRecorder({
   }, []);
 
   const handleSegment = useCallback((segment: Segment) => {
-    setSegments((prev) => [...prev, segment]);
+    // Diarized segments finalize per speaker, so keep the list ordered by the
+    // moment the speech started rather than by arrival.
+    setSegments((prev) => {
+      const next = [...prev, segment];
+      return next.every((s) => typeof s.start === "number")
+        ? next.sort((a, b) => (a.start ?? 0) - (b.start ?? 0))
+        : next;
+    });
   }, []);
 
   const stream = useCortiStream({
