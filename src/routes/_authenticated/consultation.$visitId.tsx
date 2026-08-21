@@ -73,11 +73,23 @@ export const Route = createFileRoute("/_authenticated/consultation/$visitId")({
   component: ConsultationPage,
 });
 
+const SIGN_OFF_PHRASES = [
+  "Sealing the clinical record…",
+  "Writing to the database…",
+  "De-identifying the encounter…",
+  "Computing the clinical embedding…",
+  "Filing the population health entry…",
+  "Planning follow-ups and referrals…",
+  "Almost there…",
+];
+
 function ConsultationPage() {
   const { visitId } = useParams({ from: "/_authenticated/consultation/$visitId" });
   const queryClient = useQueryClient();
   const [recorderOpen, setRecorderOpen] = useState(false);
   const [handoutOpen, setHandoutOpen] = useState(false);
+  const [signOffPhrase, setSignOffPhrase] = useState(0);
+
 
   const { data, isPending } = useQuery({
     queryKey: ["visit-detail", visitId],
