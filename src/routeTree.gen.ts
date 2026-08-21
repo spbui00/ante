@@ -20,6 +20,7 @@ import { Route as AuthenticatedSurveillanceRouteImport } from './routes/_authent
 import { Route as AuthenticatedVisitsRouteImport } from './routes/_authenticated/visits'
 import { Route as ApiIntakeRouteImport } from './routes/api/intake'
 import { Route as ApiProcessVisitRouteImport } from './routes/api/process-visit'
+import { Route as ApiStreamSessionRouteImport } from './routes/api/stream-session'
 import { Route as ApiSttSessionRouteImport } from './routes/api/stt-session'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as ApiVerifyDoctorRouteImport } from './routes/api/verify-doctor'
@@ -80,6 +81,11 @@ const ApiProcessVisitRoute = ApiProcessVisitRouteImport.update({
   path: '/api/process-visit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStreamSessionRoute = ApiStreamSessionRouteImport.update({
+  id: '/api/stream-session',
+  path: '/api/stream-session',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSttSessionRoute = ApiSttSessionRouteImport.update({
   id: '/api/stt-session',
   path: '/api/stt-session',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
+  '/api/stream-session': typeof ApiStreamSessionRoute
   '/api/stt-session': typeof ApiSttSessionRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/api/verify-doctor': typeof ApiVerifyDoctorRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
+  '/api/stream-session': typeof ApiStreamSessionRoute
   '/api/stt-session': typeof ApiSttSessionRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/api/verify-doctor': typeof ApiVerifyDoctorRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/_authenticated/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
   '/api/process-visit': typeof ApiProcessVisitRoute
+  '/api/stream-session': typeof ApiStreamSessionRoute
   '/api/stt-session': typeof ApiSttSessionRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/api/verify-doctor': typeof ApiVerifyDoctorRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/visits'
     | '/api/intake'
     | '/api/process-visit'
+    | '/api/stream-session'
     | '/api/stt-session'
     | '/api/transcribe'
     | '/api/verify-doctor'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/visits'
     | '/api/intake'
     | '/api/process-visit'
+    | '/api/stream-session'
     | '/api/stt-session'
     | '/api/transcribe'
     | '/api/verify-doctor'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/_authenticated/visits'
     | '/api/intake'
     | '/api/process-visit'
+    | '/api/stream-session'
     | '/api/stt-session'
     | '/api/transcribe'
     | '/api/verify-doctor'
@@ -210,6 +222,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiIntakeRoute: typeof ApiIntakeRoute
   ApiProcessVisitRoute: typeof ApiProcessVisitRoute
+  ApiStreamSessionRoute: typeof ApiStreamSessionRoute
   ApiSttSessionRoute: typeof ApiSttSessionRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   ApiVerifyDoctorRoute: typeof ApiVerifyDoctorRoute
@@ -294,6 +307,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProcessVisitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/stream-session': {
+      id: '/api/stream-session'
+      path: '/api/stream-session'
+      fullPath: '/api/stream-session'
+      preLoaderRoute: typeof ApiStreamSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stt-session': {
       id: '/api/stt-session'
       path: '/api/stt-session'
@@ -354,6 +374,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiIntakeRoute: ApiIntakeRoute,
   ApiProcessVisitRoute: ApiProcessVisitRoute,
+  ApiStreamSessionRoute: ApiStreamSessionRoute,
   ApiSttSessionRoute: ApiSttSessionRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
   ApiVerifyDoctorRoute: ApiVerifyDoctorRoute,

@@ -46,6 +46,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
+import { VisitTranscript } from "@/components/ante/visit-transcript";
+
 
 import {
   findScheduledVisitsByCpr,
@@ -547,17 +549,45 @@ function ClinicalPage() {
                 </div>
 
                 <Block label="Symptoms" value={selected.symptoms} />
+
+                {selected.status === "COMPLETED" ? (
+                  <>
+                    <Block label="Conclusion" value={selected.conclusion} />
+                    <Block label="Recommendation" value={selected.recommendation} />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Block label="Disposition" value={selected.disposition} />
+                      <Block label="Urgency" value={selected.urgency_level} />
+                    </div>
+                    <div className="space-y-1">
+                      <VisitTranscript
+                        transcript={selected.intake_transcript}
+                        label="Intake transcript"
+                      />
+                      <VisitTranscript
+                        transcript={selected.visit_transcript}
+                        label="Visit transcript"
+                      />
+                    </div>
+                  </>
+                ) : null}
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Observations</CardTitle>
+                <CardTitle className="text-sm">
+                  {selected.status === "COMPLETED" ? "Clinical items" : "Observations"}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <VisitClinicalItems visitId={selected.id} sections={["observation"]} />
+                {selected.status === "COMPLETED" ? (
+                  <VisitClinicalItems visitId={selected.id} />
+                ) : (
+                  <VisitClinicalItems visitId={selected.id} sections={["observation"]} />
+                )}
               </CardContent>
             </Card>
+
           </div>
         ) : (
           <Card>

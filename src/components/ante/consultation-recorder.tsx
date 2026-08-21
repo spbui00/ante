@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Loader2, Mic, Square, Stethoscope, X } from "lucide-react";
+import { ArrowLeftRight, Check, Loader2, Mic, Sparkles, Square, Stethoscope, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Waveform } from "@/components/ante/waveform";
-import { useCortiDictation } from "@/lib/use-corti-dictation";
+import { useCortiStream, type StreamFact } from "@/lib/use-corti-stream";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -30,6 +30,7 @@ import {
 } from "@/lib/consultation.functions";
 
 type Fact = { group: string; text: string };
+type Segment = { id: string; speakerId: number; text: string };
 type Diagnosis = { description: string; code: string | null; status: "ACTIVE" | "RESOLVED" | "SUSPECTED" };
 type Prescription = { drugName: string; atcCode: string | null; dosage: string | null; frequency: string | null };
 type Observation = { testName: string; loincCode: string | null; value: number | null; unit: string | null };
@@ -44,7 +45,14 @@ type Draft = {
   disposition: string;
 };
 
-const FACT_INTERVAL_MS = 20000;
+/** Backup extraction cadence used when the live FactsR stream stays quiet. */
+const FACT_FALLBACK_MS = 25000;
+
+function speakerLabel(speakerId: number, swapped: boolean) {
+  if (speakerId < 0) return "Speaker";
+  const roles = swapped ? ["Patient", "Doctor"] : ["Doctor", "Patient"];
+  return roles[speakerId] ?? `Speaker ${speakerId + 1}`;
+}
 
 export function ConsultationRecorder({
   visitId,
@@ -59,10 +67,13 @@ export function ConsultationRecorder({
   onOpenChange: (open: boolean) => void;
   onSigned: () => void;
 }) {
-  const [segments, setSegments] = useState<string[]>([]);
+  const [segments, setSegments] = useState<Segment[]>([]);
   const [facts, setFacts] = useState<Fact[]>([]);
+  const [swapSpeakers, setSwapSpeakers] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [phase, setPhase] = useState<"record" | "drafting" | "review" | "saving">("record");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const liveFacts = useRef(false);
   const lastFactLength = useRef(0);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -70,14 +81,33 @@ export function ConsultationRecorder({
   const makeDraft = useServerFn(draftConsultation);
   const signOff = useServerFn(signOffConsultation);
 
-  const dictation = useCortiDictation({
+  const handleFacts = useCallback((incoming: StreamFact[]) => {
+    liveFacts.current = true;
+    setFacts((prev) => {
+      const seen = new Set(prev.map((f) => f.text.toLowerCase()));
+      const added = incoming
+        .filter((f) => !seen.has(f.text.toLowerCase()))
+        .map((f) => ({ group: f.group, text: f.text }));
+      return added.length ? [...prev, ...added] : prev;
+    });
+  }, []);
+
+  const handleSegment = useCallback((segment: Segment) => {
+    setSegments((prev) => [...prev, segment]);
+  }, []);
+
+  const stream = useCortiStream({
     language: "en",
-    onFinal: (text) => setSegments((prev) => [...prev, text]),
+    visitId,
+    onSegment: handleSegment,
+    onFacts: handleFacts,
     onError: (message) => toast.error(message),
   });
 
-  const transcript = segments.join("\n");
-  const recording = dictation.status === "listening" || dictation.status === "connecting";
+  const transcript = segments
+    .map((s) => `${speakerLabel(s.speakerId, swapSpeakers)}: ${s.text}`)
+    .join("\n");
+  const recording = stream.status === "listening" || stream.status === "connecting";
 
   // Reset when the drawer is reopened for a new consultation.
   useEffect(() => {
@@ -85,30 +115,54 @@ export function ConsultationRecorder({
     setSegments([]);
     setFacts([]);
     setDraft(null);
+    setSwapSpeakers(false);
     setPhase("record");
+    liveFacts.current = false;
     lastFactLength.current = 0;
   }, [open]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [segments, dictation.interim]);
+  }, [segments]);
 
-  // Live fact extraction while the conversation is running.
+  const runExtraction = useCallback(
+    async (text: string) => {
+      if (text.length < 40) {
+        toast.error("Not enough conversation captured yet");
+        return;
+      }
+      setExtracting(true);
+      try {
+        const res = await extract({ data: { transcript: text } });
+        lastFactLength.current = text.length;
+        handleFacts(res.facts.map((f) => ({ group: f.group, text: f.text })));
+      } catch {
+        toast.error("Could not extract clinical facts");
+      } finally {
+        setExtracting(false);
+      }
+    },
+    [extract, handleFacts],
+  );
+
+  // Safety net: if the live FactsR stream has produced nothing, extract from
+  // the transcript we already have so the doctor still sees facts.
   useEffect(() => {
     if (!open || phase !== "record") return;
     const timer = setInterval(() => {
+      if (liveFacts.current) return;
       const text = transcript.trim();
-      if (text.length < 60 || text.length - lastFactLength.current < 120) return;
+      if (text.length < 80 || text.length - lastFactLength.current < 120) return;
       lastFactLength.current = text.length;
       void extract({ data: { transcript: text } })
-        .then((res) => setFacts(res.facts))
+        .then((res) => handleFacts(res.facts.map((f) => ({ group: f.group, text: f.text }))))
         .catch(() => undefined);
-    }, FACT_INTERVAL_MS);
+    }, FACT_FALLBACK_MS);
     return () => clearInterval(timer);
-  }, [open, phase, transcript, extract]);
+  }, [open, phase, transcript, extract, handleFacts]);
 
   async function finishRecording() {
-    if (recording) dictation.stop();
+    if (recording) stream.stop();
     const text = transcript.trim();
     if (text.length < 20) {
       toast.error("Not enough conversation captured yet");
@@ -163,7 +217,7 @@ export function ConsultationRecorder({
             <DrawerDescription>
               {phase === "review" || phase === "saving"
                 ? "Check the AI draft before signing — edit the text and remove anything that is wrong."
-                : `Live transcription and clinical facts for ${patientName}.`}
+                : `Live diarized transcription and clinical facts for ${patientName}.`}
             </DrawerDescription>
           </DrawerHeader>
 
@@ -171,35 +225,66 @@ export function ConsultationRecorder({
             {phase === "record" || phase === "drafting" ? (
               <>
                 <Waveform
-                  analyser={dictation.analyser}
-                  active={dictation.status === "listening"}
+                  analyser={stream.analyser}
+                  active={stream.status === "listening"}
                   className="h-16 w-full"
                 />
 
                 <div className="rounded-lg border bg-muted/30 p-3">
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Transcript
-                  </p>
-                  {segments.length === 0 && !dictation.interim ? (
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Transcript
+                    </p>
+                    {segments.length ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSwapSpeakers((v) => !v)}
+                        title="Swap the doctor and patient labels"
+                      >
+                        <ArrowLeftRight className="size-3.5" />
+                        Swap speakers
+                      </Button>
+                    ) : null}
+                  </div>
+                  {segments.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                      Press “Start recording” and speak — the conversation appears here in real time.
+                      Press “Start recording” and speak — the conversation appears here in real time,
+                      labelled per speaker.
                     </p>
                   ) : (
-                    <div className="space-y-1 text-sm leading-relaxed">
-                      {segments.map((s, i) => (
-                        <p key={i}>{s}</p>
+                    <div className="space-y-1.5 text-sm leading-relaxed">
+                      {segments.map((s) => (
+                        <p key={s.id}>
+                          <span className="mr-2 font-medium text-primary">
+                            {speakerLabel(s.speakerId, swapSpeakers)}:
+                          </span>
+                          {s.text}
+                        </p>
                       ))}
-                      {dictation.interim ? (
-                        <p className="text-muted-foreground">{dictation.interim}</p>
-                      ) : null}
                     </div>
                   )}
                 </div>
 
                 <div className="rounded-lg border p-3">
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Clinical facts
-                  </p>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Clinical facts
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={extracting || segments.length === 0}
+                      onClick={() => void runExtraction(transcript.trim())}
+                    >
+                      {extracting ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-3.5" />
+                      )}
+                      Extract now
+                    </Button>
+                  </div>
                   {facts.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       Facts are extracted continuously as the conversation develops.
@@ -352,7 +437,7 @@ export function ConsultationRecorder({
               <>
                 <Button
                   variant={recording ? "destructive" : "default"}
-                  onClick={() => (recording ? dictation.stop() : void dictation.start())}
+                  onClick={() => (recording ? stream.stop() : void stream.start())}
                 >
                   {recording ? (
                     <>

@@ -125,6 +125,44 @@ export async function createInteraction(opts: {
   return data.interactionId;
 }
 
+/**
+ * Creates an interaction for the real-time /streams endpoint (ambient
+ * documentation) and returns the authenticated WebSocket URL for it.
+ */
+export async function createStreamInteraction(opts: {
+  identifier: string;
+  title?: string;
+  patientIdentifier?: string;
+}): Promise<{ interactionId: string; url: string }> {
+  const data = await cortiFetch<{ interactionId: string; websocketUrl?: string }>(
+    "/interactions/",
+    {
+      method: "POST",
+      contentType: "application/json",
+      body: JSON.stringify({
+        encounter: {
+          identifier: opts.identifier,
+          status: "in-progress",
+          type: "consultation",
+          title: opts.title ?? "Ante ambient consultation",
+          period: { startedAt: new Date().toISOString() },
+        },
+        ...(opts.patientIdentifier ? { patient: { identifier: opts.patientIdentifier } } : {}),
+      }),
+    },
+  );
+
+  const token = await getCortiToken();
+  const base =
+    data.websocketUrl ??
+    `wss://api.${ENVIRONMENT}.corti.app/audio-bridge/v2/interactions/${data.interactionId}/streams?tenant-name=${encodeURIComponent(TENANT)}`;
+  const separator = base.includes("?") ? "&" : "?";
+  const url = `${base}${separator}token=${encodeURIComponent(`Bearer ${token}`)}`;
+
+  return { interactionId: data.interactionId, url };
+}
+
+
 export async function uploadRecording(interactionId: string, audio: ArrayBuffer): Promise<string> {
   const data = await cortiFetch<{ recordingId: string }>(
     `/interactions/${interactionId}/recordings/`,
