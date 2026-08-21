@@ -50,17 +50,15 @@ const FACT_FALLBACK_MS = 25000;
 
 /**
  * Corti returns an arbitrary integer per detected speaker (-1 when diarization
- * is off). Map ids to labels by the order they first appear so the first voice
- * heard is the doctor, the second the patient, and any extra voice keeps a
- * neutral label.
+ * is off). Number speakers by the order they first appear and leave role
+ * attribution (doctor / patient / nurse) to the post-processing agent.
  */
-function speakerLabel(speakerId: number, swapped: boolean, order: number[]) {
+function speakerLabel(speakerId: number, order: number[]) {
   if (speakerId < 0) return "Speaker";
   const index = order.indexOf(speakerId);
-  if (index < 0) return `Speaker ${speakerId + 1}`;
-  const roles = swapped ? ["Patient", "Doctor"] : ["Doctor", "Patient"];
-  return roles[index] ?? `Speaker ${index + 1}`;
+  return `Speaker ${(index < 0 ? speakerId : index) + 1}`;
 }
+
 
 export function ConsultationRecorder({
   visitId,
