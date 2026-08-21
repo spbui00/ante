@@ -245,11 +245,13 @@ export function AnalyticsCardView({
 
   const xKey = card.config?.xKey ?? Object.keys(card.rows[0] ?? {})[0] ?? "x";
   const series = seriesOf(card);
+  const hasRightAxis = series.some((s) => s.axis === "right");
   const axes = (
     <>
       <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
       <XAxis dataKey={xKey} tick={{ fontSize: 11 }} minTickGap={24} />
-      <YAxis tick={{ fontSize: 11 }} />
+      <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
+      {hasRightAxis ? <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} /> : null}
       <Tooltip
         contentStyle={{
           background: "var(--popover)",
@@ -261,6 +263,7 @@ export function AnalyticsCardView({
       <Legend wrapperStyle={{ fontSize: 11 }} />
     </>
   );
+  const axisIdOf = (s: CardSeries) => (s.axis === "right" && hasRightAxis ? "right" : "left");
 
   return (
     <CardChrome card={card} onPin={onPin} onRemove={onRemove}>
