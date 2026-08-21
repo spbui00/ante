@@ -314,7 +314,7 @@ export const generatePatientHandout = createServerFn({ method: "POST" })
         .maybeSingle(),
       supabase
         .from("drug_prescription")
-        .select("drug_name, dosage, frequency, instructions")
+        .select("drug_name, dosage, frequency")
         .eq("visit_id", data.visitId),
       supabase.from("observation").select("test_name, value, unit").eq("visit_id", data.visitId),
       supabase.from("clinical_record").select("description, status").eq("visit_id", data.visitId),
@@ -333,7 +333,7 @@ export const generatePatientHandout = createServerFn({ method: "POST" })
         .join("; ") || "none recorded"}`,
       `Prescribed medicines: ${(prescriptions.data ?? [])
         .map((p) =>
-          [p.drug_name, p.dosage, p.frequency, p.instructions].filter(Boolean).join(" · "),
+          [p.drug_name, p.dosage, p.frequency].filter(Boolean).join(" · "),
         )
         .join("; ") || "none"}`,
     ].join("\n");
