@@ -130,10 +130,36 @@ export function ConsultationRecorder({
     return seen;
   }, [segments]);
 
-  const transcript = segments
+  const sessionTranscript = segments
     .map((s) => `${speakerLabel(s.speakerId, speakerOrder)}: ${s.text}`)
     .join("\n");
+  const transcript = sessionTranscript;
+  const fullTranscript = [existingTranscript.trim(), sessionTranscript.trim()]
+    .filter(Boolean)
+    .join("\n\n");
   const recording = stream.status === "listening" || stream.status === "connecting";
+
+  // Autosave: persist the transcript to the visit every few seconds so a refresh,
+  // a crash or a closed tab never loses the conversation.
+  const persistTranscript = useCallback(
+    async (text: string) => {
+      if (!text || text === lastSaved.current) return;
+      lastSaved.current = text;
+      try {
+        await saveTranscript({ data: { visitId, transcript: text } });
+        setSavedAt(new Date());
+      } catch {
+        lastSaved.current = "";
+      }
+    },
+    [saveTranscript, visitId],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setInterval(() => void persistTranscript(fullTranscript), 8000);
+    return () => clearInterval(timer);
+  }, [open, fullTranscript, persistTranscript]);
 
   // Reset when the drawer is reopened for a new consultation.
   useEffect(() => {
@@ -142,9 +168,12 @@ export function ConsultationRecorder({
     setFacts([]);
     setDraft(null);
     setPhase("record");
+    setSavedAt(null);
     liveFacts.current = false;
     lastFactLength.current = 0;
+    lastSaved.current = "";
   }, [open]);
+
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
