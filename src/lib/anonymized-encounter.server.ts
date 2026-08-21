@@ -184,7 +184,7 @@ export async function recordAnonymizedEncounter(
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const { error } = await supabaseAdmin.from("anonymized_encounter").insert({
+  const payload = {
     encounter_date: when.toISOString(),
     year: when.getUTCFullYear(),
     month: when.getUTCMonth() + 1,
