@@ -293,6 +293,11 @@ export function ConsultationRecorder({
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Transcript
                     </p>
+                    {savedAt ? (
+                      <p className="text-xs text-muted-foreground">
+                        Autosaved {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    ) : null}
                   </div>
                   {segments.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
