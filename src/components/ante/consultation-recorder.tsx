@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeftRight, Check, Loader2, Mic, Sparkles, Square, Stethoscope, X } from "lucide-react";
+import { Check, Loader2, Mic, Sparkles, Square, Stethoscope, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Waveform } from "@/components/ante/waveform";
