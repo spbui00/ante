@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { OutbreakPanel } from "@/components/ante/outbreak-panel";
+import { IntelligencePanel } from "@/components/ante/intelligence-panel";
 import { getSurveillance } from "@/lib/ante.functions";
 import { AGE_BRACKETS, formatDate } from "@/lib/clinical-utils";
 
