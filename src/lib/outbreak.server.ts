@@ -269,7 +269,7 @@ export function buildAnalystBriefing(intel: OutbreakIntelligence) {
   const last30 = intel.series.slice(-30).map((s) => ({
     d: s.date,
     all: s.total,
-    covid: s.covid,
+    focus: s.focus,
     resp: s.respiratory,
     er: s.er,
   }));
