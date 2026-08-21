@@ -1,14 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 import { RichTextInline } from "@/components/ante/rich-text";
 import { VisitCard } from "@/components/ante/visit-card";
 import { VisitDetailDrawer, type VisitDetail } from "@/components/ante/visit-detail-drawer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPatientRecord } from "@/lib/ante.functions";
 import { formatCpr, formatDate } from "@/lib/clinical-utils";
+import { cn } from "@/lib/utils";
 
 export function PatientPassportPanel({ patientId }: { patientId: string }) {
   const { data, isPending } = useQuery({
