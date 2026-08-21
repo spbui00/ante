@@ -65,12 +65,14 @@ function speakerLabel(speakerId: number, order: number[]) {
 export function ConsultationRecorder({
   visitId,
   patientName,
+  existingTranscript = "",
   open,
   onOpenChange,
   onSigned,
 }: {
   visitId: string;
   patientName: string;
+  existingTranscript?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSigned: () => void;
@@ -80,13 +82,17 @@ export function ConsultationRecorder({
   const [extracting, setExtracting] = useState(false);
   const [phase, setPhase] = useState<"record" | "drafting" | "review" | "saving">("record");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
   const liveFacts = useRef(false);
   const lastFactLength = useRef(0);
+  const lastSaved = useRef("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const extract = useServerFn(extractConsultationFacts);
   const makeDraft = useServerFn(draftConsultation);
+  const saveTranscript = useServerFn(saveVisitTranscript);
   const signOff = useServerFn(signOffConsultation);
+
 
   const handleFacts = useCallback((incoming: StreamFact[]) => {
     liveFacts.current = true;
