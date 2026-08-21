@@ -788,6 +788,7 @@ export type Database = {
           is_ai_generated: boolean
           is_pregnant: boolean
           patient_id: string
+          patient_summary: string | null
           practitioner_id: string | null
           recommendation: string | null
           status: Database["public"]["Enums"]["visit_status_enum"]
@@ -812,6 +813,7 @@ export type Database = {
           is_ai_generated?: boolean
           is_pregnant?: boolean
           patient_id: string
+          patient_summary?: string | null
           practitioner_id?: string | null
           recommendation?: string | null
           status?: Database["public"]["Enums"]["visit_status_enum"]
@@ -836,6 +838,7 @@ export type Database = {
           is_ai_generated?: boolean
           is_pregnant?: boolean
           patient_id?: string
+          patient_summary?: string | null
           practitioner_id?: string | null
           recommendation?: string | null
           status?: Database["public"]["Enums"]["visit_status_enum"]

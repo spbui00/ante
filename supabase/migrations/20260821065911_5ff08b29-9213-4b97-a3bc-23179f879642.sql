@@ -1,0 +1,1 @@
+ALTER TABLE public.visit ADD COLUMN IF NOT EXISTS patient_summary text;
