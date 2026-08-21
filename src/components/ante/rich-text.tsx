@@ -78,7 +78,11 @@ function parseBlocks(input: string): Block[] {
 
     const heading = line.trim().match(/^(#{1,6})\s+(.*)$/);
     if (heading) {
-      blocks.push({ kind: "h", level: heading[1].length, text: heading[2].replace(/\s*#+\s*$/, "") });
+      blocks.push({
+        kind: "h",
+        level: (heading[1] ?? "#").length,
+        text: (heading[2] ?? "").replace(/\s*#+\s*$/, ""),
+      });
       continue;
     }
 
