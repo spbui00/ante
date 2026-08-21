@@ -119,8 +119,14 @@ export function ConsultationRecorder({
     onError: (message) => toast.error(message),
   });
 
+  const speakerOrder = useMemo(() => {
+    const seen: number[] = [];
+    for (const s of segments) if (s.speakerId >= 0 && !seen.includes(s.speakerId)) seen.push(s.speakerId);
+    return seen;
+  }, [segments]);
+
   const transcript = segments
-    .map((s) => `${speakerLabel(s.speakerId, swapSpeakers)}: ${s.text}`)
+    .map((s) => `${speakerLabel(s.speakerId, swapSpeakers, speakerOrder)}: ${s.text}`)
     .join("\n");
   const recording = stream.status === "listening" || stream.status === "connecting";
 
