@@ -94,15 +94,13 @@ export function computeSignals(stats: OutbreakStats) {
     _n: arr.length,
   }));
 
-  const avgs: Record<string, number[]> = {
-    totalAvg: movingAverage(series.map((s) => s.total), 7),
-    covidAvg: movingAverage(series.map((s) => s.covid), 7),
-    respiratoryAvg: movingAverage(series.map((s) => s.respiratory), 7),
-  };
+  const totalAvg = movingAverage(series.map((s) => s.total), 7);
+  const covidAvg = movingAverage(series.map((s) => s.covid), 7);
+  const respAvg = movingAverage(series.map((s) => s.respiratory), 7);
   series.forEach((s, i) => {
-    s.totalAvg = Number(avgs.totalAvg[i].toFixed(1));
-    s.covidAvg = Number(avgs.covidAvg[i].toFixed(1));
-    s.respiratoryAvg = Number(avgs.respiratoryAvg[i].toFixed(1));
+    s.totalAvg = Number((totalAvg[i] ?? 0).toFixed(1));
+    s.covidAvg = Number((covidAvg[i] ?? 0).toFixed(1));
+    s.respiratoryAvg = Number((respAvg[i] ?? 0).toFixed(1));
   });
 
   function metric(key: keyof DailyRow, label: string) {
