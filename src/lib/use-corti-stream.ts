@@ -10,7 +10,7 @@ type Session = {
   source: MediaStreamAudioSourceNode;
 };
 
-export type StreamSegment = { id: string; text: string; speakerId: number };
+export type StreamSegment = { id: string; text: string; speakerId: number; start?: number };
 export type StreamFact = { id?: string; group: string; text: string };
 
 const SAMPLE_RATE = 16000;
@@ -145,20 +145,53 @@ export function useCortiStream({
           return;
         }
         if (type === "transcript") {
-          const items = Array.isArray(msg.data) ? msg.data : [];
-          for (const raw of items as {
+          const items = (Array.isArray(msg.data) ? msg.data : []) as {
             id?: string;
             transcript?: string;
             text?: string;
             final?: boolean;
             speakerId?: number;
-          }[]) {
+            speaker?: number;
+            participant?: { channel?: number; role?: string };
+            time?: { start?: number; end?: number };
+          }[];
+
+          // Diagnostics: keep the raw payloads so speaker attribution can be
+          // inspected from the console (window.__cortiTranscriptLog).
+          if (typeof window !== "undefined") {
+            const w = window as unknown as { __cortiTranscriptLog?: unknown[] };
+            w.__cortiTranscriptLog = [...(w.__cortiTranscriptLog ?? []), ...items].slice(-200);
+            console.debug(
+              "[corti] transcript",
+              items.map((i) => ({
+                speakerId: i.speakerId,
+                channel: i.participant?.channel,
+                start: i.time?.start,
+                text: (i.transcript ?? i.text ?? "").slice(0, 40),
+              })),
+            );
+          }
+
+          // Segments for different speakers finalize independently, so order
+          // by speech start time rather than socket arrival order.
+          const ordered = [...items].sort(
+            (a, b) => (a.time?.start ?? 0) - (b.time?.start ?? 0) || (a.time?.end ?? 0) - (b.time?.end ?? 0),
+          );
+
+          for (const raw of ordered) {
             const text = (raw.transcript ?? raw.text ?? "").trim();
             if (!text) continue;
+            const speakerId =
+              typeof raw.speakerId === "number"
+                ? raw.speakerId
+                : typeof raw.speaker === "number"
+                  ? raw.speaker
+                  : -1;
             onSegment({
               id: raw.id ?? `${Date.now()}-${Math.random()}`,
               text,
-              speakerId: typeof raw.speakerId === "number" ? raw.speakerId : -1,
+              speakerId,
+              ...(typeof raw.time?.start === "number" ? { start: raw.time.start } : {}),
             });
           }
           return;

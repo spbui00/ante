@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeftRight, Check, Loader2, Mic, Sparkles, Square, Stethoscope, X } from "lucide-react";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ import {
 } from "@/lib/consultation.functions";
 
 type Fact = { group: string; text: string };
-type Segment = { id: string; speakerId: number; text: string };
+type Segment = { id: string; speakerId: number; text: string; start?: number };
 type Diagnosis = { description: string; code: string | null; status: "ACTIVE" | "RESOLVED" | "SUSPECTED" };
 type Prescription = { drugName: string; atcCode: string | null; dosage: string | null; frequency: string | null };
 type Observation = { testName: string; loincCode: string | null; value: number | null; unit: string | null; status?: "ORDERED" | "PENDING" | "RESULTED" | "CANCELLED" };
@@ -48,10 +48,18 @@ type Draft = {
 /** Backup extraction cadence used when the live FactsR stream stays quiet. */
 const FACT_FALLBACK_MS = 25000;
 
-function speakerLabel(speakerId: number, swapped: boolean) {
+/**
+ * Corti returns an arbitrary integer per detected speaker (-1 when diarization
+ * is off). Map ids to labels by the order they first appear so the first voice
+ * heard is the doctor, the second the patient, and any extra voice keeps a
+ * neutral label.
+ */
+function speakerLabel(speakerId: number, swapped: boolean, order: number[]) {
   if (speakerId < 0) return "Speaker";
+  const index = order.indexOf(speakerId);
+  if (index < 0) return `Speaker ${speakerId + 1}`;
   const roles = swapped ? ["Patient", "Doctor"] : ["Doctor", "Patient"];
-  return roles[speakerId] ?? `Speaker ${speakerId + 1}`;
+  return roles[index] ?? `Speaker ${index + 1}`;
 }
 
 export function ConsultationRecorder({
@@ -93,7 +101,14 @@ export function ConsultationRecorder({
   }, []);
 
   const handleSegment = useCallback((segment: Segment) => {
-    setSegments((prev) => [...prev, segment]);
+    // Diarized segments finalize per speaker, so keep the list ordered by the
+    // moment the speech started rather than by arrival.
+    setSegments((prev) => {
+      const next = [...prev, segment];
+      return next.every((s) => typeof s.start === "number")
+        ? next.sort((a, b) => (a.start ?? 0) - (b.start ?? 0))
+        : next;
+    });
   }, []);
 
   const stream = useCortiStream({
@@ -104,8 +119,14 @@ export function ConsultationRecorder({
     onError: (message) => toast.error(message),
   });
 
+  const speakerOrder = useMemo(() => {
+    const seen: number[] = [];
+    for (const s of segments) if (s.speakerId >= 0 && !seen.includes(s.speakerId)) seen.push(s.speakerId);
+    return seen;
+  }, [segments]);
+
   const transcript = segments
-    .map((s) => `${speakerLabel(s.speakerId, swapSpeakers)}: ${s.text}`)
+    .map((s) => `${speakerLabel(s.speakerId, swapSpeakers, speakerOrder)}: ${s.text}`)
     .join("\n");
   const recording = stream.status === "listening" || stream.status === "connecting";
 
@@ -257,7 +278,7 @@ export function ConsultationRecorder({
                       {segments.map((s) => (
                         <p key={s.id}>
                           <span className="mr-2 font-medium text-primary">
-                            {speakerLabel(s.speakerId, swapSpeakers)}:
+                            {speakerLabel(s.speakerId, swapSpeakers, speakerOrder)}:
                           </span>
                           {s.text}
                         </p>
