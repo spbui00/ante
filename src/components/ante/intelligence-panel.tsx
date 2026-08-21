@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Brain, Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
