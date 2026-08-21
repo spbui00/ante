@@ -86,10 +86,10 @@ function CardChrome({
   className,
 }: {
   card: AnalyticsCardData;
-  onPin?: (card: AnalyticsCardData) => void;
-  onRemove?: (card: AnalyticsCardData) => void;
+  onPin?: ((card: AnalyticsCardData) => void) | undefined;
+  onRemove?: ((card: AnalyticsCardData) => void) | undefined;
   children: React.ReactNode;
-  className?: string;
+  className?: string | undefined;
 }) {
   return (
     <Card className={className}>
@@ -130,8 +130,8 @@ export function AnalyticsCardView({
   onRemove,
 }: {
   card: AnalyticsCardData;
-  onPin?: (card: AnalyticsCardData) => void;
-  onRemove?: (card: AnalyticsCardData) => void;
+  onPin?: ((card: AnalyticsCardData) => void) | undefined;
+  onRemove?: ((card: AnalyticsCardData) => void) | undefined;
 }) {
   if (card.kind === "alert") {
     const severity = (card.config?.severity ?? "info") as "critical" | "warning" | "info";
