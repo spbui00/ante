@@ -283,63 +283,36 @@ export const signOffConsultation = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    return { ok: true };
+    // Patient-facing after-visit summary, stored on the visit so the patient can read it.
+    const { storePatientHandout } = await import("@/lib/handout.server");
+    const patientSummary = await storePatientHandout(supabase, data.visitId);
+
+    return { ok: true, patientSummary };
   });
 
-const HANDOUT_SYSTEM = `You write the after-visit summary that a patient takes home from a Danish primary-care clinic.
-Use warm, plain language at a 6th-grade reading level. No jargon, no ICD/ATC/LOINC codes, no diagnosis speculation beyond what the clinician documented.
-Return GitHub-flavoured markdown with exactly these sections:
-## What we found
-## Your medicines
-(one bullet per prescribed medicine: name, how much, how often, and what it is for — if none, write "No new medicines were prescribed today.")
-## What to do next
-## When to seek help
-(clear warning signs that mean the patient should contact the clinic or emergency services)
-Never invent medicines, doses or findings that are not in the supplied data.`;
-
-/** Patient-facing after-visit summary and medication instructions. */
+/** Patient-facing after-visit summary; returns the stored one unless regeneration is asked for. */
 export const generatePatientHandout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ visitId: z.string().uuid() }).parse(input),
+    z.object({ visitId: z.string().uuid(), regenerate: z.boolean().default(false) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
 
-    const [{ data: visit }, prescriptions, observations, records] = await Promise.all([
-      supabase
+    if (!data.regenerate) {
+      const { data: existing } = await supabase
         .from("visit")
-        .select("id, symptoms, conclusion, recommendation, disposition, urgency_level, visit_date")
+        .select("patient_summary")
         .eq("id", data.visitId)
-        .maybeSingle(),
-      supabase
-        .from("drug_prescription")
-        .select("drug_name, dosage, frequency")
-        .eq("visit_id", data.visitId),
-      supabase.from("observation").select("test_name, value, unit").eq("visit_id", data.visitId),
-      supabase.from("clinical_record").select("description, status").eq("visit_id", data.visitId),
-    ]);
+        .maybeSingle();
+      if (existing?.patient_summary) return { text: existing.patient_summary };
+    }
 
-    if (!visit) throw new Error("Visit not found");
-
-    const lines = [
-      `Reported symptoms: ${visit.symptoms || "not recorded"}`,
-      `Clinician conclusion: ${visit.conclusion || "not recorded"}`,
-      `Clinician plan: ${visit.recommendation || "not recorded"}`,
-      `Disposition: ${visit.disposition ?? "HOME_CARE"}`,
-      `Diagnoses: ${(records.data ?? []).map((r) => `${r.description} (${r.status ?? "ACTIVE"})`).join("; ") || "none recorded"}`,
-      `Measurements: ${(observations.data ?? [])
-        .map((o) => `${o.test_name}: ${o.value ?? "?"}${o.unit ? ` ${o.unit}` : ""}`)
-        .join("; ") || "none recorded"}`,
-      `Prescribed medicines: ${(prescriptions.data ?? [])
-        .map((p) =>
-          [p.drug_name, p.dosage, p.frequency].filter(Boolean).join(" · "),
-        )
-        .join("; ") || "none"}`,
-    ].join("\n");
-
-    const { cortiChat } = await import("@/lib/corti.server");
-    const text = await cortiChat({ system: HANDOUT_SYSTEM, user: lines });
+    const { buildPatientHandout } = await import("@/lib/handout.server");
+    const text = await buildPatientHandout(supabase, data.visitId);
+    if (text) {
+      await supabase.from("visit").update({ patient_summary: text }).eq("id", data.visitId);
+    }
 
     return { text: text || "Could not generate a patient summary for this visit." };
   });
