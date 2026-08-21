@@ -600,7 +600,7 @@ export const getMyVisitHistory = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("visit")
       .select(
-        "id, visit_date, encounter_type, urgency_level, status, disposition, conclusion, recommendation, symptoms, symptom_icd_codes, intake_transcript, visit_transcript, travel_history, symptom_duration_days, practitioner_id, practitioner:practitioner(id, full_name, title, specialization)",
+        "id, visit_date, encounter_type, urgency_level, status, disposition, conclusion, recommendation, patient_summary, symptoms, symptom_icd_codes, intake_transcript, visit_transcript, travel_history, symptom_duration_days, practitioner_id, practitioner:practitioner(id, full_name, title, specialization)",
       )
       .eq("patient_id", profile.patient_id)
       .order("visit_date", { ascending: false });
@@ -821,7 +821,7 @@ export const getPatientRecord = createServerFn({ method: "GET" })
       supabase
         .from("visit")
         .select(
-          "id, visit_date, encounter_type, urgency_level, status, disposition, symptoms, conclusion, recommendation, practitioner_id, practitioner:practitioner(full_name, title, specialization)",
+          "id, visit_date, encounter_type, urgency_level, status, disposition, symptoms, conclusion, recommendation, patient_summary, practitioner_id, practitioner:practitioner(full_name, title, specialization)",
         )
         .eq("patient_id", data.patientId)
         .order("visit_date", { ascending: false })
@@ -869,7 +869,7 @@ export const findScheduledVisitsByCpr = createServerFn({ method: "POST" })
 
     const { data: visits, error } = await supabase
       .from("visit")
-      .select("id, visit_date, encounter_type, urgency_level, status, symptoms, conclusion")
+      .select("id, visit_date, encounter_type, urgency_level, status, symptoms, conclusion, patient_summary")
       .eq("patient_id", patient.id)
       .eq("status", "SCHEDULED")
       .order("visit_date", { ascending: false });
