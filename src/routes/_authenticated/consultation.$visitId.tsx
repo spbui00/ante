@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Copy, FileText, Mic } from "lucide-react";
+import { ArrowLeft, Copy, FileText, Mic, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
