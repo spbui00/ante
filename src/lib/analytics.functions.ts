@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const cardInput = z.object({
+  id: z.string().uuid().optional(),
   title: z.string().min(1).max(120),
   subtitle: z.string().max(240).nullish(),
   kind: z.enum(["metric", "alert", "line", "area", "bar", "table"]),
