@@ -162,7 +162,21 @@ function ConsultationPage() {
       startHandout();
       // De-identified population row for surveillance; failures stay silent for the clinician.
       void recordAnonymizedVisit({ data: { visitId } }).catch(() => undefined);
+      // Follow-up planner: turns the plan into prefilled SCHEDULED intakes for the patient.
+      void planVisitFollowUps({ data: { visitId } })
+        .then((res) => {
+          if (res?.created) {
+            toast.success(
+              res.created === 1
+                ? "Follow-up intake prepared for the patient"
+                : `${res.created} follow-up intakes prepared for the patient`,
+            );
+            void queryClient.invalidateQueries({ queryKey: ["patient-visits"] });
+          }
+        })
+        .catch(() => undefined);
     },
+
 
     onError: (error) =>
       toast.error(
