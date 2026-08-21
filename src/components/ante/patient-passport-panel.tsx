@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPatientRecord } from "@/lib/ante.functions";
-import { formatCpr, formatDate } from "@/lib/clinical-utils";
+import { formatCpr, formatDate, summariseObservations } from "@/lib/clinical-utils";
 import { cn } from "@/lib/utils";
 
 export function PatientPassportPanel({
