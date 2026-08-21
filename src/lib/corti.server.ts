@@ -245,27 +245,44 @@ export async function cortiChat(opts: {
   user: string;
   model?: string;
 }): Promise<string> {
-  const token = await getCortiToken();
-  const res = await fetch(MODELS_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: opts.model ?? "corti-s1",
-      messages: [
-        { role: "system", content: opts.system },
-        { role: "user", content: opts.user },
-      ],
-    }),
-  });
+  // The Corti model endpoint occasionally answers 5xx (often with an empty body)
+  // on long transcripts. Those are transient, so retry with bounded backoff.
+  let lastError: CortiError | null = null;
 
-  if (!res.ok) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 800 * attempt));
+
+    const token = await getCortiToken();
+    const res = await fetch(MODELS_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: opts.model ?? "corti-s1",
+        messages: [
+          { role: "system", content: opts.system },
+          { role: "user", content: opts.user },
+        ],
+      }),
+    });
+
+    if (res.ok) {
+      const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+      return data.choices?.[0]?.message?.content?.trim() ?? "";
+    }
+
     const detail = await res.text().catch(() => "");
-    throw new CortiError(`Corti text generation failed (${res.status}): ${detail.slice(0, 300)}`, res.status);
+    lastError = new CortiError(
+      `Corti text generation failed (${res.status})${detail ? `: ${detail.slice(0, 300)}` : " — the model service is temporarily unavailable, please try again."}`,
+      res.status,
+    );
+
+    // Only 429/5xx are worth retrying; anything else is terminal.
+    if (res.status !== 429 && res.status < 500) break;
   }
 
-  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  return data.choices?.[0]?.message?.content?.trim() ?? "";
+  throw lastError ?? new CortiError("Corti text generation failed", 500);
 }
+
 
 /** Dimensionality returned by `corti-s1-embedding`. */
 export const CORTI_EMBEDDING_DIMS = 2560;
