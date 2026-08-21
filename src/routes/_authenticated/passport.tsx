@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/drawer";
 import { getPassport } from "@/lib/ante.functions";
 import { deleteScheduledVisit } from "@/lib/intake.functions";
-import { formatDate, formatCpr } from "@/lib/clinical-utils";
+import { formatDate, formatCpr, summariseObservations } from "@/lib/clinical-utils";
 
 const passportQuery = queryOptions({
   queryKey: ["passport"],
