@@ -93,7 +93,7 @@ export async function recordAnonymizedEncounter(
   const { data: visit } = await supabase
     .from("visit")
     .select(
-      "id, patient_id, visit_date, completed_at, encounter_type, urgency_level, disposition, symptoms, conclusion, recommendation, symptom_icd_codes, symptom_duration_days, travel_history, is_pregnant",
+      "id, patient_id, visit_date, completed_at, encounter_type, urgency_level, disposition, symptoms, conclusion, recommendation, symptom_icd_codes, symptom_duration_days, travel_history, is_pregnant, anonymized_encounter_id",
     )
     .eq("id", visitId)
     .maybeSingle();
@@ -184,7 +184,7 @@ export async function recordAnonymizedEncounter(
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const { error } = await supabaseAdmin.from("anonymized_encounter").insert({
+  const payload = {
     encounter_date: when.toISOString(),
     year: when.getUTCFullYear(),
     month: when.getUTCMonth() + 1,
@@ -222,12 +222,53 @@ export async function recordAnonymizedEncounter(
     urgency_level: visit.urgency_level ?? null,
     disposition: visit.disposition ?? null,
     clinical_embedding: embedding ? JSON.stringify(embedding) : null,
-  });
+  };
+
+  const existingId = (visit as any).anonymized_encounter_id as string | null;
+
+  // Reprocessing a visit must refresh its existing de-identified row instead of
+  // adding a duplicate population record.
+  if (existingId) {
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from("anonymized_encounter")
+      .update(payload)
+      .eq("id", existingId)
+      .select("id")
+      .maybeSingle();
+
+    if (updateError) {
+      console.error("[anonymized-encounter] update failed", updateError.message);
+      return { ok: false, embedded: Boolean(embedding), reason: updateError.message };
+    }
+
+    if (updated) {
+      await supabaseAdmin
+        .from("visit")
+        .update({ anonymized_at: new Date().toISOString() })
+        .eq("id", visitId);
+      return { ok: true, embedded: Boolean(embedding) };
+    }
+    // Row was deleted upstream — fall through and insert a fresh one.
+  }
+
+  const { data: inserted, error } = await supabaseAdmin
+    .from("anonymized_encounter")
+    .insert(payload)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     console.error("[anonymized-encounter] insert failed", error.message);
     return { ok: false, embedded: Boolean(embedding), reason: error.message };
   }
+
+  await supabaseAdmin
+    .from("visit")
+    .update({
+      anonymized_encounter_id: inserted?.id ?? null,
+      anonymized_at: new Date().toISOString(),
+    })
+    .eq("id", visitId);
 
   return { ok: true, embedded: Boolean(embedding) };
 }
