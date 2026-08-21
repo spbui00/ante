@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_card: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          kind: string
+          owner_id: string
+          pinned: boolean
+          position: number
+          sql_query: string
+          subtitle: string | null
+          title: string
+          updated_at: string
+          window_days: number
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          kind: string
+          owner_id: string
+          pinned?: boolean
+          position?: number
+          sql_query: string
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+          window_days?: number
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          kind?: string
+          owner_id?: string
+          pinned?: boolean
+          position?: number
+          sql_query?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          window_days?: number
+        }
+        Relationships: []
+      }
       anonymized_encounter: {
         Row: {
           age_bracket: string | null
@@ -912,9 +957,141 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      surveillance_encounter: {
+        Row: {
+          age_bracket: string | null
+          clinical_history_icd_codes: Json | null
+          day_of_week: string | null
+          disposition: Database["public"]["Enums"]["disposition_enum"] | null
+          employment_status:
+            | Database["public"]["Enums"]["employment_status_enum"]
+            | null
+          encounter_date: string | null
+          encounter_day: string | null
+          encounter_type:
+            | Database["public"]["Enums"]["encounter_type_enum"]
+            | null
+          gender_identity:
+            | Database["public"]["Enums"]["gender_identity_enum"]
+            | null
+          hour_of_day: number | null
+          id: string | null
+          industry: string | null
+          insurance_type:
+            | Database["public"]["Enums"]["insurance_type_enum"]
+            | null
+          is_pregnant: boolean | null
+          marital_status:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          month: number | null
+          observations_loinc: Json | null
+          postal_code: string | null
+          prescription_atc_codes: Json | null
+          primary_icd_10: string | null
+          primary_language: string | null
+          race_ethnicity: string[] | null
+          secondary_icd_10_codes: Json | null
+          sex: Database["public"]["Enums"]["sex_enum"] | null
+          symptom_duration_category: string | null
+          symptom_icd_codes: Json | null
+          travel_history: Json | null
+          urgency_level: Database["public"]["Enums"]["urgency_enum"] | null
+          weather_conditions: Json | null
+          year: number | null
+        }
+        Insert: {
+          age_bracket?: string | null
+          clinical_history_icd_codes?: Json | null
+          day_of_week?: string | null
+          disposition?: Database["public"]["Enums"]["disposition_enum"] | null
+          employment_status?:
+            | Database["public"]["Enums"]["employment_status_enum"]
+            | null
+          encounter_date?: string | null
+          encounter_day?: never
+          encounter_type?:
+            | Database["public"]["Enums"]["encounter_type_enum"]
+            | null
+          gender_identity?:
+            | Database["public"]["Enums"]["gender_identity_enum"]
+            | null
+          hour_of_day?: number | null
+          id?: string | null
+          industry?: string | null
+          insurance_type?:
+            | Database["public"]["Enums"]["insurance_type_enum"]
+            | null
+          is_pregnant?: boolean | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          month?: number | null
+          observations_loinc?: Json | null
+          postal_code?: string | null
+          prescription_atc_codes?: Json | null
+          primary_icd_10?: string | null
+          primary_language?: string | null
+          race_ethnicity?: string[] | null
+          secondary_icd_10_codes?: Json | null
+          sex?: Database["public"]["Enums"]["sex_enum"] | null
+          symptom_duration_category?: string | null
+          symptom_icd_codes?: Json | null
+          travel_history?: Json | null
+          urgency_level?: Database["public"]["Enums"]["urgency_enum"] | null
+          weather_conditions?: Json | null
+          year?: number | null
+        }
+        Update: {
+          age_bracket?: string | null
+          clinical_history_icd_codes?: Json | null
+          day_of_week?: string | null
+          disposition?: Database["public"]["Enums"]["disposition_enum"] | null
+          employment_status?:
+            | Database["public"]["Enums"]["employment_status_enum"]
+            | null
+          encounter_date?: string | null
+          encounter_day?: never
+          encounter_type?:
+            | Database["public"]["Enums"]["encounter_type_enum"]
+            | null
+          gender_identity?:
+            | Database["public"]["Enums"]["gender_identity_enum"]
+            | null
+          hour_of_day?: number | null
+          id?: string | null
+          industry?: string | null
+          insurance_type?:
+            | Database["public"]["Enums"]["insurance_type_enum"]
+            | null
+          is_pregnant?: boolean | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          month?: number | null
+          observations_loinc?: Json | null
+          postal_code?: string | null
+          prescription_atc_codes?: Json | null
+          primary_icd_10?: string | null
+          primary_language?: string | null
+          race_ethnicity?: string[] | null
+          secondary_icd_10_codes?: Json | null
+          sex?: Database["public"]["Enums"]["sex_enum"] | null
+          symptom_duration_category?: string | null
+          symptom_icd_codes?: Json | null
+          travel_history?: Json | null
+          urgency_level?: Database["public"]["Enums"]["urgency_enum"] | null
+          weather_conditions?: Json | null
+          year?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      analytics_query: {
+        Args: { _limit?: number; _sql: string }
+        Returns: Json
+      }
       apply_onboarding:
         | {
             Args: {
