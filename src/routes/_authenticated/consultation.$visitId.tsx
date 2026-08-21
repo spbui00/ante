@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { finaliseVisit, getVisitDetail, updateVisitSymptoms } from "@/lib/ante.functions";
-import { generatePatientHandout } from "@/lib/consultation.functions";
+import { generatePatientHandout, recordAnonymizedVisit } from "@/lib/consultation.functions";
 import { printHandout } from "@/lib/print-handout";
 import { getVisitClinicalItems } from "@/lib/visit-clinical.functions";
 
