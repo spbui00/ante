@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/stream-session")({
           const body = bodySchema.parse(await request.json().catch(() => ({})));
           const { createStreamInteraction } = await import("@/lib/corti.server");
           const session = await createStreamInteraction({
-            identifier: body.visitId ?? `ante-visit-${Date.now()}`,
+            identifier: `ante-${body.visitId ?? "visit"}-${Date.now()}`,
             title: "Ante ambient consultation",
             ...(body.patientIdentifier ? { patientIdentifier: body.patientIdentifier } : {}),
           });
