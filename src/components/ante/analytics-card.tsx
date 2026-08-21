@@ -1,8 +1,10 @@
+import * as React from "react";
 import {
   Area,
   AreaChart,
   Bar,
   BarChart,
+  Brush,
   CartesianGrid,
   ComposedChart,
   Legend,
@@ -45,6 +47,11 @@ export type CardConfig = {
   severity?: "critical" | "warning" | "info" | null;
   text?: string | null;
   series?: CardSeries[] | null;
+  /** Optional axis titles. */
+  yLabel?: string | null;
+  yRightLabel?: string | null;
+  /** Stack bar/area series instead of overlaying them. */
+  stacked?: boolean | null;
   columns?: CardColumn[] | null;
 };
 
