@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { finaliseVisit, getVisitDetail, updateVisitSymptoms } from "@/lib/ante.functions";
 import { generatePatientHandout } from "@/lib/consultation.functions";
+import { printHandout } from "@/lib/print-handout";
 import { getVisitClinicalItems } from "@/lib/visit-clinical.functions";
 
 import { ENCOUNTER_TYPE_LABEL, formatDateTime } from "@/lib/clinical-utils";
