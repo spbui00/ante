@@ -95,7 +95,7 @@ export const analyzeSurveillance = createServerFn({ method: "POST" })
 /** Chat turn with the analyst; may also return new/updated cards. */
 export const chatWithAnalyst = analyzeSurveillance;
 
-/** Cards the user has pinned, re-executed against live data. */
+/** Pinned cards plus the last generated dashboard, re-executed against live data. */
 export const listAnalyticsCards = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -109,7 +109,7 @@ export const listAnalyticsCards = createServerFn({ method: "GET" })
     const { runAnalyticsSql } = await import("@/lib/analytics-agent.server");
     type Row = Record<string, string | number | boolean | null>;
 
-    return Promise.all(
+    const all = await Promise.all(
       (data ?? []).map(async (c: any) => {
         let rows: Row[] = [];
         let err: string | null = null;
@@ -128,12 +128,26 @@ export const listAnalyticsCards = createServerFn({ method: "GET" })
           sql: (c.sql_query ?? null) as string | null,
           config: (c.config ?? {}) as Record<string, never>,
           windowDays: c.window_days as number,
-          pinned: true,
+          pinned: Boolean(c.pinned),
           rows,
           error: err,
         };
       }),
     );
+
+    const { data: session } = await context.supabase
+      .from("analytics_session")
+      .select("narrative, context_id, window_days")
+      .eq("owner_id", context.userId)
+      .maybeSingle();
+
+    return {
+      pinned: all.filter((c) => c.pinned),
+      generated: all.filter((c) => !c.pinned),
+      narrative: (session?.narrative ?? "") as string,
+      contextId: (session?.context_id ?? null) as string | null,
+      windowDays: (session?.window_days ?? 60) as number,
+    };
   });
 
 /** Pins a card the agent produced so it renders without re-analysing. */
