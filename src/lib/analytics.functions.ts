@@ -7,7 +7,7 @@ const cardInput = z.object({
   id: z.string().uuid().optional(),
   title: z.string().min(1).max(120),
   subtitle: z.string().max(240).nullish(),
-  kind: z.enum(["metric", "alert", "line", "area", "bar", "table"]),
+  kind: z.enum(["metric", "alert", "line", "area", "bar", "combo", "table"]),
   sql: z.string().max(4000).nullish(),
   config: z.record(z.string(), z.any()).default({}),
   windowDays: z.number().int().min(1).max(730).default(60),

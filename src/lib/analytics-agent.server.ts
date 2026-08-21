@@ -12,7 +12,7 @@ import { z } from "zod";
 import { getAgentDefinition } from "@/lib/agents/registry";
 import { sendAgentMessage } from "@/lib/agents/corti-agents.server";
 
-export const CARD_KINDS = ["metric", "alert", "line", "area", "bar", "table"] as const;
+export const CARD_KINDS = ["metric", "alert", "line", "area", "bar", "combo", "table"] as const;
 
 export const cardSpecSchema = z.object({
   title: z.string().min(1).max(120),
@@ -32,6 +32,8 @@ export const cardSpecSchema = z.object({
             key: z.string().max(60),
             label: z.string().max(80).nullish(),
             color: z.string().max(40).nullish(),
+            type: z.enum(["line", "bar", "area"]).nullish(),
+            axis: z.enum(["left", "right"]).nullish(),
           }),
         )
         .max(6)
@@ -162,9 +164,12 @@ Card shapes (config keys must match the column aliases in that card's sql):
 - {"kind":"metric","title":"...","subtitle":"...","sql":"...","config":{"valueKey":"value","unit":"cases"}}
 - {"kind":"alert","title":"...","config":{"severity":"critical|warning|info","text":"one or two sentences"}}
 - {"kind":"line"|"area"|"bar","title":"...","sql":"...","config":{"xKey":"day","series":[{"key":"cases","label":"Cases"}]}}
+- {"kind":"combo","title":"...","sql":"...","config":{"xKey":"day","series":[{"key":"resp_cases","label":"Respiratory","type":"bar","axis":"left"},{"key":"temp_mean_c","label":"Mean temp (C)","type":"line","axis":"right"}]}}
 - {"kind":"table","title":"...","sql":"...","config":{"columns":[{"key":"postal_code","label":"Postal"},{"key":"cases","label":"Cases"}]}}
 
-Emit 6-10 cards: 3-4 metrics, the alerts that the data actually justifies, 2-3 charts (always include an epidemic curve of the signal you judge most important), and 1-2 tables (geographic and code-level detail). Order them: alerts, metrics, charts, tables.
+Overlaying signals: when two or more measures are more informative side by side (e.g. two syndromes, cases vs. weather, cases vs. ER referrals), return ONE query whose select produces one row per x value with a column per measure, and either give a line/area/bar card several entries in "series", or use "combo" to mix shapes. Put a measure on "axis":"right" whenever its unit or scale differs from the others. Prefer one overlaid card over two separate ones for comparable signals.
+
+Emit 6-10 cards: 3-4 metrics, the alerts that the data actually justifies, 2-3 charts (always include an epidemic curve of the signal you judge most important, and at least one overlay comparing signals when the data supports it), and 1-2 tables (geographic and code-level detail). Order them: alerts, metrics, charts, tables.
 
 Your very next reply must be exactly one run_query JSON object and nothing else.`;
 
