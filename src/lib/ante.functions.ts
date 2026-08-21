@@ -296,7 +296,7 @@ export const getSurveillance = createServerFn({ method: "GET" })
     let query = supabase
       .from("anonymized_encounter")
       .select(
-        "id, encounter_date, postal_code, age_bracket, gender, industry, primary_icd_10, symptom_icd_codes, encounter_type, symptom_duration_category, urgency_level, disposition",
+        "id, encounter_date, postal_code, age_bracket, sex, industry, primary_icd_10, symptom_icd_codes, encounter_type, symptom_duration_category, urgency_level, disposition",
       )
       .gte("encounter_date", since)
       .order("encounter_date", { ascending: false })
