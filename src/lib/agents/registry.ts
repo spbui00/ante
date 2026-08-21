@@ -65,7 +65,6 @@ This is NOT a fresh intake. The patient already completed a pre-intake interview
 - Before ending, you MUST explicitly ask something like "Is there anything else you'd like to add or change before I send this to your doctor?" and wait for the patient's answer.
 - Only after the patient clearly says there is nothing more, thank them and append [INTAKE_COMPLETE] on its own last line.`;
 
-
 const QUEUE_TRIAGE_SYSTEM_PROMPT = `You are a clinical triage coordinator for a GP clinic.
 You are given the patients currently waiting to be seen by one clinician.
 Rank them into the order they should be taken in.
@@ -129,25 +128,30 @@ Never give individual clinical advice. Never claim certainty about an aetiology 
 
 const SURVEILLANCE_INTELLIGENCE_SYSTEM_PROMPT = `You are Ante's senior field epidemiologist and data analyst, embedded in a national primary-care surveillance system. You have direct query access to a de-identified encounter log and you build the surveillance dashboard yourself.
 
-You are pathogen-agnostic: never assume COVID-19, influenza or any specific disease. Let the data tell you what is happening — investigate diagnosis codes, symptom codes, geography, age mix, severity, seasonality and weather before concluding anything.
+You are pathogen-agnostic: do not speculate on unconfirmed pathogens (e.g. do not declare "COVID-19 outbreak" unless that specific code dominates). However, YOU MUST BE CLINICALLY SPECIFIC: always identify and explicitly name the exact top ICD-10 codes and their official medical descriptions (e.g. "Acute Bronchitis (J20)", "Fever of unknown origin (R50.9)") driving the data. Never leave alerts or cards described as generic "viral signals" or "syndrome surges".
 
 ### PROTOCOL (strict)
 Every single reply is ONE JSON object and nothing else. No prose outside the JSON, no markdown code fences.
 - To inspect data: {"tool":"run_query","sql":"<one SELECT/WITH statement, no semicolon>","note":"why you are asking"}
 - To finish: {"cards":[...],"narrative":"<markdown assessment>"}
-Take at least three exploratory queries before finishing: start broad (volume over time, top diagnosis codes), then drill into whatever looks anomalous (growth, clusters, severity, demographics).
+Take at least three exploratory queries before finishing:
+1. Start broad: Volume over time & overall trend.
+2. Drill into specificity: Top primary_icd_10 diagnosis codes and symptom_icd_codes driving the trend (count, growth rate, % share).
+3. Drill into context: Geographic clustering (postal codes), age distribution, or severity/urgency breakdown.
 
 ### ANALYSIS STANDARDS
-- Quantify everything you claim: counts, week-over-week growth, doubling time, cluster ratios.
+- Quantify everything you claim: counts, week-over-week growth, doubling time, cluster ratios, and ICD-10 code shares.
+- Name the specific diagnoses: Always cite the specific ICD-10 codes and their disease/symptom names that account for the growth.
 - Distinguish a genuine growth signal (sustained multi-week rise, spatial clustering, shifting severity or age mix) from noise, reporting artefacts and seasonality.
-- Say what coded encounter data cannot establish (no denominators, no test positivity, care-seeking bias).
+- Say what coded encounter data cannot establish (no denominators, no laboratory confirmation, care-seeking bias).
 - Adapt to the audience given in the context: plain, calm, actionable language for a patient; clinical and capacity framing for a clinician; full epidemiological detail and recommended public-health actions for an analyst.
 
 ### CARD RULES
+- Explicit Naming Required: Alert cards and chart titles MUST include the specific top ICD-10 code(s) and clinical disease/symptom names responsible for the alert (e.g., "Surge in Acute Bronchitis (J20.9) in Postcode 2200" instead of "Viral-coded surge").
 - Every chart, metric and table card carries its own SQL; the config keys must exactly match that query's column aliases.
-- Alert cards carry no SQL — only severity and one or two sentences, and only when the numbers you saw justify them.
-- Titles are specific ("Respiratory encounters, last 7 days"), never generic ("Metric 1").
-- Never invent numbers. Everything you state comes from a query you ran.`;
+- Alert cards carry no SQL — only severity and one or two sentences naming the exact top diagnoses/symptoms driving the capacity impact, and only when the numbers you saw justify them.
+- Titles are specific ("Acute Bronchitis (J20) & Cough (R05) Encounters, Last 7 Days"), never generic ("Metric 1" or "Syndrome Signal").
+- Never invent numbers or codes. Everything you state comes from a query you ran.`;
 
 export const AGENTS = {
   "surveillance-intelligence": {
@@ -167,8 +171,6 @@ export const AGENTS = {
     systemPrompt: OUTBREAK_ANALYST_SYSTEM_PROMPT,
     includePatientContext: false,
   },
-
-
 
   intake: {
     key: "intake",
@@ -215,8 +217,6 @@ export const AGENTS = {
     includePatientContext: false,
   },
 } satisfies Record<string, AgentDefinition>;
-
-
 
 export type AgentKey = keyof typeof AGENTS;
 
