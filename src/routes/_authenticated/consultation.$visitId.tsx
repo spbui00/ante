@@ -161,7 +161,11 @@ function ConsultationPage() {
       void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
       startHandout();
       // De-identified population row for surveillance; failures stay silent for the clinician.
-      void recordAnonymizedVisit({ data: { visitId } }).catch(() => undefined);
+      void recordAnonymizedVisit({ data: { visitId } })
+        .then((res) => {
+          if (!res?.ok) console.error("[anonymized-encounter] not written", res);
+        })
+        .catch((err) => console.error("[anonymized-encounter] call failed", err));
       // Follow-up planner: turns the plan into prefilled SCHEDULED intakes for the patient.
       void planVisitFollowUps({ data: { visitId } })
         .then((res) => {
