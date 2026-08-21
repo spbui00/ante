@@ -28,7 +28,6 @@ export type Database = {
           encounter_type:
             | Database["public"]["Enums"]["encounter_type_enum"]
             | null
-          gender: string | null
           gender_identity:
             | Database["public"]["Enums"]["gender_identity_enum"]
             | null
@@ -71,7 +70,6 @@ export type Database = {
           encounter_type?:
             | Database["public"]["Enums"]["encounter_type_enum"]
             | null
-          gender?: string | null
           gender_identity?:
             | Database["public"]["Enums"]["gender_identity_enum"]
             | null
@@ -114,7 +112,6 @@ export type Database = {
           encounter_type?:
             | Database["public"]["Enums"]["encounter_type_enum"]
             | null
-          gender?: string | null
           gender_identity?:
             | Database["public"]["Enums"]["gender_identity_enum"]
             | null
