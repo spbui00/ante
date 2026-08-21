@@ -8,7 +8,7 @@ const cardInput = z.object({
   subtitle: z.string().max(240).nullish(),
   kind: z.enum(["metric", "alert", "line", "area", "bar", "table"]),
   sql: z.string().max(4000).nullish(),
-  config: z.record(z.string(), z.unknown()).default({}),
+  config: z.record(z.string(), z.any()).default({}),
   windowDays: z.number().int().min(1).max(730).default(60),
 });
 
@@ -69,10 +69,11 @@ export const listAnalyticsCards = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     const { runAnalyticsSql } = await import("@/lib/analytics-agent.server");
+    type Row = Record<string, string | number | boolean | null>;
 
     return Promise.all(
       (data ?? []).map(async (c: any) => {
-        let rows: Record<string, unknown>[] = [];
+        let rows: Row[] = [];
         let err: string | null = null;
         if (c.sql_query) {
           try {
@@ -87,7 +88,7 @@ export const listAnalyticsCards = createServerFn({ method: "GET" })
           subtitle: (c.subtitle ?? null) as string | null,
           kind: c.kind as string,
           sql: (c.sql_query ?? null) as string | null,
-          config: (c.config ?? {}) as Record<string, unknown>,
+          config: (c.config ?? {}) as Record<string, never>,
           windowDays: c.window_days as number,
           pinned: true,
           rows,

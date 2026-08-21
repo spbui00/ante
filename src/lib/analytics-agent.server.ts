@@ -45,7 +45,8 @@ export const cardSpecSchema = z.object({
 });
 
 export type CardSpec = z.infer<typeof cardSpecSchema>;
-export type RenderedCard = CardSpec & { id: string; rows: Record<string, unknown>[]; error?: string };
+export type AnalyticsRow = Record<string, string | number | boolean | null>;
+export type RenderedCard = CardSpec & { id: string; rows: AnalyticsRow[]; error?: string | undefined };
 
 type SupabaseLike = {
   rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
@@ -56,10 +57,10 @@ export async function runAnalyticsSql(
   supabase: SupabaseLike,
   sql: string,
   limit = 500,
-): Promise<Record<string, unknown>[]> {
+): Promise<AnalyticsRow[]> {
   const { data, error } = await supabase.rpc("analytics_query", { _sql: sql, _limit: limit });
   if (error) throw new Error(error.message);
-  return (Array.isArray(data) ? data : []) as Record<string, unknown>[];
+  return (Array.isArray(data) ? data : []) as AnalyticsRow[];
 }
 
 const SCHEMA_BRIEF = `TABLE public.surveillance_encounter (de-identified, one row per encounter)
@@ -129,7 +130,7 @@ export type AnalysisResult = {
   narrative: string;
   cards: RenderedCard[];
   contextId: string | null;
-  steps: { sql: string; note?: string; rows: number; error?: string }[];
+  steps: { sql: string; note?: string | undefined; rows: number; error?: string | undefined }[];
 };
 
 /** Runs the agent tool loop and returns rendered cards plus a narrative. */
@@ -168,7 +169,7 @@ export async function runSurveillanceAnalysis(opts: {
     }
 
     if (parsed.tool === "run_query" && typeof parsed.sql === "string") {
-      let rows: Record<string, unknown>[] = [];
+      let rows: AnalyticsRow[] = [];
       let error: string | undefined;
       try {
         rows = await runAnalyticsSql(opts.supabase, parsed.sql, 200);
@@ -207,7 +208,7 @@ export async function renderCards(
     if (!parsed.success) continue;
     const spec = parsed.data;
 
-    let rows: Record<string, unknown>[] = [];
+    let rows: AnalyticsRow[] = [];
     let error: string | undefined;
     if (spec.sql) {
       try {
