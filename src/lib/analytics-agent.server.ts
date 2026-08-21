@@ -24,6 +24,9 @@ export const cardSpecSchema = z.object({
       xKey: z.string().max(60).nullish(),
       valueKey: z.string().max(60).nullish(),
       unit: z.string().max(20).nullish(),
+      yLabel: z.string().max(40).nullish(),
+      yRightLabel: z.string().max(40).nullish(),
+      stacked: z.boolean().nullish(),
       severity: z.enum(["critical", "warning", "info"]).nullish(),
       text: z.string().max(1200).nullish(),
       series: z
@@ -166,6 +169,15 @@ Card shapes (config keys must match the column aliases in that card's sql):
 - {"kind":"line"|"area"|"bar","title":"...","sql":"...","config":{"xKey":"day","series":[{"key":"cases","label":"Cases"}]}}
 - {"kind":"combo","title":"...","sql":"...","config":{"xKey":"day","series":[{"key":"resp_cases","label":"Respiratory","type":"bar","axis":"left"},{"key":"temp_mean_c","label":"Mean temp (C)","type":"line","axis":"right"}]}}
 - {"kind":"table","title":"...","sql":"...","config":{"columns":[{"key":"postal_code","label":"Postal"},{"key":"cases","label":"Cases"}]}}
+
+Chart quality rules (the renderer draws axes, tooltips, legend and a brush for you — give it clean data):
+- Time series MUST select the x column as an ISO date (e.g. encounter_day as day), one row per day, ordered ascending, with no gaps you can avoid (generate_series + left join when a day may have zero rows).
+- Always set config.xKey to that column and list every plotted measure in config.series with a human "label" (never leave the label off).
+- Set config.yLabel (and config.yRightLabel when you use a right axis) to the unit, e.g. "Cases", "Mean temp (C)", "% of encounters".
+- Keep a chart to at most 4 series and a bar chart to at most 12 categories (order by value desc, limit); use a table for long lists.
+- Round numeric measures (round(x, 1)) and alias columns in snake_case matching series keys exactly.
+- Use "stacked": true on bar/area cards when the series are parts of a whole; otherwise leave it off.
+- Prefer daily counts for windows under ~90 days, weekly buckets (date_trunc('week', ...)) for longer ones, so the x-axis stays readable.
 
 Overlaying signals: when two or more measures are more informative side by side (e.g. two syndromes, cases vs. weather, cases vs. ER referrals), return ONE query whose select produces one row per x value with a column per measure, and either give a line/area/bar card several entries in "series", or use "combo" to mix shapes. Put a measure on "axis":"right" whenever its unit or scale differs from the others. Prefer one overlaid card over two separate ones for comparable signals.
 
