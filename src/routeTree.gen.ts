@@ -19,7 +19,6 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSurveillanceRouteImport } from './routes/_authenticated/surveillance'
 import { Route as AuthenticatedVisitsRouteImport } from './routes/_authenticated/visits'
 import { Route as ApiIntakeRouteImport } from './routes/api/intake'
-import { Route as ApiProcessVisitRouteImport } from './routes/api/process-visit'
 import { Route as ApiStreamSessionRouteImport } from './routes/api/stream-session'
 import { Route as ApiSttSessionRouteImport } from './routes/api/stt-session'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
@@ -76,11 +75,6 @@ const ApiIntakeRoute = ApiIntakeRouteImport.update({
   path: '/api/intake',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiProcessVisitRoute = ApiProcessVisitRouteImport.update({
-  id: '/api/process-visit',
-  path: '/api/process-visit',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiStreamSessionRoute = ApiStreamSessionRouteImport.update({
   id: '/api/stream-session',
   path: '/api/stream-session',
@@ -118,7 +112,6 @@ export interface FileRoutesByFullPath {
   '/surveillance': typeof AuthenticatedSurveillanceRoute
   '/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
-  '/api/process-visit': typeof ApiProcessVisitRoute
   '/api/stream-session': typeof ApiStreamSessionRoute
   '/api/stt-session': typeof ApiSttSessionRoute
   '/api/transcribe': typeof ApiTranscribeRoute
@@ -135,7 +128,6 @@ export interface FileRoutesByTo {
   '/surveillance': typeof AuthenticatedSurveillanceRoute
   '/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
-  '/api/process-visit': typeof ApiProcessVisitRoute
   '/api/stream-session': typeof ApiStreamSessionRoute
   '/api/stt-session': typeof ApiSttSessionRoute
   '/api/transcribe': typeof ApiTranscribeRoute
@@ -154,7 +146,6 @@ export interface FileRoutesById {
   '/_authenticated/surveillance': typeof AuthenticatedSurveillanceRoute
   '/_authenticated/visits': typeof AuthenticatedVisitsRoute
   '/api/intake': typeof ApiIntakeRoute
-  '/api/process-visit': typeof ApiProcessVisitRoute
   '/api/stream-session': typeof ApiStreamSessionRoute
   '/api/stt-session': typeof ApiSttSessionRoute
   '/api/transcribe': typeof ApiTranscribeRoute
@@ -173,7 +164,6 @@ export interface FileRouteTypes {
     | '/surveillance'
     | '/visits'
     | '/api/intake'
-    | '/api/process-visit'
     | '/api/stream-session'
     | '/api/stt-session'
     | '/api/transcribe'
@@ -190,7 +180,6 @@ export interface FileRouteTypes {
     | '/surveillance'
     | '/visits'
     | '/api/intake'
-    | '/api/process-visit'
     | '/api/stream-session'
     | '/api/stt-session'
     | '/api/transcribe'
@@ -208,7 +197,6 @@ export interface FileRouteTypes {
     | '/_authenticated/surveillance'
     | '/_authenticated/visits'
     | '/api/intake'
-    | '/api/process-visit'
     | '/api/stream-session'
     | '/api/stt-session'
     | '/api/transcribe'
@@ -221,7 +209,6 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiIntakeRoute: typeof ApiIntakeRoute
-  ApiProcessVisitRoute: typeof ApiProcessVisitRoute
   ApiStreamSessionRoute: typeof ApiStreamSessionRoute
   ApiSttSessionRoute: typeof ApiSttSessionRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
@@ -300,13 +287,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/process-visit': {
-      id: '/api/process-visit'
-      path: '/api/process-visit'
-      fullPath: '/api/process-visit'
-      preLoaderRoute: typeof ApiProcessVisitRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/stream-session': {
       id: '/api/stream-session'
       path: '/api/stream-session'
@@ -373,7 +353,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiIntakeRoute: ApiIntakeRoute,
-  ApiProcessVisitRoute: ApiProcessVisitRoute,
   ApiStreamSessionRoute: ApiStreamSessionRoute,
   ApiSttSessionRoute: ApiSttSessionRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
