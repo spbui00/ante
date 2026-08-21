@@ -85,3 +85,11 @@ export const CONSENT_DURATIONS = {
 export type ConsentDuration = keyof typeof CONSENT_DURATIONS;
 
 export const CONSENT_DURATION_OPTIONS = Object.keys(CONSENT_DURATIONS) as ConsentDuration[];
+
+/** Internal marker linking an auto-generated follow-up draft to its source visit. */
+export const FOLLOW_UP_MARKER_RE = /^\[AUTO_FOLLOW_UP:[0-9a-f-]+\]\s*$/gim;
+
+/** Hides the internal follow-up marker from anything user- or agent-facing. */
+export function stripFollowUpMarker(text?: string | null) {
+  return (text ?? "").replace(FOLLOW_UP_MARKER_RE, "").trim();
+}

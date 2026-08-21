@@ -3,7 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Loader2, Mic, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
+import { stripFollowUpMarker } from "@/lib/clinical-utils";
 import { useCortiDictation } from "@/lib/use-corti-dictation";
+
 import { CodeChip, UrgencyBadge } from "@/components/ante/badges";
 import { Waveform } from "@/components/ante/waveform";
 import {
@@ -160,8 +162,8 @@ export function VoiceIntakeModal({
               visit?.symptom_icd_codes?.length
                 ? `Codes: ${visit.symptom_icd_codes.join(", ")}`
                 : "",
-              visit?.intake_transcript
-                ? `\n### PREVIOUS CONVERSATION TRANSCRIPT\n${visit.intake_transcript}`
+              stripFollowUpMarker(visit?.intake_transcript)
+                ? `\n### PREVIOUS CONVERSATION TRANSCRIPT\n${stripFollowUpMarker(visit?.intake_transcript)}`
                 : "",
             ]
               .filter(Boolean)
@@ -235,7 +237,7 @@ export function VoiceIntakeModal({
     finishedRef.current || (userTurns >= 3 && (result?.symptoms.length ?? 0) > 0);
 
   const conversationText = [
-    editing && visit?.intake_transcript ? visit.intake_transcript.trim() : "",
+    editing ? stripFollowUpMarker(visit?.intake_transcript) : "",
     messages
       .map((m) => `${m.role === "user" ? "Patient" : "Assistant"}: ${m.text}`)
       .join("\n"),
