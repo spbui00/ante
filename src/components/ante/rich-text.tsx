@@ -57,6 +57,8 @@ function Inline({ text }: { text: string }) {
 
 type Block =
   | { kind: "p"; lines: string[] }
+  | { kind: "h"; level: number; text: string }
+  | { kind: "hr" }
   | { kind: "ol" | "ul"; items: { text: string; indented: boolean }[] };
 
 function parseBlocks(input: string): Block[] {
