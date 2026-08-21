@@ -17,7 +17,13 @@ import { getPatientRecord } from "@/lib/ante.functions";
 import { formatCpr, formatDate } from "@/lib/clinical-utils";
 import { cn } from "@/lib/utils";
 
-export function PatientPassportPanel({ patientId }: { patientId: string }) {
+export function PatientPassportPanel({
+  patientId,
+  collapsibleMedical = false,
+}: {
+  patientId: string;
+  collapsibleMedical?: boolean;
+}) {
   const { data, isPending } = useQuery({
     queryKey: ["patient-record", patientId],
     queryFn: () => getPatientRecord({ data: { patientId } }),
