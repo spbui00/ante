@@ -971,6 +971,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      outbreak_stats: { Args: { _days?: number }; Returns: Json }
       owns_visit: { Args: { _visit_id: string }; Returns: boolean }
       request_consent_by_cpr: {
         Args: { _cpr: string; _duration: string }
