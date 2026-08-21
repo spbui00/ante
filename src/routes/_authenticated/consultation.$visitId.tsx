@@ -369,10 +369,51 @@ function ConsultationPage() {
           onOpenChange={setRecorderOpen}
           onSigned={() => {
             void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
+            void queryClient.invalidateQueries({ queryKey: ["visit-clinical-items", visitId] });
             void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
+            void queryClient.invalidateQueries({ queryKey: ["patient-visits"] });
           }}
         />
       ) : null}
+
+      <Drawer open={handoutOpen} onOpenChange={setHandoutOpen}>
+        <DrawerContent>
+          <div className="mx-auto flex max-h-[88vh] w-full max-w-2xl flex-col">
+            <DrawerHeader>
+              <DrawerTitle>Patient summary</DrawerTitle>
+              <DrawerDescription>
+                Plain-language after-visit summary, medicines and safety advice for {patientName}.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+              {handout.isPending ? (
+                <p className="text-sm text-muted-foreground">Writing the patient summary…</p>
+              ) : handout.data?.text ? (
+                <RichText text={handout.data.text} />
+              ) : (
+                <p className="text-sm text-muted-foreground">No summary generated yet.</p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 border-t px-4 py-3">
+              <Button
+                variant="ghost"
+                disabled={handout.isPending || !handout.data?.text}
+                onClick={() => {
+                  void navigator.clipboard.writeText(handout.data?.text ?? "");
+                  toast.success("Copied to clipboard");
+                }}
+              >
+                <Copy className="size-4" />
+                Copy
+              </Button>
+              <Button variant="outline" onClick={() => handout.mutate()} disabled={handout.isPending}>
+                Regenerate
+              </Button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
     </AppShell>
   );
 }
