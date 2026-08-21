@@ -213,14 +213,18 @@ function ConsultationPage() {
           variant="outline"
           size="sm"
           className="ml-auto"
-          disabled={!visit || handout.isPending}
+          disabled={!visit}
           onClick={() => {
             setHandoutOpen(true);
-            handout.mutate(false);
+            if (!handout.isPending) handout.mutate(false);
           }}
         >
-          <FileText className="size-4" />
-          {handout.isPending ? "Writing…" : "Patient summary"}
+          {handout.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <FileText className="size-4" />
+          )}
+          {handout.isPending ? "Writing summary…" : "Patient summary"}
         </Button>
         {isCompleted ? (
           <Badge variant="secondary">Completed · read-only</Badge>
