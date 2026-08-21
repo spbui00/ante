@@ -48,10 +48,18 @@ type Draft = {
 /** Backup extraction cadence used when the live FactsR stream stays quiet. */
 const FACT_FALLBACK_MS = 25000;
 
-function speakerLabel(speakerId: number, swapped: boolean) {
+/**
+ * Corti returns an arbitrary integer per detected speaker (-1 when diarization
+ * is off). Map ids to labels by the order they first appear so the first voice
+ * heard is the doctor, the second the patient, and any extra voice keeps a
+ * neutral label.
+ */
+function speakerLabel(speakerId: number, swapped: boolean, order: number[]) {
   if (speakerId < 0) return "Speaker";
+  const index = order.indexOf(speakerId);
+  if (index < 0) return `Speaker ${speakerId + 1}`;
   const roles = swapped ? ["Patient", "Doctor"] : ["Doctor", "Patient"];
-  return roles[speakerId] ?? `Speaker ${speakerId + 1}`;
+  return roles[index] ?? `Speaker ${index + 1}`;
 }
 
 export function ConsultationRecorder({
