@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Printer, Trash2 } from "lucide-react";
 
 import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
 import { RichText } from "@/components/ante/rich-text";
@@ -18,6 +18,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { ENCOUNTER_TYPE_LABEL, formatDate, formatDateTime } from "@/lib/clinical-utils";
+import { printHandout } from "@/lib/print-handout";
 
 export const VISIT_STATUS_LABEL: Record<string, string> = {
   SCHEDULED: "Scheduled",
@@ -38,6 +39,7 @@ export type VisitDetail = {
 
   conclusion?: string | null;
   recommendation?: string | null;
+  patient_summary?: string | null;
   arrived_at?: string | null;
   taken_in_at?: string | null;
   completed_at?: string | null;
@@ -120,6 +122,31 @@ export function VisitDetailDrawer({
                 label="Recommendation"
                 value={visit.recommendation ?? "No recommendation recorded."}
               />
+
+              {visit.patient_summary ? (
+                <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Your summary
+                    </h4>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        printHandout({
+                          title: "Your visit summary",
+                          subtitle: formatDate(visit.visit_date),
+                          text: visit.patient_summary ?? "",
+                        })
+                      }
+                    >
+                      <Printer className="size-4" />
+                      Print
+                    </Button>
+                  </div>
+                  <RichText text={visit.patient_summary} />
+                </div>
+              ) : null}
 
               <VisitTranscript transcript={visit.intake_transcript} label="Intake transcript" />
               <VisitTranscript transcript={visit.visit_transcript} label="Visit transcript" />

@@ -164,7 +164,8 @@ function ConsultationPage() {
   });
 
   const handout = useMutation({
-    mutationFn: () => generatePatientHandout({ data: { visitId } }),
+    mutationFn: (regenerate: boolean = false) =>
+      generatePatientHandout({ data: { visitId, regenerate } }),
     onError: (error) =>
       toast.error(
         error instanceof Error && error.message
@@ -202,7 +203,7 @@ function ConsultationPage() {
           disabled={!visit || handout.isPending}
           onClick={() => {
             setHandoutOpen(true);
-            handout.mutate();
+            handout.mutate(false);
           }}
         >
           <FileText className="size-4" />
@@ -452,7 +453,7 @@ function ConsultationPage() {
                 <Printer className="size-4" />
                 Print
               </Button>
-              <Button variant="outline" onClick={() => handout.mutate()} disabled={handout.isPending}>
+              <Button variant="outline" onClick={() => handout.mutate(true)} disabled={handout.isPending}>
                 Regenerate
               </Button>
             </div>
