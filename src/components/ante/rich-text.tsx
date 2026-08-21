@@ -70,6 +70,18 @@ function parseBlocks(input: string): Block[] {
     if (!line.trim()) continue;
 
     const indented = /^\s{2,}/.test(rawLine);
+
+    if (/^\s*(?:---+|\*\*\*+|___+)\s*$/.test(line)) {
+      blocks.push({ kind: "hr" });
+      continue;
+    }
+
+    const heading = line.trim().match(/^(#{1,6})\s+(.*)$/);
+    if (heading) {
+      blocks.push({ kind: "h", level: heading[1].length, text: heading[2].replace(/\s*#+\s*$/, "") });
+      continue;
+    }
+
     const ordered = line.trim().match(/^(\d+)[.)]\s+(.*)$/);
     const bulleted = line.trim().match(/^[-*•]\s+(.*)$/);
 
