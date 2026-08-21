@@ -160,12 +160,13 @@ export function IntelligencePanel() {
       {generated.length ? (
         <div className="grid gap-3 md:grid-cols-2">
           {generated.map((c) => (
-            <AnalyticsCardView
-              key={c.id}
-              card={c}
-              onPin={(card) => pin.mutate(card)}
-              onRemove={(card) => setGenerated((cards) => cards.filter((x) => x.id !== card.id))}
-            />
+            <div key={c.id} className={isWide(c.kind) ? "md:col-span-2" : undefined}>
+              <AnalyticsCardView
+                card={c}
+                onPin={(card) => pin.mutate(card)}
+                onRemove={(card) => setGenerated((cards) => cards.filter((x) => x.id !== card.id))}
+              />
+            </div>
           ))}
         </div>
       ) : null}
