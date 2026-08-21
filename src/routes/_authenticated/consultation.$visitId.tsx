@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Copy, FileText, Mic } from "lucide-react";
+import { ArrowLeft, Copy, FileText, Mic, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { finaliseVisit, getVisitDetail, updateVisitSymptoms } from "@/lib/ante.functions";
 import { generatePatientHandout } from "@/lib/consultation.functions";
+import { printHandout } from "@/lib/print-handout";
 import { getVisitClinicalItems } from "@/lib/visit-clinical.functions";
 
 import { ENCOUNTER_TYPE_LABEL, formatDateTime } from "@/lib/clinical-utils";
@@ -435,6 +436,21 @@ function ConsultationPage() {
               >
                 <Copy className="size-4" />
                 Copy
+              </Button>
+              <Button
+                variant="outline"
+                disabled={handout.isPending || !handout.data?.text}
+                onClick={() => {
+                  const ok = printHandout({
+                    title: `Patient summary — ${patientName}`,
+                    subtitle: formatDateTime(new Date().toISOString()),
+                    text: handout.data?.text ?? "",
+                  });
+                  if (!ok) toast.error("Allow pop-ups to print this summary");
+                }}
+              >
+                <Printer className="size-4" />
+                Print
               </Button>
               <Button variant="outline" onClick={() => handout.mutate()} disabled={handout.isPending}>
                 Regenerate

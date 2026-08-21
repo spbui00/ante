@@ -57,6 +57,8 @@ function Inline({ text }: { text: string }) {
 
 type Block =
   | { kind: "p"; lines: string[] }
+  | { kind: "h"; level: number; text: string }
+  | { kind: "hr" }
   | { kind: "ol" | "ul"; items: { text: string; indented: boolean }[] };
 
 function parseBlocks(input: string): Block[] {
@@ -68,6 +70,22 @@ function parseBlocks(input: string): Block[] {
     if (!line.trim()) continue;
 
     const indented = /^\s{2,}/.test(rawLine);
+
+    if (/^\s*(?:---+|\*\*\*+|___+)\s*$/.test(line)) {
+      blocks.push({ kind: "hr" });
+      continue;
+    }
+
+    const heading = line.trim().match(/^(#{1,6})\s+(.*)$/);
+    if (heading) {
+      blocks.push({
+        kind: "h",
+        level: (heading[1] ?? "#").length,
+        text: (heading[2] ?? "").replace(/\s*#+\s*$/, ""),
+      });
+      continue;
+    }
+
     const ordered = line.trim().match(/^(\d+)[.)]\s+(.*)$/);
     const bulleted = line.trim().match(/^[-*•]\s+(.*)$/);
 
@@ -106,6 +124,24 @@ export function RichText({ text, className }: { text: string; className?: string
                   <Inline text={line} />
                 </React.Fragment>
               ))}
+            </p>
+          );
+        }
+
+        if (block.kind === "hr") {
+          return <hr key={i} className="my-3 border-border" />;
+        }
+
+        if (block.kind === "h") {
+          const size =
+            block.level <= 1
+              ? "text-base font-semibold"
+              : block.level === 2
+                ? "text-sm font-semibold"
+                : "text-sm font-medium";
+          return (
+            <p key={i} className={cn("mt-3 text-foreground first:mt-0", size)}>
+              <Inline text={block.text} />
             </p>
           );
         }
