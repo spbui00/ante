@@ -171,7 +171,7 @@ function MedicalInfoContent({ data }: { data: any }) {
           ))}
       </Group>
       <Group title="Recent observations">
-        {(data?.observations ?? []).slice(0, 8).map((o: any) => (
+        {summariseObservations((data?.observations ?? []) as any[]).slice(0, 12).map((o: any) => (
           <Line
             key={o.id}
             primary={o.test_name}
