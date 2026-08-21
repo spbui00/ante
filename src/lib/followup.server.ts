@@ -162,8 +162,11 @@ export async function planFollowUpVisits(supabase: AnyClient, visitId: string) {
   if (!plans.length) return { created: 0, followUps: [] as { id: string; symptoms: string }[] };
 
   const validIds = new Set(
-    payload.careTeam.map((m) => m.id).filter((id): id is string => Boolean(id)),
+    payload.careTeam
+      .map((m: { id: string | null }) => m.id)
+      .filter((id: string | null): id is string => Boolean(id)),
   );
+
 
   const rows = plans.map((p) => {
     const date = new Date();
