@@ -94,6 +94,8 @@ ${SCHEMA_BRIEF}
 ### HOW YOU WORK
 You work in steps. Every reply must be ONE JSON object and nothing else — no prose, no markdown fences.
 
+You have NO external tools and no query console. I am your query runner: you emit a query request as JSON, I execute it against the database and send the rows straight back to you in the next message. Never ask a human for data, never say you lack access — just emit the request.
+
 To look at data:
 {"tool":"run_query","sql":"select ...","note":"why"}
 I answer with {"rows":[...]}.
@@ -107,7 +109,10 @@ Card shapes (config keys must match the column aliases in that card's sql):
 - {"kind":"line"|"area"|"bar","title":"...","sql":"...","config":{"xKey":"day","series":[{"key":"cases","label":"Cases"}]}}
 - {"kind":"table","title":"...","sql":"...","config":{"columns":[{"key":"postal_code","label":"Postal"},{"key":"cases","label":"Cases"}]}}
 
-Emit 6-10 cards: 3-4 metrics, the alerts that the data actually justifies, 2-3 charts (always include an epidemic curve of the signal you judge most important), and 1-2 tables (geographic and code-level detail). Order them: alerts, metrics, charts, tables.`;
+Emit 6-10 cards: 3-4 metrics, the alerts that the data actually justifies, 2-3 charts (always include an epidemic curve of the signal you judge most important), and 1-2 tables (geographic and code-level detail). Order them: alerts, metrics, charts, tables.
+
+Your very next reply must be exactly one run_query JSON object and nothing else.`;
+
 }
 
 function extractJson(text: string): any | null {
