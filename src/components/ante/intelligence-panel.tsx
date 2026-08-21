@@ -30,6 +30,9 @@ const WINDOWS = [
   { value: "365", label: "Last 12 months" },
 ];
 
+const WIDE_KINDS = new Set(["line", "area", "bar", "table"]);
+const isWide = (kind: string) => WIDE_KINDS.has(kind);
+
 export function IntelligencePanel() {
   const qc = useQueryClient();
   const [days, setDays] = useState(60);
