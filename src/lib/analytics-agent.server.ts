@@ -228,7 +228,8 @@ export async function runSurveillanceAnalysis(opts: {
       return { narrative: reply.text || "The analyst did not return a readable answer.", cards: [], contextId, steps };
     }
 
-    if (parsed.tool === "run_query" && typeof parsed.sql === "string") {
+    const toolName = typeof parsed.tool === "string" ? squash(parsed.tool) : "";
+    if (toolName === "runquery" && typeof parsed.sql === "string") {
       let rows: AnalyticsRow[] = [];
       let error: string | undefined;
       try {
