@@ -73,11 +73,23 @@ export const Route = createFileRoute("/_authenticated/consultation/$visitId")({
   component: ConsultationPage,
 });
 
+const SIGN_OFF_PHRASES = [
+  "Sealing the clinical record…",
+  "Writing to the database…",
+  "De-identifying the encounter…",
+  "Computing the clinical embedding…",
+  "Filing the population health entry…",
+  "Planning follow-ups and referrals…",
+  "Almost there…",
+];
+
 function ConsultationPage() {
   const { visitId } = useParams({ from: "/_authenticated/consultation/$visitId" });
   const queryClient = useQueryClient();
   const [recorderOpen, setRecorderOpen] = useState(false);
   const [handoutOpen, setHandoutOpen] = useState(false);
+  const [signOffPhrase, setSignOffPhrase] = useState(0);
+
 
   const { data, isPending } = useQuery({
     queryKey: ["visit-detail", visitId],
@@ -143,8 +155,8 @@ function ConsultationPage() {
 
 
   const signOff = useMutation({
-    mutationFn: () =>
-      finaliseVisit({
+    mutationFn: async () => {
+      await finaliseVisit({
         data: {
           visitId,
           conclusion,
@@ -154,31 +166,35 @@ function ConsultationPage() {
           urgencyLevel: urgency as "LOW" | "MEDIUM" | "HIGH_RED_FLAG",
           disposition: disposition as "HOME_CARE" | "PRESCRIPTION" | "ER_REFERRAL",
         },
-      }),
-    onSuccess: () => {
+      });
+
+      // Blocking: the de-identified population row and the follow-up intakes must be written
+      // before we release the screen, otherwise a refresh cancels them mid-flight.
+      const [anon, followUps] = await Promise.allSettled([
+        recordAnonymizedVisit({ data: { visitId } }),
+        planVisitFollowUps({ data: { visitId } }),
+      ]);
+      if (anon.status === "rejected" || !anon.value?.ok) {
+        console.error("[anonymized-encounter] not written", anon);
+      }
+      return {
+        followUpsCreated:
+          followUps.status === "fulfilled" ? (followUps.value?.created ?? 0) : 0,
+      };
+    },
+    onSuccess: ({ followUpsCreated }) => {
       toast.success("Consultation signed off");
       void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
       void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
+      if (followUpsCreated > 0) {
+        toast.success(
+          followUpsCreated === 1
+            ? "Follow-up intake prepared for the patient"
+            : `${followUpsCreated} follow-up intakes prepared for the patient`,
+        );
+        void queryClient.invalidateQueries({ queryKey: ["patient-visits"] });
+      }
       startHandout();
-      // De-identified population row for surveillance; failures stay silent for the clinician.
-      void recordAnonymizedVisit({ data: { visitId } })
-        .then((res) => {
-          if (!res?.ok) console.error("[anonymized-encounter] not written", res);
-        })
-        .catch((err) => console.error("[anonymized-encounter] call failed", err));
-      // Follow-up planner: turns the plan into prefilled SCHEDULED intakes for the patient.
-      void planVisitFollowUps({ data: { visitId } })
-        .then((res) => {
-          if (res?.created) {
-            toast.success(
-              res.created === 1
-                ? "Follow-up intake prepared for the patient"
-                : `${res.created} follow-up intakes prepared for the patient`,
-            );
-            void queryClient.invalidateQueries({ queryKey: ["patient-visits"] });
-          }
-        })
-        .catch(() => undefined);
     },
 
 
@@ -189,6 +205,22 @@ function ConsultationPage() {
           : "Could not save the consultation",
       ),
   });
+
+  const signOffPending = signOff.isPending;
+  useEffect(() => {
+    if (!signOffPending) {
+      setSignOffPhrase(0);
+      return;
+    }
+    const id = setInterval(
+      () => setSignOffPhrase((i) => (i + 1) % SIGN_OFF_PHRASES.length),
+      2600,
+    );
+    return () => clearInterval(id);
+  }, [signOffPending]);
+
+
+
 
   const handout = useMutation({
     mutationFn: (regenerate: boolean = false) =>
@@ -505,7 +537,21 @@ function ConsultationPage() {
         </DrawerContent>
       </Drawer>
 
+      {signOff.isPending ? (
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-background/95 px-6 text-center backdrop-blur-sm">
+          <Loader2 className="size-8 animate-spin text-primary" />
+          <p className="text-base font-medium text-foreground">
+            {SIGN_OFF_PHRASES[signOffPhrase]}
+          </p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Please keep this page open — we're writing the clinical record and the de-identified
+            surveillance entry.
+          </p>
+        </div>
+      ) : null}
+
     </AppShell>
+
   );
 }
 
