@@ -222,12 +222,53 @@ export async function recordAnonymizedEncounter(
     urgency_level: visit.urgency_level ?? null,
     disposition: visit.disposition ?? null,
     clinical_embedding: embedding ? JSON.stringify(embedding) : null,
-  });
+  };
+
+  const existingId = (visit as any).anonymized_encounter_id as string | null;
+
+  // Reprocessing a visit must refresh its existing de-identified row instead of
+  // adding a duplicate population record.
+  if (existingId) {
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from("anonymized_encounter")
+      .update(payload)
+      .eq("id", existingId)
+      .select("id")
+      .maybeSingle();
+
+    if (updateError) {
+      console.error("[anonymized-encounter] update failed", updateError.message);
+      return { ok: false, embedded: Boolean(embedding), reason: updateError.message };
+    }
+
+    if (updated) {
+      await supabaseAdmin
+        .from("visit")
+        .update({ anonymized_at: new Date().toISOString() })
+        .eq("id", visitId);
+      return { ok: true, embedded: Boolean(embedding) };
+    }
+    // Row was deleted upstream — fall through and insert a fresh one.
+  }
+
+  const { data: inserted, error } = await supabaseAdmin
+    .from("anonymized_encounter")
+    .insert(payload)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     console.error("[anonymized-encounter] insert failed", error.message);
     return { ok: false, embedded: Boolean(embedding), reason: error.message };
   }
+
+  await supabaseAdmin
+    .from("visit")
+    .update({
+      anonymized_encounter_id: inserted?.id ?? null,
+      anonymized_at: new Date().toISOString(),
+    })
+    .eq("id", visitId);
 
   return { ok: true, embedded: Boolean(embedding) };
 }
