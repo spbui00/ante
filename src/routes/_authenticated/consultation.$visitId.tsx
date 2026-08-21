@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Mic } from "lucide-react";
+import { ArrowLeft, Copy, FileText, Mic } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -17,6 +17,13 @@ import { VisitTranscript } from "@/components/ante/visit-transcript";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -26,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { finaliseVisit, getVisitDetail, updateVisitSymptoms } from "@/lib/ante.functions";
+import { generatePatientHandout } from "@/lib/consultation.functions";
 import { getVisitClinicalItems } from "@/lib/visit-clinical.functions";
 
 import { ENCOUNTER_TYPE_LABEL, formatDateTime } from "@/lib/clinical-utils";
@@ -63,6 +71,7 @@ function ConsultationPage() {
   const { visitId } = useParams({ from: "/_authenticated/consultation/$visitId" });
   const queryClient = useQueryClient();
   const [recorderOpen, setRecorderOpen] = useState(false);
+  const [handoutOpen, setHandoutOpen] = useState(false);
 
   const { data, isPending } = useQuery({
     queryKey: ["visit-detail", visitId],
@@ -153,6 +162,16 @@ function ConsultationPage() {
       ),
   });
 
+  const handout = useMutation({
+    mutationFn: () => generatePatientHandout({ data: { visitId } }),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : "Could not generate the patient summary",
+      ),
+  });
+
   const recordCount = clinicalItems?.records?.length ?? 0;
   const missing: string[] = [];
   if (!conclusion.trim()) missing.push("a conclusion");
@@ -175,12 +194,23 @@ function ConsultationPage() {
             Back to console
           </Link>
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto"
+          disabled={!visit || handout.isPending}
+          onClick={() => {
+            setHandoutOpen(true);
+            handout.mutate();
+          }}
+        >
+          <FileText className="size-4" />
+          {handout.isPending ? "Writing…" : "Patient summary"}
+        </Button>
         {isCompleted ? (
-          <Badge variant="secondary" className="ml-auto">
-            Completed · read-only
-          </Badge>
+          <Badge variant="secondary">Completed · read-only</Badge>
         ) : (
-          <Button className="ml-auto" onClick={() => setRecorderOpen(true)} disabled={!visit}>
+          <Button onClick={() => setRecorderOpen(true)} disabled={!visit}>
             <Mic className="size-4" />
             Start recording
           </Button>
