@@ -455,8 +455,23 @@ function ConsultationPage() {
             </Card>
 
             <Card>
-              <CardHeader className="pb-2">
+              <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
                 <CardTitle className="text-sm">Transcript</CardTitle>
+                {visit.visit_transcript ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReprocessOpen(true)}
+                    disabled={reprocess.isPending}
+                  >
+                    {reprocess.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="size-4" />
+                    )}
+                    {reprocess.isPending ? "Reprocessing…" : "Reprocess transcript"}
+                  </Button>
+                ) : null}
               </CardHeader>
               <CardContent className="space-y-1">
                 <VisitTranscript transcript={visit.intake_transcript} label="Intake transcript" />
@@ -468,10 +483,44 @@ function ConsultationPage() {
         </div>
       )}
 
+      <Drawer open={reprocessOpen} onOpenChange={setReprocessOpen}>
+        <DrawerContent>
+          <div className="mx-auto w-full max-w-lg">
+            <DrawerHeader>
+              <DrawerTitle>Reprocess the saved transcript?</DrawerTitle>
+              <DrawerDescription>
+                The scribe re-reads the visit transcript and reconciles it with what is already
+                documented: it keeps correct items, corrects details that changed, removes items the
+                transcript does not support and adds anything missing. The conclusion and
+                recommendation are rewritten.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="flex gap-2 px-4 pb-6">
+              <Button variant="outline" className="flex-1" onClick={() => setReprocessOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => reprocess.mutate()}
+                disabled={reprocess.isPending}
+              >
+                {reprocess.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-4" />
+                )}
+                Reprocess
+              </Button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
       {visit ? (
         <ConsultationRecorder
           visitId={visitId}
           patientName={patientName}
+          existingTranscript={visit.visit_transcript ?? ""}
           open={recorderOpen}
           onOpenChange={setRecorderOpen}
           onSigned={() => {
@@ -483,6 +532,7 @@ function ConsultationPage() {
           }}
         />
       ) : null}
+
 
       <Drawer open={handoutOpen} onOpenChange={setHandoutOpen}>
         <DrawerContent>
