@@ -245,7 +245,7 @@ function ConsultationPage() {
         </p>
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
-          <PatientPassportPanel patientId={visit.patient_id} />
+          <PatientPassportPanel patientId={visit.patient_id} collapsibleMedical />
 
           <div className="space-y-4">
             <Card>

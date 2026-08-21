@@ -1,16 +1,29 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 import { RichTextInline } from "@/components/ante/rich-text";
 import { VisitCard } from "@/components/ante/visit-card";
 import { VisitDetailDrawer, type VisitDetail } from "@/components/ante/visit-detail-drawer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPatientRecord } from "@/lib/ante.functions";
 import { formatCpr, formatDate } from "@/lib/clinical-utils";
+import { cn } from "@/lib/utils";
 
-export function PatientPassportPanel({ patientId }: { patientId: string }) {
+export function PatientPassportPanel({
+  patientId,
+  collapsibleMedical = false,
+}: {
+  patientId: string;
+  collapsibleMedical?: boolean;
+}) {
   const { data, isPending } = useQuery({
     queryKey: ["patient-record", patientId],
     queryFn: () => getPatientRecord({ data: { patientId } }),
@@ -57,46 +70,32 @@ export function PatientPassportPanel({ patientId }: { patientId: string }) {
               </TabsList>
 
               <TabsContent value="medical" className="mt-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Group title="Conditions">
-                    {(data?.records ?? [])
-                      .filter((r) => r.category === "CONDITION")
-                      .map((r) => (
-                        <Line key={r.id} primary={r.description} secondary={r.code ?? undefined} />
-                      ))}
-                  </Group>
-                  <Group title="Allergies">
-                    {(data?.records ?? [])
-                      .filter((r) => r.category === "ALLERGY")
-                      .map((r) => (
-                        <Line key={r.id} primary={r.description} secondary={r.status} />
-                      ))}
-                  </Group>
-                  <Group title="Active medications">
-                    {(data?.prescriptions ?? [])
-                      .filter((p) => !p.end_date)
-                      .map((p) => (
-                        <Line
-                          key={p.id}
-                          primary={p.drug_name}
-                          secondary={[p.dosage, p.frequency].filter(Boolean).join(" · ")}
+                {collapsibleMedical ? (
+                  <Collapsible defaultOpen>
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="group mb-2 flex w-full items-center justify-between px-0 hover:bg-transparent"
+                      >
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Medical info
+                        </span>
+                        <ChevronDown
+                          className={cn(
+                            "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                            "group-data-[state=open]:rotate-180",
+                          )}
                         />
-                      ))}
-                  </Group>
-                  <Group title="Recent observations">
-                    {(data?.observations ?? []).slice(0, 8).map((o) => (
-                      <Line
-                        key={o.id}
-                        primary={o.test_name}
-                        secondary={
-                          o.status === "ORDERED" || o.status === "PENDING"
-                            ? `⏱ ${o.status === "ORDERED" ? "Ordered" : "Pending"} · ${formatDate(o.ordered_date ?? o.recorded_at)}`
-                            : `${o.value ?? "—"} ${o.unit ?? ""} · ${formatDate(o.recorded_at)}`
-                        }
-                      />
-                    ))}
-                  </Group>
-                </div>
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <MedicalInfoContent data={data} />
+                    </CollapsibleContent>
+                  </Collapsible>
+                ) : (
+                  <MedicalInfoContent data={data} />
+                )}
               </TabsContent>
 
               <TabsContent value="visits" className="mt-4 space-y-3">
@@ -139,6 +138,51 @@ export function PatientPassportPanel({ patientId }: { patientId: string }) {
         onOpenChange={(o) => !o && setOpenVisit(null)}
         summaryDefaultOpen={false}
       />
+    </div>
+  );
+}
+
+function MedicalInfoContent({ data }: { data: any }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Group title="Conditions">
+        {(data?.records ?? [])
+          .filter((r: any) => r.category === "CONDITION")
+          .map((r: any) => (
+            <Line key={r.id} primary={r.description} secondary={r.code ?? undefined} />
+          ))}
+      </Group>
+      <Group title="Allergies">
+        {(data?.records ?? [])
+          .filter((r: any) => r.category === "ALLERGY")
+          .map((r: any) => (
+            <Line key={r.id} primary={r.description} secondary={r.status} />
+          ))}
+      </Group>
+      <Group title="Active medications">
+        {(data?.prescriptions ?? [])
+          .filter((p: any) => !p.end_date)
+          .map((p: any) => (
+            <Line
+              key={p.id}
+              primary={p.drug_name}
+              secondary={[p.dosage, p.frequency].filter(Boolean).join(" · ")}
+            />
+          ))}
+      </Group>
+      <Group title="Recent observations">
+        {(data?.observations ?? []).slice(0, 8).map((o: any) => (
+          <Line
+            key={o.id}
+            primary={o.test_name}
+            secondary={
+              o.status === "ORDERED" || o.status === "PENDING"
+                ? `⏱ ${o.status === "ORDERED" ? "Ordered" : "Pending"} · ${formatDate(o.ordered_date ?? o.recorded_at)}`
+                : `${o.value ?? "—"} ${o.unit ?? ""} · ${formatDate(o.recorded_at)}`
+            }
+          />
+        ))}
+      </Group>
     </div>
   );
 }
