@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Copy, FileText, Mic, Printer } from "lucide-react";
+import { ArrowLeft, Copy, FileText, Loader2, Mic, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ante/app-shell";
@@ -154,6 +154,7 @@ function ConsultationPage() {
       toast.success("Consultation signed off");
       void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
       void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
+      startHandout();
     },
     onError: (error) =>
       toast.error(
@@ -173,6 +174,18 @@ function ConsultationPage() {
           : "Could not generate the patient summary",
       ),
   });
+
+  // Kick off the patient handout in the background after sign-off: the button shows a loading
+  // state while the AI writes it, but sign-off itself is already done.
+  function startHandout() {
+    if (handout.isPending) return;
+    handout.mutate(true, {
+      onSuccess: () => {
+        toast.success("Patient summary ready");
+        void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
+      },
+    });
+  }
 
   const recordCount = clinicalItems?.records?.length ?? 0;
   const missing: string[] = [];
@@ -200,14 +213,18 @@ function ConsultationPage() {
           variant="outline"
           size="sm"
           className="ml-auto"
-          disabled={!visit || handout.isPending}
+          disabled={!visit}
           onClick={() => {
             setHandoutOpen(true);
-            handout.mutate(false);
+            if (!handout.isPending) handout.mutate(false);
           }}
         >
-          <FileText className="size-4" />
-          {handout.isPending ? "Writing…" : "Patient summary"}
+          {handout.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <FileText className="size-4" />
+          )}
+          {handout.isPending ? "Writing summary…" : "Patient summary"}
         </Button>
         {isCompleted ? (
           <Badge variant="secondary">Completed · read-only</Badge>
@@ -404,6 +421,7 @@ function ConsultationPage() {
             void queryClient.invalidateQueries({ queryKey: ["visit-clinical-items", visitId] });
             void queryClient.invalidateQueries({ queryKey: ["clinical-queue"] });
             void queryClient.invalidateQueries({ queryKey: ["patient-visits"] });
+            startHandout();
           }}
         />
       ) : null}

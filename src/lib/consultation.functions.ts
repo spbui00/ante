@@ -289,11 +289,9 @@ export const signOffConsultation = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    // Patient-facing after-visit summary, stored on the visit so the patient can read it.
-    const { storePatientHandout } = await import("@/lib/handout.server");
-    const patientSummary = await storePatientHandout(supabase, data.visitId);
-
-    return { ok: true, patientSummary };
+    // The patient-facing after-visit summary is generated separately (background call from the
+    // client) so sign-off returns immediately instead of waiting on the LLM.
+    return { ok: true, patientSummary: null as string | null };
   });
 
 /** Patient-facing after-visit summary; returns the stored one unless regeneration is asked for. */
