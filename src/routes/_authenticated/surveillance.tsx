@@ -161,7 +161,7 @@ function SurveillancePage() {
       title="Epidemiological command centre"
       subtitle={`${rows.length} anonymised encounters since ${formatDate(data.since)}`}
     >
-      <OutbreakPanel days={Math.max(days, 90)} />
+      <IntelligencePanel />
 
       <h2 className="mb-3 text-base font-semibold text-foreground">Signal explorer</h2>
       <div className="mb-4 grid gap-3 sm:grid-cols-3 lg:max-w-2xl">
