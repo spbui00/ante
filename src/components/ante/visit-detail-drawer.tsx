@@ -1,13 +1,18 @@
-import { Pencil, Printer, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, Pencil, Printer, Trash2 } from "lucide-react";
 
 import { DispositionBadge, UrgencyBadge } from "@/components/ante/badges";
 import { RichText } from "@/components/ante/rich-text";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
 import { VisitTranscript } from "@/components/ante/visit-transcript";
 
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Drawer,
   DrawerClose,
@@ -17,6 +22,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { cn } from "@/lib/utils";
 import { ENCOUNTER_TYPE_LABEL, formatDate, formatDateTime } from "@/lib/clinical-utils";
 import { printHandout } from "@/lib/print-handout";
 
@@ -56,14 +62,21 @@ export function VisitDetailDrawer({
   onOpenChange,
   onEdit,
   onDelete,
+  summaryDefaultOpen = true,
 }: {
   visit: VisitDetail | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  summaryDefaultOpen?: boolean;
 }) {
   const canEdit = visit?.status === "SCHEDULED";
+  const [summaryOpen, setSummaryOpen] = useState(summaryDefaultOpen);
+
+  useEffect(() => {
+    if (open) setSummaryOpen(summaryDefaultOpen);
+  }, [open, summaryDefaultOpen]);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -124,28 +137,42 @@ export function VisitDetailDrawer({
               />
 
               {visit.patient_summary ? (
-                <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-4">
-                  <div className="flex items-center justify-between gap-2">
+                <Collapsible
+                  open={summaryOpen}
+                  onOpenChange={setSummaryOpen}
+                  className="rounded-lg border border-border bg-muted/40"
+                >
+                  <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left">
                     <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Your summary
                     </h4>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        printHandout({
-                          title: "Your visit summary",
-                          subtitle: formatDate(visit.visit_date),
-                          text: visit.patient_summary ?? "",
-                        })
-                      }
-                    >
-                      <Printer className="size-4" />
-                      Print
-                    </Button>
-                  </div>
-                  <RichText text={visit.patient_summary} />
-                </div>
+                    <ChevronDown
+                      className={cn(
+                        "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                        summaryOpen && "rotate-180",
+                      )}
+                    />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-4 pb-4">
+                    <div className="mb-3 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          printHandout({
+                            title: "Your visit summary",
+                            subtitle: formatDate(visit.visit_date),
+                            text: visit.patient_summary ?? "",
+                          })
+                        }
+                      >
+                        <Printer className="size-4" />
+                        Print
+                      </Button>
+                    </div>
+                    <RichText text={visit.patient_summary} />
+                  </CollapsibleContent>
+                </Collapsible>
               ) : null}
 
               <VisitTranscript transcript={visit.intake_transcript} label="Intake transcript" />
