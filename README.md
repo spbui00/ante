@@ -97,9 +97,9 @@ Supporting AI pipelines: ambient transcript → clinical fact extraction (Corti 
 
 | Service | Endpoint | Used for |
 | --- | --- | --- |
-| Corti API | `https://api.{env}.corti.app/v2` | Interactions, transcripts, facts, chat completions, embeddings |
-| Corti Auth | `https://auth.{env}.corti.app/realms/{tenant}/protocol/openid-connect/token` | OAuth client-credentials token |
-| Corti audio bridge | `wss://api.{env}.corti.app/audio-bridge/v2/interactions/{id}/streams` | Live ambient transcription with speaker diarization |
+| Corti API | `https://api.eu.corti.app/v2` | Interactions, transcripts, facts, chat completions, embeddings |
+| Corti Auth | `https://auth.eu.corti.app/realms/base/protocol/openid-connect/token` | OAuth client-credentials token |
+| Corti audio bridge | `wss://api.eu.corti.app/audio-bridge/v2/interactions/{id}/streams` | Live ambient transcription with speaker diarization |
 | Open-Meteo | `api.open-meteo.com`, `archive-api.open-meteo.com` | Weather conditions per encounter (forecast + historical archive) |
 | Zippopotam | `api.zippopotam.us/dk/{postcode}` | Danish postal code → coordinates |
 
@@ -136,6 +136,4 @@ SUPABASE_PUBLISHABLE_KEY
 SUPABASE_SERVICE_ROLE_KEY
 CORTI_CLIENT_ID
 CORTI_CLIENT_SECRET
-CORTI_TENANT
-CORTI_ENVIRONMENT
 ```
