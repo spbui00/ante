@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Clock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,8 @@ import {
 } from "@/lib/visit-clinical.functions";
 
 type Kind = "observation" | "prescription" | "record";
+
+const OBSERVATION_STATUSES = ["RESULTED", "ORDERED", "PENDING", "CANCELLED"] as const;
 
 const RECORD_CATEGORIES = ["CONDITION", "PROCEDURE", "ALLERGY", "REFERRAL"] as const;
 const RECORD_STATUSES = ["ACTIVE", "RESOLVED", "SUSPECTED"] as const;
@@ -76,6 +78,8 @@ export function VisitClinicalItems({
             loincCode: values["loinc_code"] ?? null,
             value: values["value"] ? Number(values["value"]) : null,
             unit: values["unit"] ?? null,
+            status: (values["status"] ?? "RESULTED") as (typeof OBSERVATION_STATUSES)[number],
+            orderedDate: values["ordered_date"] ?? null,
             ...(values["recorded_at"] ? { recordedAt: values["recorded_at"] } : {}),
           },
         });
@@ -146,7 +150,7 @@ export function VisitClinicalItems({
     for (const [k, v] of Object.entries(row)) {
       if (v === null || v === undefined) continue;
       if (typeof v === "object") continue;
-      next[k] = k === "recorded_at" ? String(v).slice(0, 10) : String(v);
+      next[k] = k === "recorded_at" || k === "ordered_date" ? String(v).slice(0, 10) : String(v);
     }
     setDraft(next);
   };
@@ -189,15 +193,15 @@ export function VisitClinicalItems({
       {show("observation") ? (
       <Section title="Observations" canEdit={canEdit} onAdd={() => startAdd("observation")}>
         <ItemsTable
-          headers={["Test", "Value", "LOINC", "Recorded"]}
+          headers={["Test", "Value", "LOINC", "Status", "Recorded"]}
           canEdit={canEdit}
           empty={(data?.observations.length ?? 0) === 0 && !isEditing("observation", null)}
           emptyText="No observations recorded"
         >
           {(data?.observations ?? []).map((o) =>
             isEditing("observation", o.id) ? (
-              <EditRow key={o.id} span={5}>
-                <ObservationForm field={field} />
+              <EditRow key={o.id} span={6}>
+                <ObservationForm field={field} draft={draft} setDraft={setDraft} />
                 {formActions("observation", o.id)}
               </EditRow>
             ) : (
@@ -205,9 +209,12 @@ export function VisitClinicalItems({
                 key={o.id}
                 cells={[
                   o.test_name,
-                  [o.value ?? "—", o.unit].filter(Boolean).join(" "),
+                  o.status === "ORDERED" || o.status === "PENDING"
+                    ? "—"
+                    : [o.value ?? "—", o.unit].filter(Boolean).join(" "),
                   o.loinc_code ?? "—",
-                  formatDate(o.recorded_at),
+                  <ObservationStatus key="s" status={o.status} />,
+                  formatDate(o.ordered_date ?? o.recorded_at),
                 ]}
                 canEdit={canEdit}
                 onEdit={() => startEdit("observation", o as unknown as Record<string, unknown>)}
@@ -216,8 +223,8 @@ export function VisitClinicalItems({
             ),
           )}
           {isEditing("observation", null) ? (
-            <EditRow span={5}>
-              <ObservationForm field={field} />
+            <EditRow span={6}>
+              <ObservationForm field={field} draft={draft} setDraft={setDraft} />
               {formActions("observation", null)}
             </EditRow>
           ) : null}
@@ -327,9 +334,39 @@ type FieldFn = (key: string) => {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
-function ObservationForm({ field }: { field: FieldFn }) {
+function ObservationStatus({ status }: { status: string | null }) {
+  const s = status ?? "RESULTED";
+  if (s === "RESULTED") return <span className="text-xs">Resulted</span>;
+  if (s === "CANCELLED") return <Badge variant="outline">Cancelled</Badge>;
+  return (
+    <Badge variant="secondary" className="gap-1">
+      <Clock className="size-3" />
+      {s === "ORDERED" ? "Ordered" : "Pending"}
+    </Badge>
+  );
+}
+
+function ObservationForm({
+  field,
+  draft,
+  setDraft,
+}: {
+  field: FieldFn;
+  draft: Draft;
+  setDraft: React.Dispatch<React.SetStateAction<Draft>>;
+}) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
+      <Labeled label="Status">
+        <Picker
+          value={draft["status"] ?? "RESULTED"}
+          onChange={(v) => setDraft((d) => ({ ...d, status: v }))}
+          options={OBSERVATION_STATUSES}
+        />
+      </Labeled>
+      <Labeled label="Ordered date">
+        <Input type="date" {...field("ordered_date")} />
+      </Labeled>
       <Labeled label="Test name">
         <Input placeholder="Blood pressure" {...field("test_name")} />
       </Labeled>
