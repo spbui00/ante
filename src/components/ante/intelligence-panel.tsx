@@ -30,6 +30,9 @@ const WINDOWS = [
   { value: "365", label: "Last 12 months" },
 ];
 
+const WIDE_KINDS = new Set(["line", "area", "bar", "table"]);
+const isWide = (kind: string) => WIDE_KINDS.has(kind);
+
 export function IntelligencePanel() {
   const qc = useQueryClient();
   const [days, setDays] = useState(60);
@@ -124,7 +127,9 @@ export function IntelligencePanel() {
           </p>
           <div className="grid gap-3 md:grid-cols-2">
             {pinnedCards.map((c) => (
-              <AnalyticsCardView key={c.id} card={{ ...c, pinned: true }} onPin={() => unpin.mutate(c)} />
+              <div key={c.id} className={isWide(c.kind) ? "md:col-span-2" : undefined}>
+                <AnalyticsCardView card={{ ...c, pinned: true }} onPin={() => unpin.mutate(c)} />
+              </div>
             ))}
           </div>
         </section>
@@ -158,12 +163,13 @@ export function IntelligencePanel() {
       {generated.length ? (
         <div className="grid gap-3 md:grid-cols-2">
           {generated.map((c) => (
-            <AnalyticsCardView
-              key={c.id}
-              card={c}
-              onPin={(card) => pin.mutate(card)}
-              onRemove={(card) => setGenerated((cards) => cards.filter((x) => x.id !== card.id))}
-            />
+            <div key={c.id} className={isWide(c.kind) ? "md:col-span-2" : undefined}>
+              <AnalyticsCardView
+                card={c}
+                onPin={(card) => pin.mutate(card)}
+                onRemove={(card) => setGenerated((cards) => cards.filter((x) => x.id !== card.id))}
+              />
+            </div>
           ))}
         </div>
       ) : null}
