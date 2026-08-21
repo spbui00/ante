@@ -93,7 +93,7 @@ export async function recordAnonymizedEncounter(
   const { data: visit } = await supabase
     .from("visit")
     .select(
-      "id, patient_id, visit_date, completed_at, encounter_type, urgency_level, disposition, symptoms, conclusion, recommendation, symptom_icd_codes, symptom_duration_days, travel_history, is_pregnant",
+      "id, patient_id, visit_date, completed_at, encounter_type, urgency_level, disposition, symptoms, conclusion, recommendation, symptom_icd_codes, symptom_duration_days, travel_history, is_pregnant, anonymized_encounter_id",
     )
     .eq("id", visitId)
     .maybeSingle();
