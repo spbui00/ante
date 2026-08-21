@@ -46,6 +46,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { VisitClinicalItems } from "@/components/ante/visit-clinical-items";
+import { VisitTranscript } from "@/components/ante/visit-transcript";
+
 
 import {
   findScheduledVisitsByCpr,
