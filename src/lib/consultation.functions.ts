@@ -15,6 +15,39 @@ export const extractConsultationFacts = createServerFn({ method: "POST" })
     return { facts };
   });
 
+/**
+ * Autosave for the live consultation transcript. The recorder sends the full text
+ * (previous transcript + this session) every few seconds so a refresh never loses it.
+ */
+export const saveVisitTranscript = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({ visitId: z.string().uuid(), transcript: z.string().max(80000) })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("visit")
+      .update({ visit_transcript: data.transcript })
+      .eq("id", data.visitId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/**
+ * Re-runs the scribe over the saved transcript and reconciles it with the clinical
+ * items already stored on the visit (keep / update / delete / add).
+ */
+export const reprocessVisitTranscript = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ visitId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { reprocessVisitFromTranscript } = await import("@/lib/transcript-reprocess.server");
+    return reprocessVisitFromTranscript(context.supabase, data.visitId);
+  });
+
+
 const DRAFT_SYSTEM = `You are a medical scribe for a Danish primary-care clinic.
 Read the consultation transcript and the extracted clinical facts, then respond with STRICT JSON only:
 {"conclusion": string, "recommendation": string, "diagnoses": [{"description": string, "code": string|null, "status": "ACTIVE"|"RESOLVED"|"SUSPECTED"}], "prescriptions": [{"drugName": string, "atcCode": string|null, "dosage": string|null, "frequency": string|null}], "observations": [{"testName": string, "loincCode": string|null, "value": number|null, "unit": string|null, "status": "ORDERED"|"RESULTED"}], "urgencyLevel": "LOW"|"MEDIUM"|"HIGH_RED_FLAG", "disposition": "HOME_CARE"|"PRESCRIPTION"|"ER_REFERRAL"}
