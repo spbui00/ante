@@ -283,7 +283,11 @@ export const signOffConsultation = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    return { ok: true };
+    // Patient-facing after-visit summary, stored on the visit so the patient can read it.
+    const { storePatientHandout } = await import("@/lib/handout.server");
+    const patientSummary = await storePatientHandout(supabase, data.visitId);
+
+    return { ok: true, patientSummary };
   });
 
 const HANDOUT_SYSTEM = `You write the after-visit summary that a patient takes home from a Danish primary-care clinic.
