@@ -30,7 +30,7 @@ import {
 } from "@/lib/consultation.functions";
 
 type Fact = { group: string; text: string };
-type Segment = { id: string; speakerId: number; text: string };
+type Segment = { id: string; speakerId: number; text: string; start?: number };
 type Diagnosis = { description: string; code: string | null; status: "ACTIVE" | "RESOLVED" | "SUSPECTED" };
 type Prescription = { drugName: string; atcCode: string | null; dosage: string | null; frequency: string | null };
 type Observation = { testName: string; loincCode: string | null; value: number | null; unit: string | null; status?: "ORDERED" | "PENDING" | "RESULTED" | "CANCELLED" };
