@@ -137,6 +137,7 @@ export function PatientPassportPanel({ patientId }: { patientId: string }) {
         visit={openVisit}
         open={Boolean(openVisit)}
         onOpenChange={(o) => !o && setOpenVisit(null)}
+        summaryDefaultOpen={false}
       />
     </div>
   );
