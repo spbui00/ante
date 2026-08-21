@@ -306,6 +306,19 @@ export const recordAnonymizedVisit = createServerFn({ method: "POST" })
     return recordAnonymizedEncounter(context.supabase, data.visitId);
   });
 
+/**
+ * Runs the follow-up planner agent for a signed-off visit and creates the
+ * prefilled SCHEDULED intakes it proposes. Fire-and-forget from the client.
+ */
+export const planVisitFollowUps = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ visitId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { planFollowUpVisits } = await import("@/lib/followup.server");
+    return planFollowUpVisits(context.supabase, data.visitId);
+  });
+
+
 
 /** Patient-facing after-visit summary; returns the stored one unless regeneration is asked for. */
 export const generatePatientHandout = createServerFn({ method: "POST" })
