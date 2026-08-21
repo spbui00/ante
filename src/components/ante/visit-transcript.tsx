@@ -3,6 +3,7 @@ import { ChevronDown, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { stripFollowUpMarker } from "@/lib/clinical-utils";
 import { cn } from "@/lib/utils";
 
 /** Read-only view of a visit's intake + consultation transcript. */
@@ -18,7 +19,7 @@ export function VisitTranscript({
   className?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-  const text = transcript?.trim() ?? "";
+  const text = stripFollowUpMarker(transcript);
 
   return (
     <div className={cn("space-y-2", className)}>
