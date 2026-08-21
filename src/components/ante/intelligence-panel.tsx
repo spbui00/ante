@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Brain, Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -41,11 +41,21 @@ export function IntelligencePanel() {
   const [narrative, setNarrative] = useState("");
   const [contextId, setContextId] = useState<string | null>(null);
 
-  const pinned = useQuery({
+  const dashboard = useQuery({
     queryKey: ["analytics-cards"],
     queryFn: () => listAnalyticsCards(),
     staleTime: 60_000,
   });
+
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    if (hydrated || !dashboard.data) return;
+    setGenerated(dashboard.data.generated as AnalyticsCardData[]);
+    setNarrative(dashboard.data.narrative ?? "");
+    setContextId(dashboard.data.contextId ?? null);
+    if (dashboard.data.windowDays) setDays(dashboard.data.windowDays);
+    setHydrated(true);
+  }, [dashboard.data, hydrated]);
 
   const analyse = useMutation({
     mutationFn: (instruction?: string) =>
@@ -61,6 +71,7 @@ export function IntelligencePanel() {
     mutationFn: (card: AnalyticsCardData) =>
       saveAnalyticsCard({
         data: {
+          ...(card.id && /^[0-9a-f-]{36}$/i.test(card.id) ? { id: card.id } : {}),
           title: card.title,
           subtitle: card.subtitle ?? null,
           kind: card.kind as never,
@@ -80,7 +91,7 @@ export function IntelligencePanel() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["analytics-cards"] }),
   });
 
-  const pinnedCards = (pinned.data ?? []) as AnalyticsCardData[];
+  const pinnedCards = (dashboard.data?.pinned ?? []) as AnalyticsCardData[];
 
   return (
     <div className="mb-8 space-y-4">
@@ -167,7 +178,10 @@ export function IntelligencePanel() {
               <AnalyticsCardView
                 card={c}
                 onPin={(card) => pin.mutate(card)}
-                onRemove={(card) => setGenerated((cards) => cards.filter((x) => x.id !== card.id))}
+                onRemove={(card) => {
+                  setGenerated((cards) => cards.filter((x) => x.id !== card.id));
+                  if (/^[0-9a-f-]{36}$/i.test(card.id)) deleteAnalyticsCard({ data: { id: card.id } });
+                }}
               />
             </div>
           ))}

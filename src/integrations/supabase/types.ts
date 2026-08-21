@@ -59,6 +59,30 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_session: {
+        Row: {
+          context_id: string | null
+          narrative: string | null
+          owner_id: string
+          updated_at: string
+          window_days: number
+        }
+        Insert: {
+          context_id?: string | null
+          narrative?: string | null
+          owner_id: string
+          updated_at?: string
+          window_days?: number
+        }
+        Update: {
+          context_id?: string | null
+          narrative?: string | null
+          owner_id?: string
+          updated_at?: string
+          window_days?: number
+        }
+        Relationships: []
+      }
       anonymized_encounter: {
         Row: {
           age_bracket: string | null

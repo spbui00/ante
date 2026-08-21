@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const cardInput = z.object({
+  id: z.string().uuid().optional(),
   title: z.string().min(1).max(120),
   subtitle: z.string().max(240).nullish(),
   kind: z.enum(["metric", "alert", "line", "area", "bar", "table"]),
@@ -46,9 +47,47 @@ export const analyzeSurveillance = createServerFn({ method: "POST" })
         "Analyse the whole de-identified encounter log for this window. Find what is actually happening — growth signals, geographic clusters, severity shifts, age or seasonal patterns — with no assumption about which disease it is. Then build the dashboard.",
     });
 
+    // Persist this batch as the user's "last generated" dashboard so it survives navigation.
+    await context.supabase
+      .from("analytics_card")
+      .delete()
+      .eq("owner_id", context.userId)
+      .eq("pinned", false);
+
+    let cards = result.cards;
+    if (cards.length) {
+      const { data: saved } = await context.supabase
+        .from("analytics_card")
+        .insert(
+          cards.map((c: any, i: number) => ({
+            owner_id: context.userId,
+            title: c.title,
+            subtitle: c.subtitle ?? null,
+            kind: c.kind,
+            sql_query: c.sql ?? "",
+            config: (c.config ?? {}) as never,
+            window_days: data.days,
+            position: i,
+            pinned: false,
+          })),
+        )
+        .select("id");
+      if (saved?.length === cards.length) {
+        cards = cards.map((c: any, i: number) => ({ ...c, id: String(saved[i]?.id ?? c.id) }));
+      }
+    }
+
+    await context.supabase.from("analytics_session").upsert({
+      owner_id: context.userId,
+      narrative: result.narrative ?? null,
+      context_id: result.contextId ?? null,
+      window_days: data.days,
+      updated_at: new Date().toISOString(),
+    });
+
     return {
       narrative: result.narrative,
-      cards: result.cards,
+      cards,
       contextId: result.contextId,
       steps: result.steps.map((s) => ({ note: s.note ?? "", rows: s.rows, error: s.error ?? null })),
     };
@@ -57,7 +96,7 @@ export const analyzeSurveillance = createServerFn({ method: "POST" })
 /** Chat turn with the analyst; may also return new/updated cards. */
 export const chatWithAnalyst = analyzeSurveillance;
 
-/** Cards the user has pinned, re-executed against live data. */
+/** Pinned cards plus the last generated dashboard, re-executed against live data. */
 export const listAnalyticsCards = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -71,7 +110,7 @@ export const listAnalyticsCards = createServerFn({ method: "GET" })
     const { runAnalyticsSql } = await import("@/lib/analytics-agent.server");
     type Row = Record<string, string | number | boolean | null>;
 
-    return Promise.all(
+    const all = await Promise.all(
       (data ?? []).map(async (c: any) => {
         let rows: Row[] = [];
         let err: string | null = null;
@@ -90,12 +129,26 @@ export const listAnalyticsCards = createServerFn({ method: "GET" })
           sql: (c.sql_query ?? null) as string | null,
           config: (c.config ?? {}) as Record<string, never>,
           windowDays: c.window_days as number,
-          pinned: true,
+          pinned: Boolean(c.pinned),
           rows,
           error: err,
         };
       }),
     );
+
+    const { data: session } = await context.supabase
+      .from("analytics_session")
+      .select("narrative, context_id, window_days")
+      .eq("owner_id", context.userId)
+      .maybeSingle();
+
+    return {
+      pinned: all.filter((c) => c.pinned),
+      generated: all.filter((c) => !c.pinned),
+      narrative: (session?.narrative ?? "") as string,
+      contextId: (session?.context_id ?? null) as string | null,
+      windowDays: (session?.window_days ?? 60) as number,
+    };
   });
 
 /** Pins a card the agent produced so it renders without re-analysing. */
@@ -103,6 +156,18 @@ export const saveAnalyticsCard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => cardInput.parse(input))
   .handler(async ({ data, context }) => {
+    // Cards produced by an analysis already exist as unpinned rows — just flip the flag.
+    if (data.id) {
+      const { data: updated } = await context.supabase
+        .from("analytics_card")
+        .update({ pinned: true, updated_at: new Date().toISOString() })
+        .eq("id", data.id)
+        .eq("owner_id", context.userId)
+        .select("id")
+        .maybeSingle();
+      if (updated) return { id: updated.id as string };
+    }
+
     const { count } = await context.supabase
       .from("analytics_card")
       .select("id", { count: "exact", head: true })
