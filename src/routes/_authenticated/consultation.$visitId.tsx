@@ -206,6 +206,21 @@ function ConsultationPage() {
       ),
   });
 
+  const signOffPending = signOff.isPending;
+  useEffect(() => {
+    if (!signOffPending) {
+      setSignOffPhrase(0);
+      return;
+    }
+    const id = setInterval(
+      () => setSignOffPhrase((i) => (i + 1) % SIGN_OFF_PHRASES.length),
+      2600,
+    );
+    return () => clearInterval(id);
+  }, [signOffPending]);
+
+
+
 
   const handout = useMutation({
     mutationFn: (regenerate: boolean = false) =>
