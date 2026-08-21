@@ -198,7 +198,10 @@ export async function planFollowUpVisits(supabase: AnyClient, visitId: string) {
     .from("visit")
     .insert(rows)
     .select("id, symptoms");
-  if (error) return { created: 0, followUps: [] as { id: string; symptoms: string }[] };
+  if (error) {
+    console.error("[follow-up-planner] insert failed", error);
+    return { created: 0, followUps: [] as { id: string; symptoms: string }[] };
+  }
 
   return {
     created: inserted?.length ?? 0,
