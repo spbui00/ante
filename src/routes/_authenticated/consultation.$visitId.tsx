@@ -510,7 +510,21 @@ function ConsultationPage() {
         </DrawerContent>
       </Drawer>
 
+      {signOff.isPending ? (
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-background/95 px-6 text-center backdrop-blur-sm">
+          <Loader2 className="size-8 animate-spin text-primary" />
+          <p className="text-base font-medium text-foreground">
+            {SIGN_OFF_PHRASES[signOffPhrase]}
+          </p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Please keep this page open — we're writing the clinical record and the de-identified
+            surveillance entry.
+          </p>
+        </div>
+      ) : null}
+
     </AppShell>
+
   );
 }
 
