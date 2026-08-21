@@ -12,7 +12,7 @@ import { z } from "zod";
 import { getAgentDefinition } from "@/lib/agents/registry";
 import { sendAgentMessage } from "@/lib/agents/corti-agents.server";
 
-export const CARD_KINDS = ["metric", "alert", "line", "area", "bar", "table"] as const;
+export const CARD_KINDS = ["metric", "alert", "line", "area", "bar", "combo", "table"] as const;
 
 export const cardSpecSchema = z.object({
   title: z.string().min(1).max(120),
