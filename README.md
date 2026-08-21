@@ -12,6 +12,19 @@ Every signed-off visit is de-identified (demographic brackets, ICD-10/ATC/LOINC 
 
 ---
 
+## Capability checklist
+
+| Capability | Done | Where | How |
+| --- | --- | --- | --- |
+| Ambient speech-to-text | ✅ | `src/hooks/use-corti-stream.ts`, `src/components/ante/consultation-recorder.tsx`, `createStreamInteraction` in `src/lib/corti.server.ts` | Consultation audio is streamed to Corti `/streams` over WebSocket during the visit; transcript arrives live with speaker diarization (speaker IDs mapped to Doctor / Patient / Speaker N) and FactsR clinical facts, autosaved to `visit.visit_transcript` every 8s. |
+| Dictation speech-to-text | ✅ | `src/hooks/use-corti-dictation.ts`, `src/components/ante/voice-intake-modal.tsx`, `transcribeAudio` / `uploadRecording` in `src/lib/corti.server.ts` | Hold-to-talk capture in the patient intake drawer; audio is uploaded to a Corti interaction and transcribed via the Corti transcription endpoint, returning text into the intake chat. |
+| Text generation | ✅ | `cortiChat` in `src/lib/corti.server.ts`, used by `src/lib/handout.server.ts`, `src/lib/consultation.functions.ts`, `src/lib/transcript-reprocess.server.ts`, `src/lib/analytics-agent.server.ts` | `corti-s1` generates the structured clinical note from transcript + extracted facts, the plain-language patient handout (markdown, printable), reconciliation summaries on transcript reprocessing, and surveillance narratives. |
+| Agentic framework | ✅ | `src/lib/agents/registry.ts`, `src/lib/corti-agents.server.ts`, `src/routes/api/intake.ts`, `src/lib/followup.server.ts`, `src/lib/analytics-agent.server.ts` | Corti Agentic v2 agents with per-agent system prompts and context packs: intake, intake-edit, queue triage, charge nurse (wait estimation), care navigator, follow-up planner, outbreak analyst, and a tool-calling surveillance epidemiologist that writes its own read-only SQL and emits a dashboard spec. |
+| Medical coding | ✅ | `predictCodes` in `src/lib/corti.server.ts`, `src/routes/api/intake.ts`, `src/lib/anonymized-encounter.server.ts` | Corti `/tools/coding/` maps intake complaints and consultation findings to ICD-10 / ATC / LOINC / SKS codes; the primary ICD-10 code plus code sets are stored on the de-identified `anonymized_encounter` row and drive syndromic surveillance grouping. |
+
+---
+
+
 ## Tech stack
 
 | Layer | Technology |
