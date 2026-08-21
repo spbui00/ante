@@ -222,6 +222,7 @@ export function ConsultationRecorder({
       toast.error("Not enough conversation captured yet");
       return;
     }
+    await persistTranscript(fullTranscript);
     setPhase("drafting");
     try {
       const result = (await makeDraft({ data: { transcript: text, facts } })) as Draft;
@@ -237,10 +238,13 @@ export function ConsultationRecorder({
     if (!draft) return;
     setPhase("saving");
     try {
+      await persistTranscript(fullTranscript);
       await signOff({
         data: {
           visitId,
-          transcript: transcript.trim(),
+          // The transcript is already autosaved in full; don't append it again.
+          transcript: "",
+
           conclusion: draft.conclusion,
           recommendation: draft.recommendation,
           urgencyLevel: draft.urgencyLevel as "LOW" | "MEDIUM" | "HIGH_RED_FLAG",
