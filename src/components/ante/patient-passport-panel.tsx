@@ -142,7 +142,51 @@ export function PatientPassportPanel({
   );
 }
 
-function Group({
+function MedicalInfoContent({ data }: { data: ReturnType<typeof getPatientRecord> extends Promise<infer T> ? T : never }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Group title="Conditions">
+        {(data?.records ?? [])
+          .filter((r) => r.category === "CONDITION")
+          .map((r) => (
+            <Line key={r.id} primary={r.description} secondary={r.code ?? undefined} />
+          ))}
+      </Group>
+      <Group title="Allergies">
+        {(data?.records ?? [])
+          .filter((r) => r.category === "ALLERGY")
+          .map((r) => (
+            <Line key={r.id} primary={r.description} secondary={r.status} />
+          ))}
+      </Group>
+      <Group title="Active medications">
+        {(data?.prescriptions ?? [])
+          .filter((p) => !p.end_date)
+          .map((p) => (
+            <Line
+              key={p.id}
+              primary={p.drug_name}
+              secondary={[p.dosage, p.frequency].filter(Boolean).join(" · ")}
+            />
+          ))}
+      </Group>
+      <Group title="Recent observations">
+        {(data?.observations ?? []).slice(0, 8).map((o) => (
+          <Line
+            key={o.id}
+            primary={o.test_name}
+            secondary={
+              o.status === "ORDERED" || o.status === "PENDING"
+                ? `⏱ ${o.status === "ORDERED" ? "Ordered" : "Pending"} · ${formatDate(o.ordered_date ?? o.recorded_at)}`
+                : `${o.value ?? "—"} ${o.unit ?? ""} · ${formatDate(o.recorded_at)}`
+            }
+          />
+        ))}
+      </Group>
+    </div>
+  );
+}
+
   title,
   className,
   children,
