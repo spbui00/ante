@@ -249,7 +249,7 @@ export async function cortiChat(opts: {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: opts.model ?? "corti-s1-mini",
+      model: opts.model ?? "corti-s1",
       messages: [
         { role: "system", content: opts.system },
         { role: "user", content: opts.user },
