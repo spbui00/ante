@@ -206,6 +206,27 @@ function ConsultationPage() {
       ),
   });
 
+  const reprocess = useMutation({
+    mutationFn: () => reprocessVisitTranscript({ data: { visitId } }),
+    onSuccess: (res) => {
+      setReprocessOpen(false);
+      toast.success(
+        `Transcript reprocessed · ${res.added} added, ${res.updated} updated, ${res.deleted} removed`,
+      );
+      if (res.conclusion) setConclusion(res.conclusion);
+      if (res.recommendation) setRecommendation(res.recommendation);
+      void queryClient.invalidateQueries({ queryKey: ["visit-detail", visitId] });
+      void queryClient.invalidateQueries({ queryKey: ["visit-clinical-items", visitId] });
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : "Could not reprocess the transcript",
+      ),
+  });
+
+
   const signOffPending = signOff.isPending;
   useEffect(() => {
     if (!signOffPending) {
