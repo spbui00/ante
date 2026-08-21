@@ -73,7 +73,7 @@ export const analyzeSurveillance = createServerFn({ method: "POST" })
         )
         .select("id");
       if (saved?.length === cards.length) {
-        cards = cards.map((c: any, i: number) => ({ ...c, id: saved[i].id as string }));
+        cards = cards.map((c: any, i: number) => ({ ...c, id: String(saved[i]?.id ?? c.id) }));
       }
     }
 
