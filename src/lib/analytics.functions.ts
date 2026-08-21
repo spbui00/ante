@@ -155,6 +155,18 @@ export const saveAnalyticsCard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => cardInput.parse(input))
   .handler(async ({ data, context }) => {
+    // Cards produced by an analysis already exist as unpinned rows — just flip the flag.
+    if (data.id) {
+      const { data: updated } = await context.supabase
+        .from("analytics_card")
+        .update({ pinned: true, updated_at: new Date().toISOString() })
+        .eq("id", data.id)
+        .eq("owner_id", context.userId)
+        .select("id")
+        .maybeSingle();
+      if (updated) return { id: updated.id as string };
+    }
+
     const { count } = await context.supabase
       .from("analytics_card")
       .select("id", { count: "exact", head: true })
