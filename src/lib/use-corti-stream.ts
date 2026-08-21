@@ -10,7 +10,7 @@ type Session = {
   source: MediaStreamAudioSourceNode;
 };
 
-export type StreamSegment = { id: string; text: string; speakerId: number };
+export type StreamSegment = { id: string; text: string; speakerId: number; start?: number };
 export type StreamFact = { id?: string; group: string; text: string };
 
 const SAMPLE_RATE = 16000;
